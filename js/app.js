@@ -1,4 +1,27 @@
 
+// ===== COUNTDOWN TIMER ===== 
+function initCountdownTimer() {
+    const updateCountdown = () => {
+        const targetDate = new Date("2027-01-01T00:00:00").getTime();
+        const now = new Date().getTime();
+        const timeLeft = targetDate - now;
+        
+        const days = Math.floor(timeLeft / (1000 * 60 * 60 * 24));
+        const hours = Math.floor((timeLeft % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+        const minutes = Math.floor((timeLeft % (1000 * 60 * 60)) / (1000 * 60));
+        const seconds = Math.floor((timeLeft % (1000 * 60)) / 1000);
+        
+        document.getElementById("countdownDays").textContent = String(days).padStart(2, "0");
+        document.getElementById("countdownHours").textContent = String(hours).padStart(2, "0");
+        document.getElementById("countdownMinutes").textContent = String(minutes).padStart(2, "0");
+        document.getElementById("countdownSeconds").textContent = String(seconds).padStart(2, "0");
+    };
+    
+    updateCountdown();
+    setInterval(updateCountdown, 1000);
+}
+
+
 // ===== TRADING JOURNAL APP =====
 
 // ===== LOGIN SYSTEM =====
@@ -27,8 +50,8 @@ function initLoginSystem() {
     const container = document.querySelector('.container');
     
     // Toggle buttons
-    const adminLoginToggle = document.getElementById('adminLoginToggle');
-    const userLoginToggle = document.getElementById('userLoginToggle');
+    const userModeBtn = document.getElementById('userModeBtn');
+    const adminModeBtn = document.getElementById('adminModeBtn');
     const loginKeyInput = document.getElementById('loginKeyInput');
     const loginBtn = document.getElementById('loginBtn');
     const adminKeyInput = document.getElementById('adminKeyInput');
@@ -69,16 +92,20 @@ function initLoginSystem() {
     }
     
     // Toggle login views
-    adminLoginToggle.addEventListener('click', () => {
-        normalLoginForm.style.display = 'none';
-        adminLoginForm.style.display = 'flex';
-        adminKeyInput.focus();
-    });
-    
-    userLoginToggle.addEventListener('click', () => {
-        adminLoginForm.style.display = 'none';
+    userModeBtn.addEventListener('click', () => {
         normalLoginForm.style.display = 'flex';
+        adminLoginForm.style.display = 'none';
+        userModeBtn.style.background = 'linear-gradient(135deg, #9333ea 0%, #8b5cf6 100%)';
+        adminModeBtn.style.background = 'linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%)';
         loginKeyInput.focus();
+    });
+
+    adminModeBtn.addEventListener('click', () => {
+        adminLoginForm.style.display = 'flex';
+        normalLoginForm.style.display = 'none';
+        adminModeBtn.style.background = 'linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%)';
+        userModeBtn.style.background = 'linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%)';
+        adminKeyInput.focus();
     });
     
     // User login
@@ -271,6 +298,7 @@ function initMobileMenu() {
 document.addEventListener('DOMContentLoaded', () => {
     initLoginSystem();
     initMobileMenu();
+    initCountdownTimer();
 });
 
 const tradeForm = document.getElementById('tradeForm');
@@ -823,11 +851,13 @@ function loadCalendar() {
             // Render new calendar
             if (view === 'daily') renderDailyCalendar(trades, calendarContent);
             else if (view === 'monthly') renderMonthlyCalendar(trades, calendarContent);
+            updateCalendarStats(trades);
         });
     });
     
     // Render initial (daily)
     renderDailyCalendar(trades, calendarContent);
+    updateCalendarStats(trades);
 }
 
 function renderDailyCalendar(trades, container) {
@@ -888,42 +918,6 @@ function renderDailyCalendar(trades, container) {
     
     // HTML
     const html = `
-        <!-- Stats Section -->
-        <div style="background: rgba(168, 85, 247, 0.1); border: 1px solid rgba(168, 85, 247, 0.2); border-radius: 12px; padding: 20px; margin-bottom: 30px;">
-            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 20px;">
-                <div>
-                    <div style="color: #94a3b8; font-size: 12px; margin-bottom: 8px;">Total P&L</div>
-                    <div style="font-size: 24px; font-weight: 700; color: ${totalPnL >= 0 ? '#10b981' : '#f87171'};">€${totalPnL.toFixed(2)}</div>
-                </div>
-                <div>
-                    <div style="color: #94a3b8; font-size: 12px; margin-bottom: 8px;">Trades</div>
-                    <div style="font-size: 24px; font-weight: 700; color: #a855f7;">${monthTrades.length}</div>
-                </div>
-                <div>
-                    <div style="color: #94a3b8; font-size: 12px; margin-bottom: 8px;">Win Rate</div>
-                    <div style="font-size: 24px; font-weight: 700; color: #10b981;">${winRate}%</div>
-                </div>
-                <div>
-                    <div style="color: #94a3b8; font-size: 12px; margin-bottom: 8px;">Ø pro Tag</div>
-                    <div style="font-size: 24px; font-weight: 700; color: #cbd5e1;">€${avgPerDay}</div>
-                </div>
-            </div>
-        </div>
-        
-        <!-- Best/Worst Days -->
-        <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px; margin-bottom: 30px;">
-            <div style="background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.3); border-radius: 12px; padding: 16px;">
-                <div style="color: #94a3b8; font-size: 12px; margin-bottom: 8px;">Best Day 🏆</div>
-                <div style="font-size: 20px; font-weight: 700; color: #10b981;">${bestDay.date !== '-' ? bestDay.date : '—'}</div>
-                <div style="color: #cbd5e1; font-size: 14px; margin-top: 8px;">€${bestDay.pnl.toFixed(2)}</div>
-            </div>
-            <div style="background: rgba(248, 113, 113, 0.1); border: 1px solid rgba(248, 113, 113, 0.3); border-radius: 12px; padding: 16px;">
-                <div style="color: #94a3b8; font-size: 12px; margin-bottom: 8px;">Worst Day 📉</div>
-                <div style="font-size: 20px; font-weight: 700; color: #f87171;">${worstDay.date !== '-' ? worstDay.date : '—'}</div>
-                <div style="color: #cbd5e1; font-size: 14px; margin-top: 8px;">€${worstDay.pnl.toFixed(2)}</div>
-            </div>
-        </div>
-        
         <!-- Legende -->
         <div style="display: flex; gap: 20px; margin-bottom: 30px; padding: 16px; background: rgba(100, 116, 139, 0.1); border-radius: 8px;">
             <div style="display: flex; align-items: center; gap: 8px;">
@@ -1070,42 +1064,6 @@ function renderMonthlyCalendar(trades, container) {
     
     // HTML
     const html = `
-        <!-- Stats Section -->
-        <div style="background: rgba(168, 85, 247, 0.1); border: 1px solid rgba(168, 85, 247, 0.2); border-radius: 12px; padding: 20px; margin-bottom: 30px;">
-            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 20px;">
-                <div>
-                    <div style="color: #94a3b8; font-size: 12px; margin-bottom: 8px;">Total P&L</div>
-                    <div style="font-size: 24px; font-weight: 700; color: ${totalPnL >= 0 ? '#10b981' : '#f87171'};">€${totalPnL.toFixed(2)}</div>
-                </div>
-                <div>
-                    <div style="color: #94a3b8; font-size: 12px; margin-bottom: 8px;">Trades</div>
-                    <div style="font-size: 24px; font-weight: 700; color: #a855f7;">${allTrades.length}</div>
-                </div>
-                <div>
-                    <div style="color: #94a3b8; font-size: 12px; margin-bottom: 8px;">Win Rate</div>
-                    <div style="font-size: 24px; font-weight: 700; color: #10b981;">${winRate}%</div>
-                </div>
-                <div>
-                    <div style="color: #94a3b8; font-size: 12px; margin-bottom: 8px;">Ø pro Monat</div>
-                    <div style="font-size: 24px; font-weight: 700; color: #cbd5e1;">€${avgPerMonth}</div>
-                </div>
-            </div>
-        </div>
-        
-        <!-- Best/Worst Months -->
-        <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px; margin-bottom: 30px;">
-            <div style="background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.3); border-radius: 12px; padding: 16px;">
-                <div style="color: #94a3b8; font-size: 12px; margin-bottom: 8px;">Best Month 🏆</div>
-                <div style="font-size: 20px; font-weight: 700; color: #10b981;">${bestMonth.key !== '-' ? getMonthName(bestMonth.key) : '—'}</div>
-                <div style="color: #cbd5e1; font-size: 14px; margin-top: 8px;">€${bestMonth.pnl.toFixed(2)}</div>
-            </div>
-            <div style="background: rgba(248, 113, 113, 0.1); border: 1px solid rgba(248, 113, 113, 0.3); border-radius: 12px; padding: 16px;">
-                <div style="color: #94a3b8; font-size: 12px; margin-bottom: 8px;">Worst Month 📉</div>
-                <div style="font-size: 20px; font-weight: 700; color: #f87171;">${worstMonth.key !== '-' ? getMonthName(worstMonth.key) : '—'}</div>
-                <div style="color: #cbd5e1; font-size: 14px; margin-top: 8px;">€${worstMonth.pnl.toFixed(2)}</div>
-            </div>
-        </div>
-        
         <!-- Legende -->
         <div style="display: flex; gap: 20px; margin-bottom: 30px; padding: 16px; background: rgba(100, 116, 139, 0.1); border-radius: 8px;">
             <div style="display: flex; align-items: center; gap: 8px;">
@@ -2560,4 +2518,75 @@ function initCustomDropdowns() {
             el.classList.remove('open');
         });
     });
+}
+
+// ===== CALENDAR STATS =====
+function updateCalendarStats(trades) {
+    if (!trades || trades.length === 0) {
+        // Reset stats to default
+        document.getElementById("totalPnLStat").textContent = "€ 0.00";
+        document.getElementById("bestDayStat").textContent = "€ 0.00";
+        document.getElementById("bestDayDateStat").textContent = "—";
+        document.getElementById("worstDayStat").textContent = "€ 0.00";
+        document.getElementById("worstDayDateStat").textContent = "—";
+        document.getElementById("winningDaysStat").textContent = "0%";
+        document.getElementById("winningDaysCountStat").textContent = "0 von 0";
+        document.getElementById("losingDaysStat").textContent = "0%";
+        document.getElementById("losingDaysCountStat").textContent = "0 von 0";
+        document.getElementById("avgDailyPnLStat").textContent = "€ 0.00";
+        document.getElementById("calendarTradeCount").textContent = "0";
+        document.getElementById("calendarTradingDays").textContent = "0";
+        return;
+    }
+
+    const groupedByDate = {};
+    trades.forEach(t => {
+        const date = t.date || new Date(t.entryTime).toLocaleDateString("de-DE");
+        if (!groupedByDate[date]) groupedByDate[date] = [];
+        groupedByDate[date].push(t);
+    });
+
+    let totalPnL = 0;
+    let bestDayPnL = -Infinity;
+    let worstDayPnL = Infinity;
+    let bestDayDate = "";
+    let worstDayDate = "";
+    let winningDays = 0;
+    let losingDays = 0;
+    const tradingDays = Object.keys(groupedByDate).length;
+
+    Object.entries(groupedByDate).forEach(([date, dayTrades]) => {
+        const dayPnL = dayTrades.reduce((sum, t) => sum + (t.pnl || 0), 0);
+        totalPnL += dayPnL;
+        if (dayPnL > bestDayPnL) { bestDayPnL = dayPnL; bestDayDate = date; }
+        if (dayPnL < worstDayPnL) { worstDayPnL = dayPnL; worstDayDate = date; }
+        if (dayPnL > 0) winningDays++;
+        else if (dayPnL < 0) losingDays++;
+    });
+
+    const winningDaysPercent = tradingDays > 0 ? ((winningDays / tradingDays) * 100).toFixed(1) : 0;
+    const losingDaysPercent = tradingDays > 0 ? ((losingDays / tradingDays) * 100).toFixed(1) : 0;
+    const avgDailyPnL = tradingDays > 0 ? totalPnL / tradingDays : 0;
+
+    // Handle Infinity values
+    bestDayPnL = bestDayPnL === -Infinity ? 0 : bestDayPnL;
+    worstDayPnL = worstDayPnL === Infinity ? 0 : worstDayPnL;
+
+    const updateElement = (id, value) => {
+        const el = document.getElementById(id);
+        if (el) el.textContent = value;
+    };
+
+    updateElement("totalPnLStat", `€ ${totalPnL.toFixed(2)}`);
+    updateElement("bestDayStat", `€ ${bestDayPnL.toFixed(2)}`);
+    updateElement("bestDayDateStat", bestDayDate || "—");
+    updateElement("worstDayStat", `€ ${worstDayPnL.toFixed(2)}`);
+    updateElement("worstDayDateStat", worstDayDate || "—");
+    updateElement("winningDaysStat", `${winningDaysPercent}%`);
+    updateElement("winningDaysCountStat", `${winningDays} von ${tradingDays}`);
+    updateElement("losingDaysStat", `${losingDaysPercent}%`);
+    updateElement("losingDaysCountStat", `${losingDays} von ${tradingDays}`);
+    updateElement("avgDailyPnLStat", `€ ${avgDailyPnL.toFixed(2)}`);
+    updateElement("calendarTradeCount", trades.length);
+    updateElement("calendarTradingDays", tradingDays);
 }

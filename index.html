@@ -4,52 +4,77 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <title>Trading Journal - Swing Trading Tracker</title>
     <link rel="stylesheet" href="css/style.css">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
 </head>
 <body>
     <!-- ===== LOGIN SCREEN ===== -->
     <div class="login-screen" id="loginScreen">
-        <div class="login-container">
-            <div class="login-header">
-                <img src="img/41fd020201f230669a0bcda62685bb5d.jpg" alt="Logo" class="login-logo">
-                <div class="login-title">CapitalFlow</div>
-                <div class="login-subtitle">Premium Trading Journal</div>
+        <div class="login-container" style="max-width: 380px;">
+            <!-- Logo -->
+            <div style="margin-bottom: 32px; text-align: center;">
+                <img src="img/41fd020201f230669a0bcda62685bb5d.jpg" alt="Logo" style="width: 100px; height: 100px; border-radius: 16px; box-shadow: 0 20px 60px rgba(168, 85, 247, 0.2); margin-bottom: 20px; transition: all 0.3s ease; cursor: pointer;" 
+                onmouseover="this.style.boxShadow='0 20px 80px rgba(168, 85, 247, 0.4), 0 0 40px rgba(168, 85, 247, 0.3)'; this.style.transform='scale(1.05)'"
+                onmouseout="this.style.boxShadow='0 20px 60px rgba(168, 85, 247, 0.2)'; this.style.transform='scale(1)'">
+                <h1 style="margin: 0; font-size: 42px; font-weight: 700; font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: linear-gradient(135deg, #9333ea 0%, #be185d 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; letter-spacing: -0.5px; font-smoothing: antialiased; -webkit-font-smoothing: antialiased;">CapitalFlow</h1>
             </div>
-            
+
+            <!-- Countdown Timer Compact -->
+            <div style="background: rgba(15, 15, 30, 0.8); border: 1px solid rgba(168, 85, 247, 0.15); border-radius: 14px; padding: 24px; margin-bottom: 32px; text-align: center;">
+                <div style="color: #64748b; font-size: 11px; text-transform: uppercase; letter-spacing: 0.8px; font-weight: 600; margin-bottom: 14px; font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;">Launch Countdown</div>
+                
+                <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px;">
+                    <div>
+                        <div id="countdownDays" style="font-size: 28px; font-weight: 800; color: #a855f7; line-height: 1; margin-bottom: 6px;">0</div>
+                        <div style="color: #64748b; font-size: 10px; text-transform: uppercase; letter-spacing: 0.3px; font-weight: 600;">Days</div>
+                    </div>
+                    <div>
+                        <div id="countdownHours" style="font-size: 28px; font-weight: 800; color: #a855f7; line-height: 1; margin-bottom: 6px;">0</div>
+                        <div style="color: #64748b; font-size: 10px; text-transform: uppercase; letter-spacing: 0.3px; font-weight: 600;">Hours</div>
+                    </div>
+                    <div>
+                        <div id="countdownMinutes" style="font-size: 28px; font-weight: 800; color: #a855f7; line-height: 1; margin-bottom: 6px;">0</div>
+                        <div style="color: #64748b; font-size: 10px; text-transform: uppercase; letter-spacing: 0.3px; font-weight: 600;">Min</div>
+                    </div>
+                    <div>
+                        <div id="countdownSeconds" style="font-size: 28px; font-weight: 800; color: #a855f7; line-height: 1; margin-bottom: 6px;">0</div>
+                        <div style="color: #64748b; font-size: 10px; text-transform: uppercase; letter-spacing: 0.3px; font-weight: 600;">Sec</div>
+                    </div>
+                </div>
+                
+                <div style="height: 1px; background: rgba(168, 85, 247, 0.1); margin-top: 14px;"></div>
+                <p style="color: #64748b; font-size: 11px; margin: 10px 0 0 0; font-weight: 500;">Jan 1, 2027</p>
+            </div>
+
+            <!-- Login Mode Toggle -->
+            <div style="display: flex; gap: 8px; margin-bottom: 16px;">
+                <button id="userModeBtn" class="login-btn active" style="flex: 1; background: linear-gradient(135deg, #9333ea 0%, #8b5cf6 100%); font-size: 12px; padding: 12px;">User Access</button>
+                <button id="adminModeBtn" class="login-btn" style="flex: 1; background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%); font-size: 12px; padding: 12px;">Admin Access</button>
+            </div>
+
+            <!-- Login Forms -->
             <!-- Normal Login -->
             <div class="login-form" id="normalLoginForm">
                 <div class="login-form-group">
-                    <label for="loginKeyInput">Your Access Key</label>
-                    <input type="password" id="loginKeyInput" class="login-input" placeholder="Enter your access key" autocomplete="off">
-                    <div class="login-hint">🔐 Keep your key safe!</div>
+                    <input type="password" id="loginKeyInput" class="login-input" placeholder="Enter your access key" autocomplete="off" style="background: rgba(15, 15, 30, 0.9); border: 1px solid rgba(168, 85, 247, 0.15); backdrop-filter: blur(10px); color: #cbd5e1; font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-size: 13px;">
                 </div>
                 
                 <button class="login-btn" id="loginBtn">Access Dashboard</button>
-                
-                <div class="login-divider">or</div>
-                
-                <button class="login-btn-secondary" id="adminLoginToggle" type="button">Admin Login</button>
             </div>
             
             <!-- Admin Login -->
             <div class="login-form" id="adminLoginForm" style="display: none;">
                 <div class="login-form-group">
-                    <label for="adminKeyInput">Admin Key</label>
-                    <input type="password" id="adminKeyInput" class="login-input" placeholder="Enter admin key" autocomplete="off">
+                    <input type="password" id="adminKeyInput" class="login-input" placeholder="Enter admin key" autocomplete="off" style="background: rgba(15, 15, 30, 0.9); border: 1px solid rgba(248, 113, 113, 0.15); backdrop-filter: blur(10px); color: #cbd5e1; font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-size: 13px;">
                 </div>
                 
-                <button class="login-btn" id="adminLoginBtn">Enter Admin Panel</button>
-                
-                <div class="login-divider">or</div>
-                
-                <button class="login-btn-secondary" id="userLoginToggle" type="button">User Login</button>
+                <button class="login-btn" id="adminLoginBtn" style="background: linear-gradient(135deg, #9333ea 0%, #8b5cf6 100%);">Enter Admin</button>
             </div>
             
-            <div class="login-footer">
-                <p style="color: #64748b; font-size: 12px; margin: 0;">© 2024 CapitalFlow by maxim</p>
+            <div class="login-footer" style="margin-top: 24px; text-align: center;">
+                <p style="color: #475569; font-size: 10px; margin: 0; text-transform: uppercase; letter-spacing: 0.4px; font-weight: 500;">CapitalFlow © 2026</p>
             </div>
         </div>
     </div>
@@ -139,6 +164,10 @@
             <div class="nav-item" data-tab="transactions">
                 <svg class="nav-icon" viewBox="0 0 24 24" width="20" height="20"><path fill="currentColor" d="M4 6h16v2H4zm0 5h16v2H4zm0 5h16v2H4z"/></svg>
                 <span>Transaktionen</span>
+            </div>
+            <div class="nav-item" data-tab="roadmap">
+                <svg class="nav-icon" viewBox="0 0 24 24" width="20" height="20"><path fill="currentColor" d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>
+                <span>Roadmap</span>
             </div>
             
             <div class="sidebar-logout-divider"></div>
@@ -427,11 +456,60 @@
 
         <!-- ===== CALENDAR TAB ===== -->
         <div id="calendar" class="tab-content">
-            <h2>P&L-Kalender</h2>
-            <div class="calendar-controls">
-                <button class="calendar-btn active" data-view="daily">Täglich</button>
-                <button class="calendar-btn" data-view="monthly">Monatlich</button>
+            <div style="margin-bottom: 32px;">
+                <h2 style="margin-bottom: 8px; font-size: 32px; font-weight: 700;">📅 P&L-Kalender</h2>
+                <p style="color: #94a3b8; font-size: 14px; margin: 0;">Tägliche & monatliche Performance-Analyse mit historischen Daten</p>
             </div>
+
+            <!-- Premium Stats Cards -->
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 16px; margin-bottom: 40px;">
+                <div class="premium-stat-card" style="border: 1px solid rgba(16, 185, 129, 0.2); background: linear-gradient(135deg, rgba(16, 185, 129, 0.08) 0%, rgba(16, 185, 129, 0.03) 100%);">
+                    <div style="color: #94a3b8; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 10px;">Total P&L</div>
+                    <div id="totalPnLStat" style="font-size: 28px; font-weight: 700; background: linear-gradient(135deg, #10b981 0%, #6ee7b7 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; margin-bottom: 8px;">€ 0.00</div>
+                    <div style="color: #10b981; font-size: 12px; font-weight: 600;">Alle Trades</div>
+                </div>
+
+                <div class="premium-stat-card" style="border: 1px solid rgba(168, 85, 247, 0.2); background: linear-gradient(135deg, rgba(168, 85, 247, 0.08) 0%, rgba(168, 85, 247, 0.03) 100%);">
+                    <div style="color: #94a3b8; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 10px;">Best Day</div>
+                    <div id="bestDayStat" style="font-size: 28px; font-weight: 700; color: #6ee7b7; margin-bottom: 8px;">€ 0.00</div>
+                    <div id="bestDayDateStat" style="color: #94a3b8; font-size: 12px; font-weight: 500;">—</div>
+                </div>
+
+                <div class="premium-stat-card" style="border: 1px solid rgba(248, 113, 113, 0.2); background: linear-gradient(135deg, rgba(248, 113, 113, 0.08) 0%, rgba(248, 113, 113, 0.03) 100%);">
+                    <div style="color: #94a3b8; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 10px;">Worst Day</div>
+                    <div id="worstDayStat" style="font-size: 28px; font-weight: 700; color: #fb7185; margin-bottom: 8px;">€ 0.00</div>
+                    <div id="worstDayDateStat" style="color: #94a3b8; font-size: 12px; font-weight: 500;">—</div>
+                </div>
+
+                <div class="premium-stat-card" style="border: 1px solid rgba(59, 130, 246, 0.2); background: linear-gradient(135deg, rgba(59, 130, 246, 0.08) 0%, rgba(59, 130, 246, 0.03) 100%);">
+                    <div style="color: #94a3b8; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 10px;">Winning Days</div>
+                    <div id="winningDaysStat" style="font-size: 28px; font-weight: 700; color: #60a5fa; margin-bottom: 8px;">0%</div>
+                    <div id="winningDaysCountStat" style="color: #94a3b8; font-size: 12px; font-weight: 500;">0 von 0</div>
+                </div>
+
+                <div class="premium-stat-card" style="border: 1px solid rgba(251, 146, 60, 0.2); background: linear-gradient(135deg, rgba(251, 146, 60, 0.08) 0%, rgba(251, 146, 60, 0.03) 100%);">
+                    <div style="color: #94a3b8; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 10px;">Losing Days</div>
+                    <div id="losingDaysStat" style="font-size: 28px; font-weight: 700; color: #fb923c; margin-bottom: 8px;">0%</div>
+                    <div id="losingDaysCountStat" style="color: #94a3b8; font-size: 12px; font-weight: 500;">0 von 0</div>
+                </div>
+
+                <div class="premium-stat-card" style="border: 1px solid rgba(139, 92, 246, 0.2); background: linear-gradient(135deg, rgba(139, 92, 246, 0.08) 0%, rgba(139, 92, 246, 0.03) 100%);">
+                    <div style="color: #94a3b8; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 10px;">Avg Daily P&L</div>
+                    <div id="avgDailyPnLStat" style="font-size: 28px; font-weight: 700; color: #c4b5fd; margin-bottom: 8px;">€ 0.00</div>
+                    <div style="color: #94a3b8; font-size: 12px; font-weight: 500;">Pro Trading Day</div>
+                </div>
+            </div>
+
+            <!-- Calendar Controls -->
+            <div style="display: flex; gap: 12px; margin-bottom: 28px; align-items: center;">
+                <button class="calendar-btn premium-btn active" data-view="daily" style="background: rgba(168, 85, 247, 0.15); border: 1px solid rgba(168, 85, 247, 0.3); color: #e2e8f0; padding: 10px 24px; border-radius: 8px; font-weight: 600; font-size: 14px; cursor: pointer; transition: all 0.3s ease;">📆 Täglich</button>
+                <button class="calendar-btn premium-btn" data-view="monthly" style="background: rgba(94, 109, 241, 0.1); border: 1px solid rgba(94, 109, 241, 0.2); color: #cbd5e1; padding: 10px 24px; border-radius: 8px; font-weight: 600; font-size: 14px; cursor: pointer; transition: all 0.3s ease;">📊 Monatlich</button>
+                <div style="flex: 1;"></div>
+                <div style="color: #94a3b8; font-size: 12px; font-weight: 500; text-transform: uppercase;">
+                    <span id="calendarTradeCount">0</span> Trades • <span id="calendarTradingDays">0</span> Tage
+                </div>
+            </div>
+            
             <div id="calendarContent"></div>
         </div>
 
@@ -444,6 +522,239 @@
         <div id="analytics" class="tab-content">
             <p>Loading...</p>
         </div>
+
+        <!-- ===== ROADMAP TAB ===== -->
+        <div id="roadmap" class="tab-content">
+            <div style="margin-bottom: 40px;">
+                <h2 style="margin-bottom: 8px; font-size: 32px; font-weight: 700;">📍 Product Roadmap</h2>
+                <p style="color: #94a3b8; font-size: 14px; margin: 0;">CapitalFlow Development Phases • 5/17 Features Complete</p>
+            </div>
+
+</html>            <!-- ===== PHASE 1 ===== -->
+            <div style="margin-bottom: 56px;">
+                <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 28px;">
+                    <div>
+                        <h3 style="color: #10b981; font-size: 24px; font-weight: 700; margin: 0 0 8px 0;">Phase 1: Foundation</h3>
+                        <p style="color: #94a3b8; font-size: 13px; margin: 0;">Core trading infrastructure</p>
+                    </div>
+                    <div style="text-align: right;">
+                        <div style="font-size: 36px; font-weight: 700; color: #10b981;">5/5</div>
+                        <div style="font-size: 12px; color: #10b981; font-weight: 600;">✅ COMPLETED</div>
+                    </div>
+                </div>
+                
+                <div style="width: 100%; height: 8px; background: rgba(16, 185, 129, 0.1); border-radius: 4px; margin-bottom: 28px; overflow: hidden; border: 1px solid rgba(16, 185, 129, 0.2);">
+                    <div style="width: 100%; height: 100%; background: linear-gradient(90deg, #10b981 0%, #6ee7b7 100%); border-radius: 4px; box-shadow: 0 0 20px rgba(16, 185, 129, 0.5);"></div>
+                </div>
+                
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 16px;">
+                    <div class="roadmap-card-premium completed-card">
+                        <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 14px;">
+                            <div style="font-size: 36px; opacity: 0.95;">📊</div>
+                            <svg style="width: 20px; height: 20px; color: #10b981; stroke-width: 3;" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                <polyline points="20 6 9 17 4 12"></polyline>
+                            </svg>
+                        </div>
+                        <h4 style="font-size: 13px; font-weight: 700; color: #e2e8f0; margin: 0 0 6px 0; text-transform: uppercase; letter-spacing: 0.5px;">Dashboard</h4>
+                        <p style="font-size: 11px; color: #94a3b8; margin: 0; line-height: 1.5;">Live Stats, Radar, Heatmap</p>
+                    </div>
+                    
+                    <div class="roadmap-card-premium completed-card">
+                        <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 14px;">
+                            <div style="font-size: 36px; opacity: 0.95;">📔</div>
+                            <svg style="width: 20px; height: 20px; color: #10b981; stroke-width: 3;" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                <polyline points="20 6 9 17 4 12"></polyline>
+                            </svg>
+                        </div>
+                        <h4 style="font-size: 13px; font-weight: 700; color: #e2e8f0; margin: 0 0 6px 0; text-transform: uppercase; letter-spacing: 0.5px;">Journal</h4>
+                        <p style="font-size: 11px; color: #94a3b8; margin: 0; line-height: 1.5;">Entry, Exit, Setup</p>
+                    </div>
+                    
+                    <div class="roadmap-card-premium completed-card">
+                        <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 14px;">
+                            <div style="font-size: 36px; opacity: 0.95;">📈</div>
+                            <svg style="width: 20px; height: 20px; color: #10b981; stroke-width: 3;" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                <polyline points="20 6 9 17 4 12"></polyline>
+                            </svg>
+                        </div>
+                        <h4 style="font-size: 13px; font-weight: 700; color: #e2e8f0; margin: 0 0 6px 0; text-transform: uppercase; letter-spacing: 0.5px;">Analytics</h4>
+                        <p style="font-size: 11px; color: #94a3b8; margin: 0; line-height: 1.5;">Win Rate, Profit</p>
+                    </div>
+                    
+                    <div class="roadmap-card-premium completed-card">
+                        <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 14px;">
+                            <div style="font-size: 36px; opacity: 0.95;">📅</div>
+                            <svg style="width: 20px; height: 20px; color: #10b981; stroke-width: 3;" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                <polyline points="20 6 9 17 4 12"></polyline>
+                            </svg>
+                        </div>
+                        <h4 style="font-size: 13px; font-weight: 700; color: #e2e8f0; margin: 0 0 6px 0; text-transform: uppercase; letter-spacing: 0.5px;">Calendar</h4>
+                        <p style="font-size: 11px; color: #94a3b8; margin: 0; line-height: 1.5;">Day/Month View</p>
+                    </div>
+                    
+                    <div class="roadmap-card-premium completed-card">
+                        <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 14px;">
+                            <div style="font-size: 36px; opacity: 0.95;">🔐</div>
+                            <svg style="width: 20px; height: 20px; color: #10b981; stroke-width: 3;" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                <polyline points="20 6 9 17 4 12"></polyline>
+                            </svg>
+                        </div>
+                        <h4 style="font-size: 13px; font-weight: 700; color: #e2e8f0; margin: 0 0 6px 0; text-transform: uppercase; letter-spacing: 0.5px;">Auth</h4>
+                        <p style="font-size: 11px; color: #94a3b8; margin: 0; line-height: 1.5;">Admin, Security</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ===== PHASE 2 ===== -->
+            <div style="margin-bottom: 56px;">
+                <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 28px;">
+                    <div>
+                        <h3 style="color: #f59e0b; font-size: 24px; font-weight: 700; margin: 0 0 8px 0;">Phase 2: Advanced Features</h3>
+                        <p style="color: #94a3b8; font-size: 13px; margin: 0;">Cross-platform expansion & ecosystem</p>
+                    </div>
+                    <div style="text-align: right;">
+                        <div style="font-size: 36px; font-weight: 700; color: #f59e0b;">0/8</div>
+                        <div style="font-size: 12px; color: #f59e0b; font-weight: 600;">🔄 IN PROGRESS</div>
+                    </div>
+                </div>
+                
+                <div style="width: 100%; height: 8px; background: rgba(245, 158, 11, 0.1); border-radius: 4px; margin-bottom: 28px; overflow: hidden; border: 1px solid rgba(245, 158, 11, 0.2);">
+                    <div style="width: 0%; height: 100%; background: linear-gradient(90deg, #f59e0b 0%, #fbbf24 100%); border-radius: 4px; box-shadow: 0 0 20px rgba(245, 158, 11, 0.5);"></div>
+                </div>
+                
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 16px;">
+                    <div class="roadmap-card-premium in-progress-card">
+                        <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 14px;">
+                            <div style="font-size: 32px;">👁️</div>
+                            <div style="background: rgba(245, 158, 11, 0.25); color: #f59e0b; padding: 3px 6px; border-radius: 3px; font-size: 10px; font-weight: 700;">SOON</div>
+                        </div>
+                        <h4 style="font-size: 13px; font-weight: 700; color: #e2e8f0; margin: 0 0 6px 0; text-transform: uppercase; letter-spacing: 0.5px;">Watchlist</h4>
+                        <p style="font-size: 11px; color: #94a3b8; margin: 0; line-height: 1.5;">Alerts & Tracking</p>
+                    </div>
+                    
+                    <div class="roadmap-card-premium in-progress-card">
+                        <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 14px;">
+                            <div style="font-size: 32px;">💼</div>
+                            <div style="background: rgba(245, 158, 11, 0.25); color: #f59e0b; padding: 3px 6px; border-radius: 3px; font-size: 10px; font-weight: 700;">SOON</div>
+                        </div>
+                        <h4 style="font-size: 13px; font-weight: 700; color: #e2e8f0; margin: 0 0 6px 0; text-transform: uppercase; letter-spacing: 0.5px;">Portfolio</h4>
+                        <p style="font-size: 11px; color: #94a3b8; margin: 0; line-height: 1.5;">Long-term Tracks</p>
+                    </div>
+                    
+                    <div class="roadmap-card-premium in-progress-card">
+                        <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 14px;">
+                            <div style="font-size: 32px;">💳</div>
+                            <div style="background: rgba(245, 158, 11, 0.25); color: #f59e0b; padding: 3px 6px; border-radius: 3px; font-size: 10px; font-weight: 700;">SOON</div>
+                        </div>
+                        <h4 style="font-size: 13px; font-weight: 700; color: #e2e8f0; margin: 0 0 6px 0; text-transform: uppercase; letter-spacing: 0.5px;">Transactions</h4>
+                        <p style="font-size: 11px; color: #94a3b8; margin: 0; line-height: 1.5;">History & Export</p>
+                    </div>
+                    
+                    <div class="roadmap-card-premium in-progress-card">
+                        <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 14px;">
+                            <div style="font-size: 32px;">🎨</div>
+                            <div style="background: rgba(245, 158, 11, 0.25); color: #f59e0b; padding: 3px 6px; border-radius: 3px; font-size: 10px; font-weight: 700;">SOON</div>
+                        </div>
+                        <h4 style="font-size: 13px; font-weight: 700; color: #e2e8f0; margin: 0 0 6px 0; text-transform: uppercase; letter-spacing: 0.5px;">Design Polish</h4>
+                        <p style="font-size: 11px; color: #94a3b8; margin: 0; line-height: 1.5;">UI Refinements</p>
+                    </div>
+                    
+                    <div class="roadmap-card-premium in-progress-card">
+                        <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 14px;">
+                            <div style="font-size: 32px;">📋</div>
+                            <div style="background: rgba(245, 158, 11, 0.25); color: #f59e0b; padding: 3px 6px; border-radius: 3px; font-size: 10px; font-weight: 700;">SOON</div>
+                        </div>
+                        <h4 style="font-size: 13px; font-weight: 700; color: #e2e8f0; margin: 0 0 6px 0; text-transform: uppercase; letter-spacing: 0.5px;">Closed Pos</h4>
+                        <p style="font-size: 11px; color: #94a3b8; margin: 0; line-height: 1.5;">Exit Archive</p>
+                    </div>
+                    
+                    <div class="roadmap-card-premium in-progress-card">
+                        <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 14px;">
+                            <div style="font-size: 32px;">🖥️</div>
+                            <div style="background: rgba(245, 158, 11, 0.25); color: #f59e0b; padding: 3px 6px; border-radius: 3px; font-size: 10px; font-weight: 700;">SOON</div>
+                        </div>
+                        <h4 style="font-size: 13px; font-weight: 700; color: #e2e8f0; margin: 0 0 6px 0; text-transform: uppercase; letter-spacing: 0.5px;">Desktop App</h4>
+                        <p style="font-size: 11px; color: #94a3b8; margin: 0; line-height: 1.5;">Windows/macOS</p>
+                    </div>
+                    
+                    <div class="roadmap-card-premium in-progress-card">
+                        <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 14px;">
+                            <div style="font-size: 32px;">📱</div>
+                            <div style="background: rgba(245, 158, 11, 0.25); color: #f59e0b; padding: 3px 6px; border-radius: 3px; font-size: 10px; font-weight: 700;">SOON</div>
+                        </div>
+                        <h4 style="font-size: 13px; font-weight: 700; color: #e2e8f0; margin: 0 0 6px 0; text-transform: uppercase; letter-spacing: 0.5px;">Mobile App</h4>
+                        <p style="font-size: 11px; color: #94a3b8; margin: 0; line-height: 1.5;">iOS & Android</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ===== PHASE 3 ===== -->
+            <div>
+                <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 28px;">
+                    <div>
+                        <h3 style="color: #8b5cf6; font-size: 24px; font-weight: 700; margin: 0 0 8px 0;">Phase 3: Integration</h3>
+                        <p style="color: #94a3b8; font-size: 13px; margin: 0;">Enterprise & AI capabilities</p>
+                    </div>
+                    <div style="text-align: right;">
+                        <div style="font-size: 36px; font-weight: 700; color: #8b5cf6;">0/4</div>
+                        <div style="font-size: 12px; color: #8b5cf6; font-weight: 600;">📅 PLANNED</div>
+                    </div>
+                </div>
+                
+                <div style="width: 100%; height: 8px; background: rgba(139, 92, 246, 0.1); border-radius: 4px; margin-bottom: 28px; overflow: hidden; border: 1px solid rgba(139, 92, 246, 0.2);">
+                    <div style="width: 0%; height: 100%; background: linear-gradient(90deg, #8b5cf6 0%, #c4b5fd 100%); border-radius: 4px; box-shadow: 0 0 20px rgba(139, 92, 246, 0.5);"></div>
+                </div>
+                
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 16px;">
+                    <div class="roadmap-card-premium planned-card">
+                        <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 14px;">
+                            <div style="font-size: 36px; opacity: 0.7;">🔌</div>
+                            <div style="background: rgba(139, 92, 246, 0.25); color: #8b5cf6; padding: 3px 6px; border-radius: 3px; font-size: 10px; font-weight: 700;">Q1 2027</div>
+                        </div>
+                        <h4 style="font-size: 13px; font-weight: 700; color: #e2e8f0; margin: 0 0 6px 0; text-transform: uppercase; letter-spacing: 0.5px;">Broker API</h4>
+                        <p style="font-size: 11px; color: #94a3b8; margin: 0; line-height: 1.5;">IB, Degiro, Futu</p>
+                    </div>
+                    
+                    <div class="roadmap-card-premium planned-card">
+                        <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 14px;">
+                            <div style="font-size: 36px; opacity: 0.7;">💰</div>
+                            <div style="background: rgba(139, 92, 246, 0.25); color: #8b5cf6; padding: 3px 6px; border-radius: 3px; font-size: 10px; font-weight: 700;">Q1 2027</div>
+                        </div>
+                        <h4 style="font-size: 13px; font-weight: 700; color: #e2e8f0; margin: 0 0 6px 0; text-transform: uppercase; letter-spacing: 0.5px;">Tax Reports</h4>
+                        <p style="font-size: 11px; color: #94a3b8; margin: 0; line-height: 1.5;">Auto Calculation</p>
+                    </div>
+                    
+                    <div class="roadmap-card-premium planned-card">
+                        <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 14px;">
+                            <div style="font-size: 36px; opacity: 0.7;">👥</div>
+                            <div style="background: rgba(139, 92, 246, 0.25); color: #8b5cf6; padding: 3px 6px; border-radius: 3px; font-size: 10px; font-weight: 700;">Q1 2027</div>
+                        </div>
+                        <h4 style="font-size: 13px; font-weight: 700; color: #e2e8f0; margin: 0 0 6px 0; text-transform: uppercase; letter-spacing: 0.5px;">Community</h4>
+                        <p style="font-size: 11px; color: #94a3b8; margin: 0; line-height: 1.5;">Leaderboards</p>
+                    </div>
+                    
+                    <div class="roadmap-card-premium planned-card">
+                        <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 14px;">
+                            <div style="font-size: 36px; opacity: 0.7;">🤖</div>
+                            <div style="background: rgba(139, 92, 246, 0.25); color: #8b5cf6; padding: 3px 6px; border-radius: 3px; font-size: 10px; font-weight: 700;">Q1 2027</div>
+                        </div>
+                        <h4 style="font-size: 13px; font-weight: 700; color: #e2e8f0; margin: 0 0 6px 0; text-transform: uppercase; letter-spacing: 0.5px;">AI Insights</h4>
+                        <p style="font-size: 11px; color: #94a3b8; margin: 0; line-height: 1.5;">Pattern Recognition</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- ===== LOGOUT MODAL ===== -->
+    <div class="modal" id="logoutModal">
+        <div class="modal-content" style="max-width: 400px;">
+            <h3 style="margin-top: 0; color: #e2e8f0; font-size: 20px;">Logout?</h3>
+            <p style="color: #94a3b8; margin: 16px 0;">Bist du sicher, dass du dich abmelden möchtest?</p>
+            <div style="display: flex; gap: 12px; justify-content: flex-end;">
+                <button onclick="cancelLogout()" style="background: rgba(94, 109, 241, 0.1); border: 1px solid rgba(94, 109, 241, 0.3); color: #cbd5e1; padding: 10px 24px; border-radius: 8px; cursor: pointer; font-weight: 600;">Abbrechen</button>
+                <button onclick="confirmLogout()" style="background: linear-gradient(135deg, #f87171 0%, #fb7185 100%); border: none; color: white; padding: 10px 24px; border-radius: 8px; cursor: pointer; font-weight: 600;">Logout</button>
+            </div>
+        </div>
     </div>
 
     <!-- ===== SCREENSHOT MODAL ===== -->
@@ -454,34 +765,6 @@
         </div>
     </div>
 
-    <!-- ===== LOGOUT CONFIRMATION MODAL ===== -->
-    <div class="modal" id="logoutModal">
-        <div class="modal-content">
-            <div class="modal-title">🔐 Logout</div>
-            <p style="color: #cbd5e1; margin: 16px 0; font-size: 14px;">Are you sure you want to logout?</p>
-            <div class="modal-buttons">
-                <button class="modal-btn modal-btn-cancel" onclick="cancelLogout()">Cancel</button>
-                <button class="modal-btn modal-btn-confirm" onclick="confirmLogout()" style="background: #f87171;">Logout</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- ===== DELETE MODAL ===== -->
-    <div class="modal" id="deleteModal">
-        <div class="modal-content">
-            <div class="modal-title">Trade Löschen?</div>
-            <p style="color: #cbd5e1; margin: 15px 0;">Dieser Trade wird unwiederbringlich gelöscht.</p>
-            <div class="modal-buttons">
-                <button class="modal-btn modal-btn-confirm" onclick="confirmDeleteTrade()">Löschen</button>
-                <button class="modal-btn modal-btn-cancel" onclick="cancelDelete()">Abbrechen</button>
-            </div>
-        </div>
-    </div>
-
-    </div>
-    </div>
-
-    <!-- ===== SCRIPTS ===== -->
     <script src="js/app.js"></script>
 </body>
 </html>
