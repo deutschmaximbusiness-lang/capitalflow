@@ -1,0 +1,487 @@
+
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Trading Journal - Swing Trading Tracker</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+</head>
+<body>
+    <!-- ===== LOGIN SCREEN ===== -->
+    <div class="login-screen" id="loginScreen">
+        <div class="login-container">
+            <div class="login-header">
+                <img src="img/41fd020201f230669a0bcda62685bb5d.jpg" alt="Logo" class="login-logo">
+                <div class="login-title">CapitalFlow</div>
+                <div class="login-subtitle">Premium Trading Journal</div>
+            </div>
+            
+            <!-- Normal Login -->
+            <div class="login-form" id="normalLoginForm">
+                <div class="login-form-group">
+                    <label for="loginKeyInput">Your Access Key</label>
+                    <input type="password" id="loginKeyInput" class="login-input" placeholder="Enter your access key" autocomplete="off">
+                    <div class="login-hint">🔐 Keep your key safe!</div>
+                </div>
+                
+                <button class="login-btn" id="loginBtn">Access Dashboard</button>
+                
+                <div class="login-divider">or</div>
+                
+                <button class="login-btn-secondary" id="adminLoginToggle" type="button">Admin Login</button>
+            </div>
+            
+            <!-- Admin Login -->
+            <div class="login-form" id="adminLoginForm" style="display: none;">
+                <div class="login-form-group">
+                    <label for="adminKeyInput">Admin Key</label>
+                    <input type="password" id="adminKeyInput" class="login-input" placeholder="Enter admin key" autocomplete="off">
+                </div>
+                
+                <button class="login-btn" id="adminLoginBtn">Enter Admin Panel</button>
+                
+                <div class="login-divider">or</div>
+                
+                <button class="login-btn-secondary" id="userLoginToggle" type="button">User Login</button>
+            </div>
+            
+            <div class="login-footer">
+                <p style="color: #64748b; font-size: 12px; margin: 0;">© 2024 CapitalFlow by maxim</p>
+            </div>
+        </div>
+    </div>
+    
+    <!-- ===== ADMIN PANEL ===== -->
+    <div class="admin-panel" id="adminPanel">
+        <div class="admin-header">
+            <div>
+                <div class="admin-title">Admin Panel</div>
+                <div class="admin-subtitle">CapitalFlow Key Management</div>
+            </div>
+            <button class="admin-logout-btn" id="adminLogoutBtn">Logout</button>
+        </div>
+        
+        <div class="admin-content">
+            <!-- Generate Key Section -->
+            <div class="admin-section">
+                <h3>Generate New User Key</h3>
+                <div style="display: flex; gap: 12px;">
+                    <input type="text" id="adminUserNameInput" class="admin-input" placeholder="User name (optional)" autocomplete="off">
+                    <button class="admin-btn-primary" id="generateNewKeyBtn">Generate Key</button>
+                </div>
+            </div>
+            
+            <!-- Keys List -->
+            <div class="admin-section">
+                <h3>Active Keys</h3>
+                <div id="keysList" class="keys-list">
+                    <p style="color: #94a3b8; text-align: center; padding: 20px;">No keys generated yet</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- NAVBAR & APP (Hidden until logged in) -->
+    <div class="navbar">
+        <button class="hamburger-menu" id="hamburgerMenu">
+            <span></span>
+            <span></span>
+            <span></span>
+        </button>
+        <div class="navbar-content">
+            <div class="navbar-logo-section">
+                <div class="navbar-logo-wrapper">
+                    <img src="img/41fd020201f230669a0bcda62685bb5d.jpg" alt="Logo" class="navbar-logo-img">
+                </div>
+                <div class="navbar-text">
+                    <div class="navbar-title">CapitalFlow</div>
+                    <div class="navbar-subtitle">by maxim</div>
+                    <div class="navbar-phase">Early Access • Phase 1/4</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== SIDEBAR ===== -->
+    <div class="sidebar">
+        <nav class="sidebar-nav">
+            <div class="nav-item active" data-tab="dashboard">
+                <svg class="nav-icon" viewBox="0 0 24 24" width="20" height="20"><path fill="currentColor" d="M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z"/></svg>
+                <span>Dashboard</span>
+            </div>
+            <div class="nav-item" data-tab="journal">
+                <svg class="nav-icon" viewBox="0 0 24 24" width="20" height="20"><path fill="currentColor" d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V5h14v14zm-5.04-6.71l-2.75 3.54-2.16-2.66c-.23-.29-.62-.29-.85 0-.29.23-.29.62 0 .85l2.59 3.2c.23.29.62.29.85 0l3.54-4.29c.29-.23.29-.62 0-.85-.23-.29-.62-.29-.85 0z"/></svg>
+                <span>Journal</span>
+            </div>
+            <div class="nav-item" data-tab="analytics">
+                <svg class="nav-icon" viewBox="0 0 24 24" width="20" height="20"><path fill="currentColor" d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-5 9.5h3v5h-3zm-4-3h3v8h-3zm-4 5h3v3H6z"/></svg>
+                <span>Analytics</span>
+            </div>
+            <div class="nav-item" data-tab="positions">
+                <svg class="nav-icon" viewBox="0 0 24 24" width="20" height="20"><path fill="currentColor" d="M3 6c0 1.1.9 2 2 2h4c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v2zm0 12c0 1.1.9 2 2 2h4c1.1 0 2-.9 2-2v-2c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v2zm11-9h7c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2h-7c-1.1 0-2 .9-2 2v2c0 1.1.9 2 2 2zm0 9h7c1.1 0 2-.9 2-2v-2c0-1.1-.9-2-2-2h-7c-1.1 0-2 .9-2 2v2c0 1.1.9 2 2 2z"/></svg>
+                <span>Positionen</span>
+            </div>
+            <div class="nav-item" data-tab="calendar">
+                <svg class="nav-icon" viewBox="0 0 24 24" width="20" height="20"><path fill="currentColor" d="M19 3h-1V1h-2v2H8V1H6v2H5c-1.11 0-1.99.9-1.99 2L3 19c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V8h14v11z"/></svg>
+                <span>PnL-Kalender</span>
+            </div>
+            <div class="nav-item" data-tab="watchlist">
+                <svg class="nav-icon" viewBox="0 0 24 24" width="20" height="20"><path fill="currentColor" d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/></svg>
+                <span>Watchlist</span>
+            </div>
+            <div class="nav-item" data-tab="portfolio">
+                <svg class="nav-icon" viewBox="0 0 24 24" width="20" height="20"><path fill="currentColor" d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm.5-13H11v6l5.25 3.15.75-1.23-4.5-2.67z"/></svg>
+                <span>Portfolio</span>
+            </div>
+            <div class="nav-item" data-tab="transactions">
+                <svg class="nav-icon" viewBox="0 0 24 24" width="20" height="20"><path fill="currentColor" d="M4 6h16v2H4zm0 5h16v2H4zm0 5h16v2H4z"/></svg>
+                <span>Transaktionen</span>
+            </div>
+            
+            <div class="sidebar-logout-divider"></div>
+            
+            <button class="sidebar-logout-btn" id="sidebarLogoutBtn">
+                <svg class="nav-icon" viewBox="0 0 24 24" width="20" height="20"><path fill="currentColor" d="M17 7l-1.41 1.41L18.17 11H8v2h10.17l-2.58 2.58L17 17l5-5zM4 5h8V3H4c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h8v-2H4V5z"/></svg>
+                <span>Logout</span>
+            </button>
+        </nav>
+    </div>
+
+    <!-- ===== MAIN WRAPPER ===== -->
+    <div class="main-wrapper">
+        <!-- ===== CONTAINER ===== -->
+        <div class="container">
+        <!-- Balance Icon -->
+        <svg id="icon-balance" viewBox="0 0 24 24" width="24" height="24">
+            <path fill="currentColor" d="M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z"/>
+        </svg>
+        
+        <!-- Chart Icon -->
+        <svg id="icon-chart" viewBox="0 0 24 24" width="24" height="24">
+            <path fill="currentColor" d="M5 9.2h3V19H5zM10.6 5h2.8v14h-2.8zm5.6 8H19v6h-2.8z"/>
+        </svg>
+        
+        <!-- Target Icon -->
+        <svg id="icon-target" viewBox="0 0 24 24" width="24" height="24">
+            <path fill="currentColor" d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm3.5-9c0 1.93-1.57 3.5-3.5 3.5S8.5 12.93 8.5 11 10.07 7.5 12 7.5s3.5 1.57 3.5 3.5z"/>
+        </svg>
+        
+        <!-- Trending Up Icon -->
+        <svg id="icon-trending" viewBox="0 0 24 24" width="24" height="24">
+            <path fill="currentColor" d="M16 6l2.29 2.29-4.88 4.88-4-4L2 16.59 3.41 18 10 11.41l4 4 6.3-6.29L22 12v-6z"/>
+        </svg>
+    </svg>
+
+    <!-- ===== CONTAINER ===== -->
+    <div class="container">
+        <div id="journal" class="tab-content">
+            <!-- ===== FORM ===== -->
+            <form class="form" id="tradeForm" novalidate>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Ticker</label>
+                        <input type="text" id="ticker" placeholder="z.B. AAPL" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Entry Preis ($)</label>
+                        <input type="number" id="entryPrice" placeholder="0.00" step="0.01" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Exit Preis ($)</label>
+                        <input type="number" id="exitPrice" placeholder="0.00" step="0.01" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Stop Loss ($) <span style="color: #64748b; font-size: 11px;">(Optional)</span></label>
+                        <input type="number" id="stopLoss" placeholder="0.00" step="0.01">
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Position (€)</label>
+                        <input type="number" id="positionSize" placeholder="z.B. 1000" step="0.01" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Hebel <span style="color: #94a3b8; font-size: 11px;">(Leer = Normal)</span></label>
+                        <input type="number" id="leverage" placeholder="z.B. 10 oder 3.2" step="0.1" min="1">
+                    </div>
+                    <div class="form-group">
+                        <label>Grund</label>
+                        <input type="text" id="reason" placeholder="z.B. Technisch, Breakout..." required>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group" style="grid-column: 1 / -1;">
+                        <label>Setup-Typ (mehrfach wählbar)</label>
+                        <div style="display: flex; flex-wrap: wrap; gap: 16px; margin-top: 12px;">
+                            <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; font-weight: 500;">
+                                <input type="checkbox" class="setup-type-checkbox" value="Breakout"> Breakout
+                            </label>
+                            <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; font-weight: 500;">
+                                <input type="checkbox" class="setup-type-checkbox" value="Pullback"> Pullback
+                            </label>
+                            <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; font-weight: 500;">
+                                <input type="checkbox" class="setup-type-checkbox" value="Support"> Support
+                            </label>
+                            <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; font-weight: 500;">
+                                <input type="checkbox" class="setup-type-checkbox" value="Rebound"> Rebound
+                            </label>
+                            <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; font-weight: 500;">
+                                <input type="checkbox" class="setup-type-checkbox" value="Gap-Fill"> Gap-Fill
+                            </label>
+                            <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; font-weight: 500;">
+                                <input type="checkbox" class="setup-type-checkbox" value="Trend-Continuation"> Trend-Continuation
+                            </label>
+                            <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; font-weight: 500;">
+                                <input type="checkbox" class="setup-type-checkbox" value="Sonstiges"> Sonstiges
+                            </label>
+                        </div>
+                        <input type="hidden" id="setupType" value="">
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Fehlertyp</label>
+                        <div class="custom-select-wrapper">
+                            <input type="hidden" id="errorType" value="Kein Fehler">
+                            <div class="custom-select" data-select-id="errorType">
+                                <div class="custom-select-header">
+                                    <span class="custom-select-value">Kein Fehler</span>
+                                    <svg class="custom-select-arrow" viewBox="0 0 24 24" width="16" height="16">
+                                        <path fill="currentColor" d="M7 10l5 5 5-5z"/>
+                                    </svg>
+                                </div>
+                                <div class="custom-select-dropdown">
+                                    <div class="custom-option" data-value="Kein Fehler">Kein Fehler</div>
+                                    <div class="custom-option" data-value="Emotional">Emotional</div>
+                                    <div class="custom-option" data-value="Strategie">Strategie</div>
+                                    <div class="custom-option" data-value="Regelbruch">Regelbruch</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group" style="grid-column: 1 / -1;">
+                        <label>Chart Screenshot (Ctrl+V zum Einfügen)</label>
+                        <div id="screenshotPasteArea" class="screenshot-paste-area">
+                            📋 Hier Screenshot einfügen (Ctrl+V) oder klicken zum Datei wählen
+                            <input type="file" id="screenshot" accept="image/*" style="display: none;">
+                        </div>
+                        <div id="screenshotPreview" style="margin-top: 10px;"></div>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group" style="grid-column: 1 / -1;">
+                        <label>Notizen</label>
+                        <textarea id="notes" placeholder="Trade-Analyse, Gedanken..." rows="3"></textarea>
+                    </div>
+                </div>
+
+                <div class="form-buttons">
+                    <button type="submit" class="btn btn-primary">✨ Trade Hinzufügen</button>
+                    <button type="reset" class="btn btn-secondary">Zurücksetzen</button>
+                </div>
+            </form>
+
+            <!-- ===== TRADES HEADER WITH STATS ===== -->
+            <div class="trades-header">
+                <h2>Meine Trades</h2>
+                <div class="trades-stats">
+                    <div class="trades-stat-item">
+                        <div class="trades-stat-label">Total P&L</div>
+                        <div id="tradesPnLDisplay" style="font-size: 28px; font-weight: 700; background: linear-gradient(135deg, #22c55e, #10b981); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;">€ 0.00</div>
+                    </div>
+                    <div class="trades-stat-item">
+                        <div class="trades-stat-label">Anzahl Trades</div>
+                        <div id="tradeCountDisplay" style="font-size: 28px; font-weight: 700; color: #f1f5f9;">0</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ===== FILTER BUTTONS ===== -->
+            <div class="trades-filter">
+                <button class="filter-btn active" data-filter="all">Alle Trades</button>
+                <button class="filter-btn" data-filter="leverage">Nur Hebel</button>
+                <button class="filter-btn" data-filter="normal">Nur Normal</button>
+            </div>
+
+            <!-- ===== TRADES CONTAINER ===== -->
+            <div class="trades-container" id="tradesContainer"></div>
+        </div>
+
+        <!-- ===== POSITIONEN TAB ===== -->
+        <div id="positions" class="tab-content">
+            <h2>Offene Positionen</h2>
+
+            <!-- ===== PORTFOLIO SUMMARY ===== -->
+            <div class="portfolio-summary">
+                <div class="summary-stat">
+                    <div class="summary-label">Offene Positionen</div>
+                    <div class="summary-value" id="portfolioOpenCount">0</div>
+                </div>
+                <div class="summary-stat">
+                    <div class="summary-label">Gesamtes Kapital</div>
+                    <div class="summary-value" id="portfolioTotalValue">€0,00</div>
+                </div>
+                <div class="summary-stat">
+                    <div class="summary-label">Ø Position Size</div>
+                    <div class="summary-value" id="portfolioAvgSize">€0,00</div>
+                </div>
+                <div class="summary-stat">
+                    <div class="summary-label">Größte Position</div>
+                    <div class="summary-value" id="portfolioMaxSize">€0,00</div>
+                </div>
+            </div>
+
+            <!-- ===== POSITIONEN FORM ===== -->
+            <div class="form-section" style="margin-bottom: 40px;">
+                <h3>Neue Position Öffnen</h3>
+                <form id="positionsForm" novalidate>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="positionsTicker">Ticker</label>
+                            <input type="text" id="positionsTicker" placeholder="z.B. AAPL" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="positionsEntry">Entry Price (€)</label>
+                            <input type="number" id="positionsEntry" step="0.01" placeholder="150.50" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="positionsSize">Position Size (€)</label>
+                            <input type="number" id="positionsSize" step="0.01" placeholder="1000" required>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="positionsThesis">These / Begründung</label>
+                        <textarea id="positionsThesis" placeholder="Warum bin ich in dieser Position? Was ist der Plan?" rows="4" required></textarea>
+                    </div>
+
+                    <!-- ===== SCREENSHOT PASTE AREA ===== -->
+                    <div class="form-group">
+                        <label>Screenshot (optional)</label>
+                        <div class="screenshot-paste-area" id="positionsScreenshotPasteArea">
+                            <p style="margin: 0; color: #cbd5e1;">📋 Strg+V zum Einfügen oder klicken zum Hochladen</p>
+                            <input type="file" accept="image/*" style="display: none;" id="positionsScreenshotInput">
+                        </div>
+                        <div id="positionsScreenshotPreview"></div>
+                    </div>
+
+                    <button type="submit" class="submit-btn">Position Öffnen</button>
+                </form>
+            </div>
+
+            <!-- ===== POSITIONEN CONTAINER ===== -->
+            <div class="positions-container" id="positionsContainer"></div>
+
+            <!-- ===== GESCHLOSSENE POSITIONEN ===== -->
+            <div style="margin-top: 60px; position: relative; min-height: 300px;">
+                <h3 style="font-size: 20px; font-weight: 600; color: #f1f5f9; margin-bottom: 30px;">Geschlossene Positionen</h3>
+                <div class="positions-container" id="closedPositionsContainer"></div>
+
+                <!-- ===== COMING SOON OVERLAY ===== -->
+                <div class="coming-soon-overlay" id="positionsComingSoonOverlay">
+                    <h2>🚀 Coming Soon</h2>
+                    <p>Verfügbar in Phase 2</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- ===== WATCHLIST TAB ===== -->
+        <div id="watchlist" class="tab-content">
+            <h2>Watchlist</h2>
+            <!-- ===== COMING SOON OVERLAY ===== -->
+            <div class="coming-soon-overlay" id="watchlistComingSoonOverlay">
+                <h2>👁️ Coming Soon</h2>
+                <p>Verfügbar in Phase 2</p>
+            </div>
+        </div>
+
+        <!-- ===== PORTFOLIO TAB ===== -->
+        <div id="portfolio" class="tab-content">
+            <h2>Portfolio</h2>
+            <!-- ===== COMING SOON OVERLAY ===== -->
+            <div class="coming-soon-overlay" id="portfolioComingSoonOverlay">
+                <h2>💼 Coming Soon</h2>
+                <p>Verfügbar in Phase 2</p>
+            </div>
+        </div>
+
+        <!-- ===== TRANSACTIONS TAB ===== -->
+        <div id="transactions" class="tab-content">
+            <h2>Transaktionen</h2>
+            <!-- ===== COMING SOON OVERLAY ===== -->
+            <div class="coming-soon-overlay" id="transactionsComingSoonOverlay">
+                <h2>💳 Coming Soon</h2>
+                <p>Verfügbar in Phase 2</p>
+            </div>
+        </div>
+
+        <!-- ===== CALENDAR TAB ===== -->
+        <div id="calendar" class="tab-content">
+            <h2>P&L-Kalender</h2>
+            <div class="calendar-controls">
+                <button class="calendar-btn active" data-view="daily">Täglich</button>
+                <button class="calendar-btn" data-view="monthly">Monatlich</button>
+            </div>
+            <div id="calendarContent"></div>
+        </div>
+
+        <!-- ===== DASHBOARD TAB ===== -->
+        <div id="dashboard" class="tab-content active">
+            <p>Loading...</p>
+        </div>
+
+        <!-- ===== ANALYTICS TAB ===== -->
+        <div id="analytics" class="tab-content">
+            <p>Loading...</p>
+        </div>
+    </div>
+
+    <!-- ===== SCREENSHOT MODAL ===== -->
+    <div class="modal" id="screenshotModal">
+        <div class="modal-content screenshot-modal-content">
+            <img id="screenshotModalImg" src="" alt="Screenshot" style="max-width: 70vw; max-height: 70vh; border-radius: 8px;">
+            <button class="modal-close" onclick="closeScreenshotModal()">✕</button>
+        </div>
+    </div>
+
+    <!-- ===== LOGOUT CONFIRMATION MODAL ===== -->
+    <div class="modal" id="logoutModal">
+        <div class="modal-content">
+            <div class="modal-title">🔐 Logout</div>
+            <p style="color: #cbd5e1; margin: 16px 0; font-size: 14px;">Are you sure you want to logout?</p>
+            <div class="modal-buttons">
+                <button class="modal-btn modal-btn-cancel" onclick="cancelLogout()">Cancel</button>
+                <button class="modal-btn modal-btn-confirm" onclick="confirmLogout()" style="background: #f87171;">Logout</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== DELETE MODAL ===== -->
+    <div class="modal" id="deleteModal">
+        <div class="modal-content">
+            <div class="modal-title">Trade Löschen?</div>
+            <p style="color: #cbd5e1; margin: 15px 0;">Dieser Trade wird unwiederbringlich gelöscht.</p>
+            <div class="modal-buttons">
+                <button class="modal-btn modal-btn-confirm" onclick="confirmDeleteTrade()">Löschen</button>
+                <button class="modal-btn modal-btn-cancel" onclick="cancelDelete()">Abbrechen</button>
+            </div>
+        </div>
+    </div>
+
+    </div>
+    </div>
+
+    <!-- ===== SCRIPTS ===== -->
+    <script src="js/app.js"></script>
+</body>
+</html>
