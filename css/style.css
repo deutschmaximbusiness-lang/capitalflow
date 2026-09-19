@@ -93,6 +93,26 @@
 .top-stat:nth-child(3) { animation-delay: 0.25s; }
 .top-stat:nth-child(4) { animation-delay: 0.35s; }
 
+/* ===== GRADIENT TEXT UTILITY ===== */
+.grad {
+    background: linear-gradient(135deg, #9333ea 0%, #be185d 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    color: transparent;
+    -webkit-font-smoothing: antialiased;
+}
+
+/* Variante: hellerer Verlauf für kleinere Texte (Taglines etc.) */
+.grad-soft {
+    background: linear-gradient(135deg, #a855f7 0%, #ec4899 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    color: transparent;
+    -webkit-font-smoothing: antialiased;
+}
+
 /* ===== LOGIN SCREEN ===== */
 .login-screen {
     position: fixed;
@@ -207,6 +227,8 @@
 }
 
 .login-btn, .login-btn-secondary {
+    position: relative;
+    overflow: hidden;
     padding: 12px 20px;
     border-radius: 10px;
     border: none;
@@ -219,6 +241,29 @@
     letter-spacing: 0.4px;
 }
 
+/* Shine-Sweep: heller Streifen laeuft beim Hover ueber den Button */
+.login-btn::before, .login-btn-secondary::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -80%;
+    width: 60%;
+    height: 100%;
+    background: linear-gradient(
+        120deg,
+        transparent 0%,
+        rgba(255, 255, 255, 0.28) 50%,
+        transparent 100%
+    );
+    transform: skewX(-20deg);
+    transition: left 0.6s ease;
+    pointer-events: none;
+}
+
+.login-btn:hover::before, .login-btn-secondary:hover::before {
+    left: 130%;
+}
+
 .login-mode-btn {
     transition: all 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
@@ -226,27 +271,31 @@
 .login-btn {
     background: linear-gradient(135deg, #a855f7 0%, #8b5cf6 100%);
     color: #fff;
-    box-shadow: 0 6px 20px rgba(168, 85, 247, 0.25);
+    box-shadow: 0 0 18px rgba(168, 85, 247, 0.3);
 }
 
 .login-btn:hover {
     transform: translateY(-2px);
-    box-shadow: 0 8px 24px rgba(168, 85, 247, 0.3);
+    box-shadow: 0 0 30px rgba(168, 85, 247, 0.6);
 }
 
 .login-btn:active {
     transform: translateY(0);
+    box-shadow: 0 0 14px rgba(168, 85, 247, 0.35);
 }
 
 .login-btn-secondary {
-    background: transparent;
-    border: 1px solid rgba(168, 85, 247, 0.15);
-    color: #64748b;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: #cbd5e1;
 }
 
 .login-btn-secondary:hover {
-    background: rgba(168, 85, 247, 0.15);
-    border-color: rgba(168, 85, 247, 0.5);
+    background: rgba(168, 85, 247, 0.1);
+    border-color: rgba(168, 85, 247, 0.7);
+    color: #a855f7;
+    transform: translateY(-2px);
+    box-shadow: 0 0 24px rgba(168, 85, 247, 0.4);
 }
 
 .login-divider {
@@ -1753,7 +1802,7 @@ h3 {
 }
 
 .modal {
-    display: none !important;
+    display: none;
     position: fixed;
     top: 0;
     left: 0;
@@ -1766,7 +1815,7 @@ h3 {
 }
 
 .modal.active {
-    display: flex !important;
+    display: flex;
 }
 
 .modal-content {

@@ -1,11 +1,14 @@
-
 <!DOCTYPE html>
 <html lang="de">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <title>Trading Journal - Swing Trading Tracker</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <title>CapitalFlow - Swing Trading Journal</title>
+    <link rel="icon" type="image/png" sizes="32x32" href="img/capitalflow-icon-32.png">
+    <link rel="icon" type="image/png" sizes="192x192" href="img/capitalflow-icon-192.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="img/capitalflow-icon-180.png">
+    <meta name="theme-color" content="#0a0a15">
     <link rel="stylesheet" href="css/style.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
 </head>
@@ -15,10 +18,11 @@
         <div class="login-container" style="max-width: 380px;">
             <!-- Logo -->
             <div style="margin-bottom: 32px; text-align: center;">
-                <img src="img/41fd020201f230669a0bcda62685bb5d.jpg" alt="Logo" style="width: 100px; height: 100px; border-radius: 16px; box-shadow: 0 20px 60px rgba(168, 85, 247, 0.2); margin-bottom: 20px; transition: all 0.3s ease; cursor: pointer;" 
+                <img src="img/capitalflow-icon.png" alt="CapitalFlow Logo" style="width: 100px; height: 100px; border-radius: 23px; box-shadow: 0 20px 60px rgba(168, 85, 247, 0.2); margin-bottom: 20px; transition: all 0.3s ease; cursor: pointer;" 
                 onmouseover="this.style.boxShadow='0 20px 80px rgba(168, 85, 247, 0.4), 0 0 40px rgba(168, 85, 247, 0.3)'; this.style.transform='scale(1.05)'"
                 onmouseout="this.style.boxShadow='0 20px 60px rgba(168, 85, 247, 0.2)'; this.style.transform='scale(1)'">
-                <h1 style="margin: 0; font-size: 42px; font-weight: 700; font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: linear-gradient(135deg, #9333ea 0%, #be185d 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; letter-spacing: -0.5px; -webkit-font-smoothing: antialiased;">CapitalFlow</h1>
+                <h1 style="margin: 0; font-size: 42px; font-weight: 800; font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; letter-spacing: -0.5px; color: #d8b4fe; -webkit-font-smoothing: antialiased;">Capital<span style="font-weight: 800; background: linear-gradient(135deg, #c084fc 0%, #f472b6 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; filter: drop-shadow(0 0 18px rgba(192, 132, 252, 0.45));">Flow</span></h1>
+                <p style="margin: 10px 0 0 0; font-size: 13px; font-weight: 600; letter-spacing: 0.3px; color: #64748b;">Track Your Edge. <span style="background: linear-gradient(135deg, #a855f7 0%, #ec4899 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;">Before Everyone Else.</span></p>
             </div>
 
             <!-- Countdown Timer Compact -->
@@ -48,29 +52,13 @@
                 <p style="color: #64748b; font-size: 11px; margin: 10px 0 0 0; font-weight: 500;">Jan 1, 2027</p>
             </div>
 
-            <!-- Login Mode Toggle -->
-            <div style="display: flex; gap: 8px; margin-bottom: 16px;">
-                <button id="userModeBtn" class="login-btn active" style="flex: 1; background: linear-gradient(135deg, #9333ea 0%, #8b5cf6 100%); font-size: 12px; padding: 12px;">User Access</button>
-                <button id="adminModeBtn" class="login-btn" style="flex: 1; background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%); font-size: 12px; padding: 12px;">Admin Access</button>
-            </div>
-
-            <!-- Login Forms -->
-            <!-- Normal Login -->
+            <!-- Login Form -->
             <div class="login-form" id="normalLoginForm">
                 <div class="login-form-group">
                     <input type="password" id="loginKeyInput" class="login-input" placeholder="Enter your access key" autocomplete="off" style="background: rgba(15, 15, 30, 0.9); border: 1px solid rgba(168, 85, 247, 0.15); backdrop-filter: blur(10px); color: #cbd5e1; font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-size: 13px;">
                 </div>
                 
-                <button class="login-btn" id="loginBtn">Access Dashboard</button>
-            </div>
-            
-            <!-- Admin Login -->
-            <div class="login-form" id="adminLoginForm" style="display: none;">
-                <div class="login-form-group">
-                    <input type="password" id="adminKeyInput" class="login-input" placeholder="Enter admin key" autocomplete="off" style="background: rgba(15, 15, 30, 0.9); border: 1px solid rgba(248, 113, 113, 0.15); backdrop-filter: blur(10px); color: #cbd5e1; font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-size: 13px;">
-                </div>
-                
-                <button class="login-btn" id="adminLoginBtn" style="background: linear-gradient(135deg, #9333ea 0%, #8b5cf6 100%);">Enter Admin</button>
+                <button class="login-btn" id="loginBtn">Access CapitalFlow</button>
             </div>
             
             <div class="login-footer" style="margin-top: 24px; text-align: center;">
@@ -119,7 +107,7 @@
         <div class="navbar-content">
             <div class="navbar-logo-section">
                 <div class="navbar-logo-wrapper">
-                    <img src="img/41fd020201f230669a0bcda62685bb5d.jpg" alt="Logo" class="navbar-logo-img">
+                    <img src="img/capitalflow-icon.png" alt="CapitalFlow Logo" class="navbar-logo-img">
                 </div>
                 <div class="navbar-text">
                     <div class="navbar-title">CapitalFlow</div>
@@ -147,7 +135,7 @@
             </div>
             <div class="nav-item" data-tab="positions">
                 <svg class="nav-icon" viewBox="0 0 24 24" width="20" height="20"><path fill="currentColor" d="M3 6c0 1.1.9 2 2 2h4c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v2zm0 12c0 1.1.9 2 2 2h4c1.1 0 2-.9 2-2v-2c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v2zm11-9h7c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2h-7c-1.1 0-2 .9-2 2v2c0 1.1.9 2 2 2zm0 9h7c1.1 0 2-.9 2-2v-2c0-1.1-.9-2-2-2h-7c-1.1 0-2 .9-2 2v2c0 1.1.9 2 2 2z"/></svg>
-                <span>Positionen</span>
+                <span>Portfolio Analyse</span>
             </div>
             <div class="nav-item" data-tab="calendar">
                 <svg class="nav-icon" viewBox="0 0 24 24" width="20" height="20"><path fill="currentColor" d="M19 3h-1V1h-2v2H8V1H6v2H5c-1.11 0-1.99.9-1.99 2L3 19c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V8h14v11z"/></svg>
@@ -348,25 +336,50 @@
 
         <!-- ===== POSITIONEN TAB ===== -->
         <div id="positions" class="tab-content">
-            <h2>Offene Positionen</h2>
+            <div style="margin-bottom: 20px;">
+                <h2 style="margin-bottom: 8px; font-size: 32px; font-weight: 700;">📊 Portfolio Analyse</h2>
+                <p style="color: #94a3b8; font-size: 14px; margin: 0;">Offene & geschlossene Positionen mit Live-Gewichtung</p>
+            </div>
 
-            <!-- ===== PORTFOLIO SUMMARY ===== -->
-            <div class="portfolio-summary">
-                <div class="summary-stat">
-                    <div class="summary-label">Offene Positionen</div>
-                    <div class="summary-value" id="portfolioOpenCount">0</div>
+            <!-- ===== PORTFOLIO STATS ===== -->
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 32px;">
+                <!-- Euro in Positionen -->
+                <div class="dashboard-stat" style="background: linear-gradient(135deg, rgba(236, 72, 153, 0.1) 0%, rgba(236, 72, 153, 0.05) 100%); border: 1px solid rgba(236, 72, 153, 0.2); border-radius: 14px; padding: 20px; backdrop-filter: blur(10px);">
+                    <div style="color: #64748b; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600; margin-bottom: 12px;">Portfolio Exposure</div>
+                    <div id="portfolioTotalValue" style="font-size: 28px; font-weight: 800; color: #ec4899; line-height: 1;">€0.00</div>
                 </div>
-                <div class="summary-stat">
-                    <div class="summary-label">Gesamtes Kapital</div>
-                    <div class="summary-value" id="portfolioTotalValue">€0,00</div>
+
+                <!-- Offene Positionen -->
+                <div class="dashboard-stat" style="background: linear-gradient(135deg, rgba(59, 130, 246, 0.1) 0%, rgba(59, 130, 246, 0.05) 100%); border: 1px solid rgba(59, 130, 246, 0.2); border-radius: 14px; padding: 20px; backdrop-filter: blur(10px);">
+                    <div style="color: #64748b; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600; margin-bottom: 12px;">Offene Positionen</div>
+                    <div id="portfolioOpenCount" style="font-size: 28px; font-weight: 800; color: #3b82f6; line-height: 1;">0</div>
                 </div>
-                <div class="summary-stat">
-                    <div class="summary-label">Ø Position Size</div>
-                    <div class="summary-value" id="portfolioAvgSize">€0,00</div>
+
+                <!-- Ø Position Size -->
+                <div class="dashboard-stat" style="background: linear-gradient(135deg, rgba(168, 85, 247, 0.1) 0%, rgba(168, 85, 247, 0.05) 100%); border: 1px solid rgba(168, 85, 247, 0.2); border-radius: 14px; padding: 20px; backdrop-filter: blur(10px);">
+                    <div style="color: #64748b; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600; margin-bottom: 12px;">Ø Position Size</div>
+                    <div id="portfolioAvgSize" style="font-size: 28px; font-weight: 800; color: #a855f7; line-height: 1;">€0.00</div>
                 </div>
-                <div class="summary-stat">
-                    <div class="summary-label">Größte Position</div>
-                    <div class="summary-value" id="portfolioMaxSize">€0,00</div>
+
+                <!-- Größte Position -->
+                <div class="dashboard-stat" style="background: linear-gradient(135deg, rgba(251, 146, 60, 0.1) 0%, rgba(251, 146, 60, 0.05) 100%); border: 1px solid rgba(251, 146, 60, 0.2); border-radius: 14px; padding: 20px; backdrop-filter: blur(10px);">
+                    <div style="color: #64748b; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600; margin-bottom: 12px;">Größte Position</div>
+                    <div id="portfolioMaxSize" style="font-size: 28px; font-weight: 800; color: #fb923c; line-height: 1;">€0.00</div>
+                </div>
+            </div>
+
+            <!-- ===== PORTFOLIO COMPOSITION ===== -->
+            <div style="margin-bottom: 40px;">
+                <h3 style="font-size: 18px; font-weight: 600; margin-bottom: 20px;">📊 Portfolio Gewichtung</h3>
+                <div style="background: linear-gradient(135deg, rgba(168, 85, 247, 0.05) 0%, rgba(59, 130, 246, 0.05) 100%); border: 1px solid rgba(168, 85, 247, 0.1); border-radius: 16px; padding: 32px; backdrop-filter: blur(10px);">
+                    <!-- Stacked Bar Chart -->
+                    <div style="margin-bottom: 28px;">
+                        <div id="portfolioStackedBar" style="height: 50px; background: rgba(0,0,0,0.2); border-radius: 10px; overflow: hidden; display: flex; box-shadow: inset 0 2px 8px rgba(0,0,0,0.2);"></div>
+                    </div>
+                    <!-- Position Details -->
+                    <div id="portfolioCompositionLegend" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 16px;">
+                        <!-- Wird von JS generiert -->
+                    </div>
                 </div>
             </div>
 
@@ -413,13 +426,10 @@
 
             <!-- ===== GESCHLOSSENE POSITIONEN ===== -->
             <div style="margin-top: 60px; position: relative; min-height: 300px;">
-                <h3 style="font-size: 20px; font-weight: 600; color: #f1f5f9; margin-bottom: 30px;">Geschlossene Positionen</h3>
+                <h3 style="font-size: 20px; font-weight: 600; color: #f1f5f9; margin-bottom: 30px;">📊 Geschlossene Positionen</h3>
                 <div class="positions-container" id="closedPositionsContainer"></div>
-
-                <!-- ===== COMING SOON OVERLAY ===== -->
-                <div class="coming-soon-overlay" id="positionsComingSoonOverlay">
-                    <h2>🚀 Coming Soon</h2>
-                    <p>Verfügbar in Phase 2</p>
+                <div id="noClosedPositions" style="text-align: center; padding: 40px 20px; color: #64748b;">
+                    <p style="font-size: 14px;">Noch keine Positionen geschlossen</p>
                 </div>
             </div>
         </div>
@@ -461,49 +471,51 @@
                 <p style="color: #94a3b8; font-size: 14px; margin: 0;">Tägliche & monatliche Performance-Analyse mit historischen Daten</p>
             </div>
 
-            <!-- Premium Stats Cards -->
-            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 16px; margin-bottom: 40px;">
-                <div class="premium-stat-card" style="border: 1px solid rgba(16, 185, 129, 0.2); background: linear-gradient(135deg, rgba(16, 185, 129, 0.08) 0%, rgba(16, 185, 129, 0.03) 100%);">
-                    <div style="color: #94a3b8; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 10px;">Total P&L</div>
-                    <div id="totalPnLStat" style="font-size: 28px; font-weight: 700; background: linear-gradient(135deg, #10b981 0%, #6ee7b7 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; margin-bottom: 8px;">€ 0.00</div>
-                    <div style="color: #10b981; font-size: 12px; font-weight: 600;">Alle Trades</div>
+            <!-- PnL Calendar Stats Section -->
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 32px;">
+                <!-- Total P&L -->
+                <div class="dashboard-stat" style="background: linear-gradient(135deg, rgba(16, 185, 129, 0.1) 0%, rgba(16, 185, 129, 0.05) 100%); border: 1px solid rgba(16, 185, 129, 0.2); border-radius: 14px; padding: 20px; backdrop-filter: blur(10px);">
+                    <div style="color: #64748b; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600; margin-bottom: 12px;">Total P&L</div>
+                    <div id="totalPnLStat" style="font-size: 28px; font-weight: 800; color: #10b981; line-height: 1;">€0.00</div>
                 </div>
 
-                <div class="premium-stat-card" style="border: 1px solid rgba(168, 85, 247, 0.2); background: linear-gradient(135deg, rgba(168, 85, 247, 0.08) 0%, rgba(168, 85, 247, 0.03) 100%);">
-                    <div style="color: #94a3b8; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 10px;">Best Day</div>
-                    <div id="bestDayStat" style="font-size: 28px; font-weight: 700; color: #6ee7b7; margin-bottom: 8px;">€ 0.00</div>
-                    <div id="bestDayDateStat" style="color: #94a3b8; font-size: 12px; font-weight: 500;">—</div>
+                <!-- Best Day -->
+                <div class="dashboard-stat" style="background: linear-gradient(135deg, rgba(59, 130, 246, 0.1) 0%, rgba(59, 130, 246, 0.05) 100%); border: 1px solid rgba(59, 130, 246, 0.2); border-radius: 14px; padding: 20px; backdrop-filter: blur(10px);">
+                    <div style="color: #64748b; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600; margin-bottom: 12px;">Best Day</div>
+                    <div id="bestDayStat" style="font-size: 28px; font-weight: 800; color: #3b82f6; line-height: 1;">€0.00</div>
+                    <div id="bestDayDateStat" style="color: #94a3b8; font-size: 11px; margin-top: 6px;">—</div>
                 </div>
 
-                <div class="premium-stat-card" style="border: 1px solid rgba(248, 113, 113, 0.2); background: linear-gradient(135deg, rgba(248, 113, 113, 0.08) 0%, rgba(248, 113, 113, 0.03) 100%);">
-                    <div style="color: #94a3b8; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 10px;">Worst Day</div>
-                    <div id="worstDayStat" style="font-size: 28px; font-weight: 700; color: #fb7185; margin-bottom: 8px;">€ 0.00</div>
-                    <div id="worstDayDateStat" style="color: #94a3b8; font-size: 12px; font-weight: 500;">—</div>
+                <!-- Worst Day -->
+                <div class="dashboard-stat" style="background: linear-gradient(135deg, rgba(239, 68, 68, 0.1) 0%, rgba(239, 68, 68, 0.05) 100%); border: 1px solid rgba(239, 68, 68, 0.2); border-radius: 14px; padding: 20px; backdrop-filter: blur(10px);">
+                    <div style="color: #64748b; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600; margin-bottom: 12px;">Worst Day</div>
+                    <div id="worstDayStat" style="font-size: 28px; font-weight: 800; color: #ef4444; line-height: 1;">€0.00</div>
+                    <div id="worstDayDateStat" style="color: #94a3b8; font-size: 11px; margin-top: 6px;">—</div>
                 </div>
 
-                <div class="premium-stat-card" style="border: 1px solid rgba(59, 130, 246, 0.2); background: linear-gradient(135deg, rgba(59, 130, 246, 0.08) 0%, rgba(59, 130, 246, 0.03) 100%);">
-                    <div style="color: #94a3b8; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 10px;">Winning Days</div>
-                    <div id="winningDaysStat" style="font-size: 28px; font-weight: 700; color: #60a5fa; margin-bottom: 8px;">0%</div>
-                    <div id="winningDaysCountStat" style="color: #94a3b8; font-size: 12px; font-weight: 500;">0 von 0</div>
+                <!-- Winning Days -->
+                <div class="dashboard-stat" style="background: linear-gradient(135deg, rgba(168, 85, 247, 0.1) 0%, rgba(168, 85, 247, 0.05) 100%); border: 1px solid rgba(168, 85, 247, 0.2); border-radius: 14px; padding: 20px; backdrop-filter: blur(10px);">
+                    <div style="color: #64748b; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600; margin-bottom: 12px;">Winning Days</div>
+                    <div id="winningDaysStat" style="font-size: 28px; font-weight: 800; color: #a855f7; line-height: 1;">0%</div>
                 </div>
 
-                <div class="premium-stat-card" style="border: 1px solid rgba(251, 146, 60, 0.2); background: linear-gradient(135deg, rgba(251, 146, 60, 0.08) 0%, rgba(251, 146, 60, 0.03) 100%);">
-                    <div style="color: #94a3b8; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 10px;">Losing Days</div>
-                    <div id="losingDaysStat" style="font-size: 28px; font-weight: 700; color: #fb923c; margin-bottom: 8px;">0%</div>
-                    <div id="losingDaysCountStat" style="color: #94a3b8; font-size: 12px; font-weight: 500;">0 von 0</div>
+                <!-- Losing Days -->
+                <div class="dashboard-stat" style="background: linear-gradient(135deg, rgba(236, 72, 153, 0.1) 0%, rgba(236, 72, 153, 0.05) 100%); border: 1px solid rgba(236, 72, 153, 0.2); border-radius: 14px; padding: 20px; backdrop-filter: blur(10px);">
+                    <div style="color: #64748b; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600; margin-bottom: 12px;">Losing Days</div>
+                    <div id="losingDaysStat" style="font-size: 28px; font-weight: 800; color: #ec4899; line-height: 1;">0%</div>
                 </div>
 
-                <div class="premium-stat-card" style="border: 1px solid rgba(139, 92, 246, 0.2); background: linear-gradient(135deg, rgba(139, 92, 246, 0.08) 0%, rgba(139, 92, 246, 0.03) 100%);">
-                    <div style="color: #94a3b8; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 10px;">Avg Daily P&L</div>
-                    <div id="avgDailyPnLStat" style="font-size: 28px; font-weight: 700; color: #c4b5fd; margin-bottom: 8px;">€ 0.00</div>
-                    <div style="color: #94a3b8; font-size: 12px; font-weight: 500;">Pro Trading Day</div>
+                <!-- Avg Daily P&L -->
+                <div class="dashboard-stat" style="background: linear-gradient(135deg, rgba(251, 146, 60, 0.1) 0%, rgba(251, 146, 60, 0.05) 100%); border: 1px solid rgba(251, 146, 60, 0.2); border-radius: 14px; padding: 20px; backdrop-filter: blur(10px);">
+                    <div style="color: #64748b; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600; margin-bottom: 12px;">Avg Daily P&L</div>
+                    <div id="avgDailyPnLStat" style="font-size: 28px; font-weight: 800; color: #fb923c; line-height: 1;">€0.00</div>
                 </div>
             </div>
 
             <!-- Calendar Controls -->
             <div style="display: flex; gap: 12px; margin-bottom: 28px; align-items: center;">
-                <button class="calendar-btn premium-btn active" data-view="daily" style="background: rgba(168, 85, 247, 0.15); border: 1px solid rgba(168, 85, 247, 0.3); color: #e2e8f0; padding: 10px 24px; border-radius: 8px; font-weight: 600; font-size: 14px; cursor: pointer; transition: all 0.3s ease;">📆 Täglich</button>
-                <button class="calendar-btn premium-btn" data-view="monthly" style="background: rgba(94, 109, 241, 0.1); border: 1px solid rgba(94, 109, 241, 0.2); color: #cbd5e1; padding: 10px 24px; border-radius: 8px; font-weight: 600; font-size: 14px; cursor: pointer; transition: all 0.3s ease;">📊 Monatlich</button>
+                <button class="calendar-btn premium-btn active" data-view="daily" style="background: linear-gradient(135deg, #9333ea 0%, #8b5cf6 100%); border: none; color: white; padding: 12px 24px; border-radius: 10px; font-weight: 600; font-size: 14px; cursor: pointer; transition: all 0.3s ease;">📆 Täglich</button>
+                <button class="calendar-btn premium-btn" data-view="monthly" style="background: rgba(168, 85, 247, 0.1); border: 1px solid rgba(168, 85, 247, 0.2); color: #cbd5e1; padding: 12px 24px; border-radius: 10px; font-weight: 600; font-size: 14px; cursor: pointer; transition: all 0.3s ease;">📊 Monatlich</button>
                 <div style="flex: 1;"></div>
                 <div style="color: #94a3b8; font-size: 12px; font-weight: 500; text-transform: uppercase;">
                     <span id="calendarTradeCount">0</span> Trades • <span id="calendarTradingDays">0</span> Tage
@@ -527,7 +539,7 @@
         <div id="roadmap" class="tab-content">
             <div style="margin-bottom: 40px;">
                 <h2 style="margin-bottom: 8px; font-size: 32px; font-weight: 700;">📍 Product Roadmap</h2>
-                <p style="color: #94a3b8; font-size: 14px; margin: 0;">CapitalFlow Development Phases • 5/17 Features Complete</p>
+                <p style="color: #94a3b8; font-size: 14px; margin: 0;">CapitalFlow Development Phases • 6/17 Features Complete</p>
             </div>
 
 </html>            <!-- ===== PHASE 1 ===== -->
@@ -613,13 +625,13 @@
                         <p style="color: #94a3b8; font-size: 13px; margin: 0;">Cross-platform expansion & ecosystem</p>
                     </div>
                     <div style="text-align: right;">
-                        <div style="font-size: 36px; font-weight: 700; color: #f59e0b;">0/8</div>
+                        <div style="font-size: 36px; font-weight: 700; color: #f59e0b;">1/8</div>
                         <div style="font-size: 12px; color: #f59e0b; font-weight: 600;">🔄 IN PROGRESS</div>
                     </div>
                 </div>
                 
                 <div style="width: 100%; height: 8px; background: rgba(245, 158, 11, 0.1); border-radius: 4px; margin-bottom: 28px; overflow: hidden; border: 1px solid rgba(245, 158, 11, 0.2);">
-                    <div style="width: 0%; height: 100%; background: linear-gradient(90deg, #f59e0b 0%, #fbbf24 100%); border-radius: 4px; box-shadow: 0 0 20px rgba(245, 158, 11, 0.5);"></div>
+                    <div style="width: 12.5%; height: 100%; background: linear-gradient(90deg, #f59e0b 0%, #fbbf24 100%); border-radius: 4px; box-shadow: 0 0 20px rgba(245, 158, 11, 0.5);" transition="all 0.5s ease;"></div>
                 </div>
                 
                 <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 16px;">
@@ -632,13 +644,15 @@
                         <p style="font-size: 11px; color: #94a3b8; margin: 0; line-height: 1.5;">Alerts & Tracking</p>
                     </div>
                     
-                    <div class="roadmap-card-premium in-progress-card">
+                    <div class="roadmap-card-premium completed-card">
                         <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 14px;">
                             <div style="font-size: 32px;">💼</div>
-                            <div style="background: rgba(245, 158, 11, 0.25); color: #f59e0b; padding: 3px 6px; border-radius: 3px; font-size: 10px; font-weight: 700;">SOON</div>
+                            <svg style="width: 20px; height: 20px; color: #10b981; stroke-width: 3;" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                <polyline points="20 6 9 17 4 12"></polyline>
+                            </svg>
                         </div>
-                        <h4 style="font-size: 13px; font-weight: 700; color: #e2e8f0; margin: 0 0 6px 0; text-transform: uppercase; letter-spacing: 0.5px;">Portfolio</h4>
-                        <p style="font-size: 11px; color: #94a3b8; margin: 0; line-height: 1.5;">Long-term Tracks</p>
+                        <h4 style="font-size: 13px; font-weight: 700; color: #e2e8f0; margin: 0 0 6px 0; text-transform: uppercase; letter-spacing: 0.5px;">Portfolio Analyse</h4>
+                        <p style="font-size: 11px; color: #94a3b8; margin: 0; line-height: 1.5;">Open & Closed Pos</p>
                     </div>
                     
                     <div class="roadmap-card-premium in-progress-card">
@@ -760,12 +774,19 @@
 
     <!-- ===== DELETE MODAL ===== -->
     <div class="modal" id="deleteModal">
-        <div class="modal-content" style="max-width: 400px;">
-            <h3 style="margin-top: 0; color: #e2e8f0; font-size: 20px;">Trade löschen?</h3>
-            <p style="color: #94a3b8; margin: 16px 0;">Dieser Trade wird permanent gelöscht.</p>
-            <div style="display: flex; gap: 12px; justify-content: flex-end;">
-                <button onclick="cancelDelete()" style="background: rgba(94, 109, 241, 0.1); border: 1px solid rgba(94, 109, 241, 0.3); color: #cbd5e1; padding: 10px 24px; border-radius: 8px; cursor: pointer; font-weight: 600;">Abbrechen</button>
-                <button onclick="confirmDeleteTrade()" style="background: linear-gradient(135deg, #f87171 0%, #fb7185 100%); border: none; color: white; padding: 10px 24px; border-radius: 8px; cursor: pointer; font-weight: 600;">Löschen</button>
+        <div class="modal-content" style="max-width: 420px; background: linear-gradient(135deg, rgba(15, 15, 32, 0.95) 0%, rgba(20, 20, 45, 0.95) 100%); border: 1px solid rgba(168, 85, 247, 0.2); border-radius: 20px; backdrop-filter: blur(20px); padding: 40px; box-shadow: 0 25px 50px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.1);">
+            <div style="margin-bottom: 28px;">
+                <h2 id="deleteModalTitle" style="margin: 0 0 8px 0; font-size: 28px; font-weight: 700; background: linear-gradient(135deg, #f87171 0%, #fb7185 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;">🗑️ Löschen?</h2>
+                <p id="deleteModalText" style="margin: 0; color: #94a3b8; font-size: 13px;">Diese Aktion kann nicht rückgängig gemacht werden</p>
+            </div>
+
+            <div style="background: rgba(239, 68, 68, 0.05); border: 1px solid rgba(239, 68, 68, 0.2); border-radius: 12px; padding: 16px; margin-bottom: 28px;">
+                <p style="margin: 0; color: #cbd5e1; font-size: 13px; line-height: 1.6;">Bitte bestätigen Sie, dass Sie diesen Eintrag permanent löschen möchten. Diese Aktion kann nicht rückgängig gemacht werden.</p>
+            </div>
+
+            <div style="display: flex; gap: 12px;">
+                <button onclick="cancelDelete()" style="flex: 1; background: rgba(100, 116, 139, 0.15); border: 1px solid rgba(100, 116, 139, 0.3); color: #cbd5e1; padding: 13px 20px; border-radius: 12px; cursor: pointer; font-weight: 600; font-size: 14px; transition: all 0.2s ease;" onmouseover="this.style.background='rgba(100, 116, 139, 0.25)'; this.style.borderColor='rgba(100, 116, 139, 0.5)'" onmouseout="this.style.background='rgba(100, 116, 139, 0.15)'; this.style.borderColor='rgba(100, 116, 139, 0.3)'">Abbrechen</button>
+                <button id="deleteConfirmBtn" style="flex: 1; background: linear-gradient(135deg, #f87171 0%, #fb7185 100%); border: none; color: white; padding: 13px 20px; border-radius: 12px; cursor: pointer; font-weight: 700; font-size: 14px; box-shadow: 0 4px 15px rgba(248, 113, 113, 0.3); transition: all 0.2s ease;" onmouseover="this.style.boxShadow='0 8px 25px rgba(248, 113, 113, 0.4)'; this.style.transform='translateY(-2px)'" onmouseout="this.style.boxShadow='0 4px 15px rgba(248, 113, 113, 0.3)'; this.style.transform='translateY(0)'">Ja, löschen</button>
             </div>
         </div>
     </div>
@@ -774,6 +795,40 @@
         <div class="modal-content screenshot-modal-content">
             <img id="screenshotModalImg" src="" alt="Screenshot" style="max-width: 70vw; max-height: 70vh; border-radius: 8px;">
             <button class="modal-close" onclick="closeScreenshotModal()">✕</button>
+        </div>
+    </div>
+
+    <!-- ===== CLOSE POSITION MODAL ===== -->
+    <div class="modal" id="closePositionModal">
+        <div class="modal-content" style="max-width: 520px; background: linear-gradient(135deg, rgba(15, 15, 32, 0.95) 0%, rgba(20, 20, 45, 0.95) 100%); border: 1px solid rgba(168, 85, 247, 0.2); border-radius: 20px; backdrop-filter: blur(20px); padding: 40px; box-shadow: 0 25px 50px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.1);">
+            <div style="margin-bottom: 28px;">
+                <h2 style="margin: 0 0 8px 0; font-size: 28px; font-weight: 700; background: linear-gradient(135deg, #a855f7 0%, #ec4899 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;">📊 Position Schließen</h2>
+                <p style="margin: 0; color: #94a3b8; font-size: 13px;">Geben Sie den Exit Price und den Grund ein</p>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 24px;">
+                <div class="form-group">
+                    <label for="modalExitPrice" style="display: block; font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: #94a3b8; margin-bottom: 10px;">Exit Price (€)</label>
+                    <input type="number" id="modalExitPrice" placeholder="z.B. 155.50" step="0.01" required style="width: 100%; background: rgba(168, 85, 247, 0.08); border: 1px solid rgba(168, 85, 247, 0.2); border-radius: 10px; padding: 12px 16px; color: #f1f5f9; font-size: 14px; font-weight: 500; font-family: 'Inter', sans-serif;">
+                </div>
+                <div class="form-group">
+                    <label for="modalPosition" style="display: block; font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: #94a3b8; margin-bottom: 10px;">Position Info</label>
+                    <div id="modalPositionInfo" style="background: rgba(168, 85, 247, 0.08); border: 1px solid rgba(168, 85, 247, 0.2); border-radius: 10px; padding: 12px 16px; color: #cbd5e1; font-size: 12px; font-weight: 600; display: flex; align-items: center; gap: 8px;">
+                        <span id="modalPositionTicker" style="color: #a855f7; font-weight: 700;">-</span>
+                        <span id="modalPositionSize" style="color: #94a3b8;">-</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-group" style="margin-bottom: 24px;">
+                <label for="modalExitReason" style="display: block; font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: #94a3b8; margin-bottom: 10px;">Grund zum Schließen</label>
+                <textarea id="modalExitReason" placeholder="Warum schließe ich diese Position? (z.B. Target erreicht, Stop Hit, Trendwechsel)" rows="3" required style="width: 100%; background: rgba(168, 85, 247, 0.08); border: 1px solid rgba(168, 85, 247, 0.2); border-radius: 10px; padding: 12px 16px; color: #f1f5f9; font-size: 14px; font-weight: 500; font-family: 'Inter', sans-serif; resize: none;"></textarea>
+            </div>
+
+            <div style="display: flex; gap: 12px;">
+                <button onclick="closeModal('closePositionModal')" style="flex: 1; background: rgba(100, 116, 139, 0.15); border: 1px solid rgba(100, 116, 139, 0.3); color: #cbd5e1; padding: 13px 20px; border-radius: 12px; cursor: pointer; font-weight: 600; font-size: 14px; transition: all 0.2s ease;" onmouseover="this.style.background='rgba(100, 116, 139, 0.25)'; this.style.borderColor='rgba(100, 116, 139, 0.5)'" onmouseout="this.style.background='rgba(100, 116, 139, 0.15)'; this.style.borderColor='rgba(100, 116, 139, 0.3)'">Abbrechen</button>
+                <button onclick="confirmClosePositionModal()" style="flex: 1; background: linear-gradient(135deg, #10b981 0%, #059669 100%); border: none; color: white; padding: 13px 20px; border-radius: 12px; cursor: pointer; font-weight: 700; font-size: 14px; box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3); transition: all 0.2s ease;" onmouseover="this.style.boxShadow='0 8px 25px rgba(16, 185, 129, 0.4)'; this.style.transform='translateY(-2px)'" onmouseout="this.style.boxShadow='0 4px 15px rgba(16, 185, 129, 0.3)'; this.style.transform='translateY(0)'">✨ Position Schließen</button>
+            </div>
         </div>
     </div>
 

@@ -44,18 +44,12 @@ function initLoginSystem() {
     const loginScreen = document.getElementById('loginScreen');
     const adminPanel = document.getElementById('adminPanel');
     const normalLoginForm = document.getElementById('normalLoginForm');
-    const adminLoginForm = document.getElementById('adminLoginForm');
     const navbar = document.querySelector('.navbar');
     const sidebar = document.querySelector('.sidebar');
     const container = document.querySelector('.container');
     
-    // Toggle buttons
-    const userModeBtn = document.getElementById('userModeBtn');
-    const adminModeBtn = document.getElementById('adminModeBtn');
     const loginKeyInput = document.getElementById('loginKeyInput');
     const loginBtn = document.getElementById('loginBtn');
-    const adminKeyInput = document.getElementById('adminKeyInput');
-    const adminLoginBtn = document.getElementById('adminLoginBtn');
     const adminLogoutBtn = document.getElementById('adminLogoutBtn');
     
     // Admin panel
@@ -91,31 +85,27 @@ function initLoginSystem() {
         container.style.display = 'none';
     }
     
-    // Toggle login views
-    userModeBtn.addEventListener('click', () => {
-        normalLoginForm.style.display = 'flex';
-        adminLoginForm.style.display = 'none';
-        userModeBtn.style.background = 'linear-gradient(135deg, #9333ea 0%, #8b5cf6 100%)';
-        adminModeBtn.style.background = 'linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%)';
-        loginKeyInput.focus();
-    });
-
-    adminModeBtn.addEventListener('click', () => {
-        adminLoginForm.style.display = 'flex';
-        normalLoginForm.style.display = 'none';
-        adminModeBtn.style.background = 'linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%)';
-        userModeBtn.style.background = 'linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%)';
-        adminKeyInput.focus();
-    });
-    
-    // User login
+    // Login: Admin-Key oder User-Key ueber dasselbe Feld
     loginBtn.addEventListener('click', () => {
         const enteredKey = loginKeyInput.value.trim();
         if (!enteredKey) {
             showToast('Please enter your key', 'error');
             return;
         }
-        
+
+        // Admin-Key erkannt -> direkt ins Admin Panel
+        if (enteredKey === ADMIN_KEY) {
+            loginKeyInput.value = '';
+            loginScreen.classList.add('hidden');
+            adminPanel.classList.remove('hidden');
+            navbar.style.display = 'none';
+            sidebar.style.display = 'none';
+            container.style.display = 'none';
+            sessionStorage.setItem('capitalflow_admin_logged_in', 'true');
+            renderKeysList();
+            return;
+        }
+
         const userKeys = getAllUserKeys();
         const keyExists = Object.values(userKeys).some(k => k.key === enteredKey);
         
@@ -146,27 +136,6 @@ function initLoginSystem() {
         if (e.key === 'Enter') loginBtn.click();
     });
     
-    // Admin login
-    adminLoginBtn.addEventListener('click', () => {
-        const enteredKey = adminKeyInput.value.trim();
-        if (enteredKey === ADMIN_KEY) {
-            loginScreen.classList.add('hidden');
-            adminPanel.classList.remove('hidden');
-            navbar.style.display = 'none';
-            sidebar.style.display = 'none';
-            container.style.display = 'none';
-            sessionStorage.setItem('capitalflow_admin_logged_in', 'true');
-            renderKeysList();
-        } else {
-            showToast('Invalid admin key!', 'error');
-            adminKeyInput.value = '';
-        }
-    });
-    
-    adminKeyInput.addEventListener('keypress', (e) => {
-        if (e.key === 'Enter') adminLoginBtn.click();
-    });
-    
     // Admin logout
     adminLogoutBtn.addEventListener('click', () => {
         sessionStorage.removeItem('capitalflow_admin_logged_in');
@@ -176,8 +145,6 @@ function initLoginSystem() {
         sidebar.style.display = 'none';
         container.style.display = 'none';
         normalLoginForm.style.display = 'flex';
-        adminLoginForm.style.display = 'none';
-        adminKeyInput.value = '';
         loginKeyInput.value = '';
     });
     
@@ -315,6 +282,7 @@ let currentTab = 'dashboard'; // Tracke aktuellen Tab
 let positionsScreenshotData = null;
 let positionToDelete = null;
 let positionToClose = null; // Für Close Position Modal
+let closedPositionToDelete = null; // Für Closed Position Delete Modal
 
 function displayScreenshot(base64Data) {
     screenshotData = base64Data;
@@ -800,17 +768,26 @@ function loadTrades() {
 
 function confirmDelete(id) {
     tradeToDelete = id;
-    const modal = document.getElementById('deleteModal');
-    if (modal) {
-        modal.classList.add('active');
-    }
+    const deleteModal = document.getElementById('deleteModal');
+    const modalTitle = document.getElementById('deleteModalTitle');
+    const modalText = document.getElementById('deleteModalText');
+    const confirmBtn = document.getElementById('deleteConfirmBtn');
+    
+    modalTitle.textContent = '🗑️ Trade löschen?';
+    modalText.textContent = 'Dieser Trade wird permanent gelöscht.';
+    confirmBtn.textContent = 'Ja, löschen';
+    confirmBtn.onclick = () => confirmDeleteTrade();
+    
+    deleteModal.style.display = 'flex';
 }
 
 function cancelDelete() {
     tradeToDelete = null;
+    positionToDelete = null;
+    closedPositionToDelete = null;
     const modal = document.getElementById('deleteModal');
     if (modal) {
-        modal.classList.remove('active');
+        modal.style.display = 'none';
     }
 }
 
@@ -822,12 +799,12 @@ function confirmDeleteTrade() {
     // Modal schließen
     const modal = document.getElementById('deleteModal');
     if (modal) {
-        modal.classList.remove('active');
+        modal.style.display = 'none';
     }
     tradeToDelete = null;
     
     loadTrades();
-    showToast('Trade gelöscht');
+    showToast('✅ Trade gelöscht!');
 }
 
 // ===== CALENDAR =====
@@ -844,9 +821,25 @@ function loadCalendar() {
             const view = btn.getAttribute('data-view');
             currentCalendarView = view;
             
-            // Update active state
-            calendarBtns.forEach(b => b.classList.remove('active'));
+            // Update active state and styling
+            calendarBtns.forEach(b => {
+                b.classList.remove('active');
+                if (b.getAttribute('data-view') === 'daily') {
+                    b.style.background = 'rgba(168, 85, 247, 0.1)';
+                    b.style.border = '1px solid rgba(168, 85, 247, 0.2)';
+                    b.style.color = '#cbd5e1';
+                } else {
+                    b.style.background = 'rgba(168, 85, 247, 0.1)';
+                    b.style.border = '1px solid rgba(168, 85, 247, 0.2)';
+                    b.style.color = '#cbd5e1';
+                }
+            });
+            
+            // Active button styling
             btn.classList.add('active');
+            btn.style.background = 'linear-gradient(135deg, #9333ea 0%, #8b5cf6 100%)';
+            btn.style.border = 'none';
+            btn.style.color = 'white';
             
             // Render new calendar
             if (view === 'daily') renderDailyCalendar(trades, calendarContent);
@@ -2005,6 +1998,9 @@ function updatePortfolioSummary() {
     document.getElementById('portfolioTotalValue').textContent = `€${totalValue.toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
     document.getElementById('portfolioAvgSize').textContent = `€${avgSize.toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
     document.getElementById('portfolioMaxSize').textContent = `€${maxSize.toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+    
+    // Render Chart
+    renderPortfolioCompositionChart(positions);
 }
 
 function loadPositions() {
@@ -2034,7 +2030,7 @@ function loadPositions() {
                 
                 <div class="position-details">
                     <div class="position-detail-row">
-                        <span class="position-detail-label">Position:</span>
+                        <span class="position-detail-label">Position Size:</span>
                         <span class="position-detail-value">€${parseFloat(pos.size).toFixed(2)}</span>
                     </div>
                     <div class="position-detail-row">
@@ -2107,9 +2103,19 @@ function addPosition(event) {
 
 function deletePosition(idx) {
     positionToDelete = idx;
+    const positions = JSON.parse(localStorage.getItem('positions')) || [];
+    const position = positions[idx];
+    
     const deleteModal = document.getElementById('deleteModal');
-    const modalText = deleteModal.querySelector('p');
-    modalText.textContent = 'Diese offene Position wirklich löschen?';
+    const modalTitle = document.getElementById('deleteModalTitle');
+    const modalText = document.getElementById('deleteModalText');
+    const confirmBtn = document.getElementById('deleteConfirmBtn');
+    
+    modalTitle.textContent = '🗑️ Position löschen?';
+    modalText.textContent = `${position.ticker} wird permanent gelöscht.`;
+    confirmBtn.textContent = 'Ja, löschen';
+    confirmBtn.onclick = () => confirmDeletePosition();
+    
     deleteModal.style.display = 'flex';
 }
 
@@ -2128,7 +2134,18 @@ function confirmDeletePosition() {
 }
 
 function closePosition(idx) {
-    showToast('🚀 Position Schließen - Coming Soon in Phase 2!');
+    positionToClose = idx;
+    const positions = JSON.parse(localStorage.getItem('positions')) || [];
+    const position = positions[idx];
+    
+    // Populate modal with position info
+    document.getElementById('modalExitPrice').value = '';
+    document.getElementById('modalExitReason').value = '';
+    document.getElementById('modalPositionTicker').textContent = position.ticker;
+    document.getElementById('modalPositionSize').textContent = `€${parseFloat(position.size).toFixed(2)}`;
+    
+    document.getElementById('closePositionModal').style.display = 'flex';
+    document.getElementById('modalExitPrice').focus();
 }
 
 function confirmClosePositionModal() {
@@ -2136,8 +2153,8 @@ function confirmClosePositionModal() {
     
     if (positionToClose === null) return;
     
-    const exitPriceInput = document.getElementById('modalExitPrice').value.trim();
-    const exitReason = document.getElementById('modalExitReason').value;
+    const exitPriceInput = document.getElementById('modalExitPrice').value;
+    const exitReason = document.getElementById('modalExitReason').value.trim();
     
     console.log('exitPrice input:', exitPriceInput);
     console.log('exitReason:', exitReason);
@@ -2151,6 +2168,11 @@ function confirmClosePositionModal() {
     const exitPrice = parseFloat(exitPriceInput);
     if (isNaN(exitPrice) || exitPrice <= 0) {
         showToast('❌ Exit Price muss eine Zahl > 0 sein!');
+        return;
+    }
+    
+    if (!exitReason) {
+        showToast('❌ Grund zum Schließen erforderlich!');
         return;
     }
     
@@ -2222,25 +2244,178 @@ function clearPositionsScreenshot() {
 
 function displayClosedPositions() {
     const container = document.getElementById('closedPositionsContainer');
+    const noDataDiv = document.getElementById('noClosedPositions');
     
     if (!container) return;
     
-    container.innerHTML = `
-        <div style="grid-column: 1/-1; text-align: center; padding: 60px 20px; color: #94a3b8;">
-            <p style="font-size: 16px; font-weight: 500;">Geschlossene Positionen</p>
-            <p style="font-size: 14px; margin-top: 8px;">Coming Soon 🚀</p>
-        </div>
-    `;
+    const closedPositions = JSON.parse(localStorage.getItem('closedPositions')) || [];
+    
+    if (closedPositions.length === 0) {
+        container.innerHTML = '';
+        if (noDataDiv) noDataDiv.style.display = 'block';
+        return;
+    }
+    
+    if (noDataDiv) noDataDiv.style.display = 'none';
+    
+    container.innerHTML = closedPositions.map((pos, idx) => {
+        const dateClosed = new Date(pos.dateClosed).toLocaleDateString('de-DE');
+        const pnlColor = pos.pnl >= 0 ? '#10b981' : '#f87171';
+        const pnlSign = pos.pnl >= 0 ? '+' : '';
+        
+        return `
+            <div class="position-card" style="border-left: 4px solid ${pnlColor};">
+                <div class="position-header">
+                    <div>
+                        <div class="position-ticker">${pos.ticker}</div>
+                        <div class="position-entry">Entry: €${parseFloat(pos.entry).toFixed(2)} → Exit: €${parseFloat(pos.exitPrice).toFixed(2)}</div>
+                    </div>
+                    <div style="text-align: right;">
+                        <div style="font-size: 18px; font-weight: 700; color: ${pnlColor};">${pnlSign}€${pos.pnl.toFixed(2)}</div>
+                        <div style="font-size: 12px; color: ${pnlColor};">${pnlSign}${pos.pnlPercent.toFixed(2)}%</div>
+                    </div>
+                </div>
+                
+                <div class="position-details">
+                    <div class="position-detail-row">
+                        <span class="position-detail-label">Position:</span>
+                        <span class="position-detail-value">€${parseFloat(pos.size).toFixed(2)}</span>
+                    </div>
+                    <div class="position-detail-row">
+                        <span class="position-detail-label">Geschlossen:</span>
+                        <span class="position-detail-value">${dateClosed}</span>
+                    </div>
+                </div>
+                
+                <div class="position-thesis">
+                    <strong>These:</strong> ${pos.thesis}
+                </div>
+                
+                <div class="position-thesis" style="margin-top: 12px; color: #cbd5e1; font-size: 13px; border-top: 1px solid rgba(168, 85, 247, 0.1); padding-top: 12px;">
+                    <strong>Grund zum Schließen:</strong> ${pos.exitReason}
+                </div>
+                
+                ${pos.screenshot ? `
+                    <div class="position-screenshot">
+                        <img src="${pos.screenshot}" alt="Position Setup" onclick="openScreenshotModal(this.src)">
+                    </div>
+                ` : ''}
+                
+                <div class="position-actions">
+                    <button class="position-delete-btn" onclick="deleteClosedPosition(${idx})">Löschen</button>
+                </div>
+            </div>
+        `;
+    }).join('');
 }
 
 function deleteClosedPosition(idx) {
-    if (confirm('Geschlossene Position wirklich löschen?')) {
+    closedPositionToDelete = idx;
+    const closedPositions = JSON.parse(localStorage.getItem('closedPositions')) || [];
+    const position = closedPositions[idx];
+    
+    const deleteModal = document.getElementById('deleteModal');
+    const modalTitle = document.getElementById('deleteModalTitle');
+    const modalText = document.getElementById('deleteModalText');
+    const confirmBtn = document.getElementById('deleteConfirmBtn');
+    
+    modalTitle.textContent = '🗑️ Geschlossene Position löschen?';
+    modalText.textContent = `${position.ticker} wird permanent gelöscht.`;
+    confirmBtn.textContent = 'Ja, löschen';
+    confirmBtn.onclick = () => confirmDeleteClosedPosition();
+    
+    deleteModal.style.display = 'flex';
+}
+
+function confirmDeleteClosedPosition() {
+    if (closedPositionToDelete !== null) {
         const closedPositions = JSON.parse(localStorage.getItem('closedPositions')) || [];
-        closedPositions.splice(idx, 1);
+        const removedTicker = closedPositions[closedPositionToDelete].ticker;
+        closedPositions.splice(closedPositionToDelete, 1);
         localStorage.setItem('closedPositions', JSON.stringify(closedPositions));
+        
+        document.getElementById('deleteModal').style.display = 'none';
         displayClosedPositions();
-        showToast('✅ Geschlossene Position gelöscht!');
+        showToast(`✅ Geschlossene Position ${removedTicker} gelöscht!`);
+        closedPositionToDelete = null;
     }
+}
+
+
+function renderPortfolioCompositionChart(positions) {
+    const barDiv = document.getElementById('portfolioStackedBar');
+    const legendDiv = document.getElementById('portfolioCompositionLegend');
+    
+    if (!barDiv || !legendDiv || positions.length === 0) {
+        barDiv.innerHTML = '<div style="width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; color: #64748b; font-size: 13px;">Noch keine Positionen</div>';
+        legendDiv.innerHTML = '';
+        return;
+    }
+    
+    // Berechne Gewichtungen
+    const positionData = positions.map(pos => ({
+        ticker: pos.ticker,
+        size: parseFloat(pos.size)
+    }));
+    
+    const totalSize = positionData.reduce((sum, p) => sum + p.size, 0);
+    
+    // Farben - Premium Palette
+    const colors = [
+        '#a855f7', '#ec4899', '#3b82f6', '#10b981', '#f59e0b', 
+        '#fb7185', '#6366f1', '#14b8a6', '#f97316', '#8b5cf6',
+        '#06b6d4', '#84cc16', '#ef4444', '#8855ff'
+    ];
+    
+    // Render Stacked Bar
+    let barHTML = '';
+    positionData.forEach((pos, idx) => {
+        const percentage = (pos.size / totalSize) * 100;
+        const color = colors[idx % colors.length];
+        barHTML += `
+            <div style="
+                flex: ${percentage};
+                background: ${color};
+                height: 100%;
+                border-right: 2px solid rgba(15, 15, 32, 1);
+                position: relative;
+                transition: all 0.3s ease;
+                cursor: pointer;
+            " 
+            class="portfolio-bar-segment"
+            title="${pos.ticker}: ${percentage.toFixed(1)}% (€${pos.size.toFixed(2)})"
+            onmouseover="this.style.filter='brightness(1.2)'; this.style.flex='${percentage * 1.1}'"
+            onmouseout="this.style.filter='brightness(1)'; this.style.flex='${percentage}'">
+                ${percentage > 8 ? `<span style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-weight: 700; font-size: 12px; color: white; text-shadow: 0 1px 3px rgba(0,0,0,0.5);">${percentage.toFixed(0)}%</span>` : ''}
+            </div>
+        `;
+    });
+    barDiv.innerHTML = barHTML;
+    
+    // Render Position Cards
+    legendDiv.innerHTML = positionData.map((pos, idx) => {
+        const percentage = (pos.size / totalSize) * 100;
+        const color = colors[idx % colors.length];
+        return `
+            <div style="
+                background: linear-gradient(135deg, rgba(255,255,255,0.03) 0%, rgba(255,255,255,0.01) 100%);
+                border: 1px solid rgba(${parseInt(color.slice(1,3),16)}, ${parseInt(color.slice(3,5),16)}, ${parseInt(color.slice(5,7),16)}, 0.3);
+                border-radius: 12px;
+                padding: 16px;
+                backdrop-filter: blur(8px);
+                transition: all 0.2s ease;
+            "
+            onmouseover="this.style.transform='translateY(-4px)'; this.style.borderColor='rgba(${parseInt(color.slice(1,3),16)}, ${parseInt(color.slice(3,5),16)}, ${parseInt(color.slice(5,7),16)}, 0.8)'"
+            onmouseout="this.style.transform='translateY(0)'; this.style.borderColor='rgba(${parseInt(color.slice(1,3),16)}, ${parseInt(color.slice(3,5),16)}, ${parseInt(color.slice(5,7),16)}, 0.3)'">
+                <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 12px;">
+                    <div style="width: 10px; height: 10px; border-radius: 50%; background: ${color}; box-shadow: 0 0 12px ${color}80;"></div>
+                    <div style="font-weight: 700; font-size: 14px; color: #f1f5f9;">${pos.ticker}</div>
+                </div>
+                <div style="font-size: 16px; font-weight: 800; color: #f1f5f9; margin-bottom: 4px;">€${pos.size.toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
+                <div style="font-size: 12px; color: #94a3b8; font-weight: 600;">${percentage.toFixed(1)}% des Portfolios</div>
+            </div>
+        `;
+    }).join('');
 }
 
 function renderTradeScoreChart(tradeScore, stats) {
@@ -2583,9 +2758,7 @@ function updateCalendarStats(trades) {
     updateElement("worstDayStat", `€ ${worstDayPnL.toFixed(2)}`);
     updateElement("worstDayDateStat", worstDayDate || "—");
     updateElement("winningDaysStat", `${winningDaysPercent}%`);
-    updateElement("winningDaysCountStat", `${winningDays} von ${tradingDays}`);
     updateElement("losingDaysStat", `${losingDaysPercent}%`);
-    updateElement("losingDaysCountStat", `${losingDays} von ${tradingDays}`);
     updateElement("avgDailyPnLStat", `€ ${avgDailyPnL.toFixed(2)}`);
     updateElement("calendarTradeCount", trades.length);
     updateElement("calendarTradingDays", tradingDays);
