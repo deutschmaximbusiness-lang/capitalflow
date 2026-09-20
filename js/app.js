@@ -905,16 +905,70 @@ function getSetupTypeBadgeClass(setupType) {
     return typeMap[setupType] || 'sonstiges';
 }
 
-function loadTrades() {
-    let trades = JSON.parse(localStorage.getItem('trades')) || [];
-    
-    // CLEANUP: Remove empty/whitespace screenshots + Fix missing setupType/errorType
-    trades = trades.map(trade => ({
+// Bringt einen Trade auf ein vollstaendiges, rechenbares Format.
+// Ohne das reicht EIN Altdatensatz ohne pnl, um beim Rendern
+// toFixed(undefined) auszuloesen und die ganze Liste lahmzulegen.
+function normalizeTrade(trade, index) {
+    const num = (v, fallback) => {
+        const n = parseFloat(v);
+        return Number.isFinite(n) ? n : fallback;
+    };
+
+    const entry = num(trade.entryPrice, 0);
+    const exit = num(trade.exitPrice, 0);
+    const size = num(trade.positionSize, 0);
+    const lev = num(trade.leverage, 1) || 1;
+
+    // Fehlendes Ergebnis aus den Preisen nachrechnen, statt den
+    // Datensatz zu verlieren
+    let pnl = num(trade.pnl, null);
+    if (pnl === null) {
+        pnl = entry > 0 ? (exit - entry) * (size / entry) * lev : 0;
+        pnl = Math.round(pnl * 100) / 100;
+    }
+    let pnlPercent = num(trade.pnlPercent, null);
+    if (pnlPercent === null) {
+        pnlPercent = entry > 0
+            ? Math.round(((exit - entry) / entry) * 100 * lev * 100) / 100
+            : 0;
+    }
+
+    return {
         ...trade,
-        screenshot: trade.screenshot && trade.screenshot.trim() ? trade.screenshot : null,
+        id: trade.id || (Date.now() + index),
+        ticker: trade.ticker || '—',
+        entryPrice: entry,
+        exitPrice: exit,
+        stopLoss: num(trade.stopLoss, 0),
+        positionSize: size,
+        leverage: lev,
+        pnl: pnl,
+        pnlPercent: pnlPercent,
+        risk: num(trade.risk, 0),
+        reward: num(trade.reward, 0),
+        riskReward: num(trade.riskReward, 0),
+        reason: trade.reason || '',
+        notes: trade.notes || '',
+        date: trade.date || new Date().toISOString().slice(0, 10),
+        screenshot: trade.screenshot && String(trade.screenshot).trim()
+            ? trade.screenshot : null,
         setupType: trade.setupType || 'Sonstiges',
         errorType: trade.errorType || 'Kein Fehler'
-    }));
+    };
+}
+
+function loadTrades() {
+    let trades = JSON.parse(localStorage.getItem('trades')) || [];
+
+    // Alles auf ein vollstaendiges Format bringen und doppelte IDs
+    // auseinanderziehen - sonst loescht ein Klick zwei Eintraege
+    const seenIds = new Set();
+    trades = trades.map((t, i) => {
+        const n = normalizeTrade(t, i);
+        while (seenIds.has(n.id)) n.id = n.id + 1;
+        seenIds.add(n.id);
+        return n;
+    });
     localStorage.setItem('trades', JSON.stringify(trades));
     
     const filteredTrades = getFilteredTrades(trades);
@@ -939,7 +993,9 @@ function loadTrades() {
         return;
     }
     
-    tradesContainer.innerHTML = filteredTrades.map(trade => `
+    // Jede Karte einzeln bauen: faellt eine aus, bleiben die anderen
+    // sichtbar, statt dass die ganze Liste leer bleibt
+    const renderTradeCard = (trade) => `
         <div class="trade-card">
             <div class="trade-header">
                 <div class="trade-ticker">
@@ -982,7 +1038,21 @@ function loadTrades() {
             ${trade.screenshot && trade.screenshot.trim() ? `<div class="trade-screenshot"><img src="${trade.screenshot}" alt="Trade Setup" onclick="openScreenshotModal('${trade.screenshot}')" style="cursor: pointer;"></div>` : ''}
             <button class="trade-delete" onclick="confirmDelete(${trade.id})">🗑️ Löschen</button>
         </div>
-    `).join('');
+    `;
+
+    tradesContainer.innerHTML = filteredTrades.map((trade) => {
+        try {
+            return renderTradeCard(trade);
+        } catch (err) {
+            console.error('Trade konnte nicht dargestellt werden:', trade, err);
+            return '<div class="trade-card"><div class="trade-header">' +
+                   '<div class="trade-ticker">' + escapeHtml(trade.ticker || '—') +
+                   '</div></div><p style="color:#f87171;font-size:13px;">' +
+                   'Dieser Eintrag ist beschädigt und kann nicht angezeigt werden.' +
+                   '</p><button class="trade-delete" onclick="confirmDelete(' +
+                   (trade.id || 0) + ')">🗑️ Löschen</button></div>';
+        }
+    }).join('');
 }
 
 function confirmDelete(id) {
