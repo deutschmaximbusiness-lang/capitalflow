@@ -1425,6 +1425,52 @@ function calculateDashboardStats(trades) {
     };
 }
 
+// Kopfzeile des Dashboards: Begruessung, Datum und ein Satz zum
+// aktuellen Stand. Ersetzt die blosse Ueberschrift "Dashboard" -
+// die sagte nichts, was die Sidebar nicht schon sagt.
+function buildDashboardGreeting(trades, stats) {
+    const name = window.cfRawStorage.get('capitalflow_current_name') || '';
+    const jetzt = new Date();
+
+    const stunde = jetzt.getHours();
+    const tageszeit = stunde < 11 ? 'Guten Morgen'
+                    : stunde < 18 ? 'Guten Tag'
+                    : 'Guten Abend';
+
+    const datum = jetzt.toLocaleDateString('de-DE', {
+        weekday: 'long', day: 'numeric', month: 'long'
+    });
+
+    // Trades von heute
+    const heute = jetzt.toISOString().slice(0, 10);
+    const heutige = trades.filter(t => t.date === heute);
+    const heutePnl = heutige.reduce((sum, t) => sum + (t.pnl || 0), 0);
+
+    let lage;
+    if (trades.length === 0) {
+        lage = 'Noch kein Trade erfasst. Leg im Journal deinen ersten an.';
+    } else if (heutige.length > 0) {
+        const vz = heutePnl >= 0 ? '+' : '';
+        lage = `${heutige.length} ${heutige.length === 1 ? 'Trade' : 'Trades'} ` +
+               `heute, ${vz}€${heutePnl.toFixed(2)}.`;
+    } else if (trades.length < 20) {
+        const fehlt = 20 - trades.length;
+        lage = `${trades.length} ${trades.length === 1 ? 'Trade' : 'Trades'} erfasst. ` +
+               `Ab etwa 20 werden die Auswertungen aussagekräftig – ` +
+               `noch ${fehlt} zu gehen.`;
+    } else {
+        lage = `${trades.length} Trades erfasst, Trefferquote ` +
+               `${(stats.winRate || 0).toFixed(1)} Prozent.`;
+    }
+
+    return `
+        <div class="dash-greeting">
+            <div class="dash-greeting-date">${escapeHtml(datum)}</div>
+            <h2 class="dash-greeting-title">${tageszeit}${name ? ', ' : ''}<span class="dash-greeting-name">${escapeHtml(name)}</span></h2>
+            <p class="dash-greeting-note">${escapeHtml(lage)}</p>
+        </div>`;
+}
+
 function loadDashboard() {
     const allTrades = JSON.parse(localStorage.getItem('trades')) || [];
     const trades = getFilteredTrades(allTrades);
@@ -1496,7 +1542,7 @@ function loadDashboard() {
     
     const dashboardContent = document.getElementById('dashboard');
     dashboardContent.innerHTML = `
-        <h2 style="margin-bottom: 30px;">Dashboard</h2>
+        ${buildDashboardGreeting(trades, stats)}
         
         <!-- ===== FILTER BUTTONS ===== -->
         <div class="trades-filter" style="margin-bottom: 30px;">

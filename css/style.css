@@ -2014,6 +2014,59 @@ h3 {
     }
 }
 
+/* ===== DASHBOARD-KOPF ===== */
+.dash-greeting {
+    margin-bottom: 30px;
+}
+
+.dash-greeting-date {
+    font-size: 12px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1.2px;
+    color: #64748b;
+    margin-bottom: 10px;
+}
+
+.dash-greeting-title {
+    margin: 0 0 8px 0;
+    font-size: 30px;
+    font-weight: 800;
+    letter-spacing: -0.5px;
+    color: #d8b4fe;
+    line-height: 1.15;
+    /* Beide Haelften gleich glaetten: sonst wirkt der Verlaufsteil
+       duenner als der Volltonteil daneben */
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+.dash-greeting-name {
+    font-weight: 800;
+    background: linear-gradient(135deg, #c084fc 0%, #f472b6 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    filter: drop-shadow(0 0 14px rgba(192, 132, 252, 0.35));
+}
+
+.dash-greeting-note {
+    margin: 0;
+    font-size: 14px;
+    font-weight: 500;
+    color: #94a3b8;
+    line-height: 1.6;
+}
+
+@media (max-width: 640px) {
+    .dash-greeting-title {
+        font-size: 24px;
+    }
+    .dash-greeting-note {
+        font-size: 13px;
+    }
+}
+
 /* ===== NEUER KEY IM ADMIN-PANEL ===== */
 .newkey-card {
     background: linear-gradient(135deg, rgba(20, 12, 38, 0.9) 0%, rgba(12, 7, 24, 0.95) 100%);
