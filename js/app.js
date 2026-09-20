@@ -960,6 +960,18 @@ function normalizeTrade(trade, index) {
 function loadTrades() {
     let trades = JSON.parse(localStorage.getItem('trades')) || [];
 
+    // Phantome aussortieren: ein Eintrag ohne Ticker UND ohne
+    // Einstiegspreis ist kein Trade, sondern Datenmuell aus einer
+    // frueheren Version. Er wuerde sonst mitgezaehlt, obwohl im
+    // Journal nichts Sinnvolles erscheint.
+    trades = trades.filter((t) => {
+        if (!t || typeof t !== 'object') return false;
+        const hatTicker = typeof t.ticker === 'string' && t.ticker.trim() !== '';
+        const hatPreis = Number.isFinite(parseFloat(t.entryPrice)) &&
+                         parseFloat(t.entryPrice) > 0;
+        return hatTicker || hatPreis;
+    });
+
     // Alles auf ein vollstaendiges Format bringen und doppelte IDs
     // auseinanderziehen - sonst loescht ein Klick zwei Eintraege
     const seenIds = new Set();
