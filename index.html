@@ -82,7 +82,7 @@
             <div class="admin-section">
                 <h3>Generate New User Key</h3>
                 <div style="display: flex; gap: 12px;">
-                    <input type="text" id="adminUserNameInput" class="admin-input" placeholder="User name (optional)" autocomplete="off">
+                    <input type="text" id="adminUserNameInput" class="admin-input" placeholder="Name des Nutzers" autocomplete="off">
                     <button class="admin-btn-primary" id="generateNewKeyBtn">Generate Key</button>
                 </div>
             </div>
@@ -110,10 +110,18 @@
                     <img src="img/capitalflow-icon.png" alt="CapitalFlow Logo" class="navbar-logo-img">
                 </div>
                 <div class="navbar-text">
-                    <div class="navbar-title">CapitalFlow</div>
-                    <div class="navbar-subtitle">by maxim</div>
-                    <div class="navbar-phase">Early Access • Phase 1/4</div>
+                    <div class="navbar-title">Capital<span class="navbar-title-accent">Flow</span></div>
+                    <div class="navbar-subtitle">Track Your Edge. <span class="navbar-subtitle-accent">Before Everyone Else.</span></div>
                 </div>
+            </div>
+            <div class="navbar-right">
+                <div class="session-badge" id="sessionBadge" style="display: none;">
+                    <span class="session-dot"></span>
+                    <span class="session-name" id="sessionName"></span>
+                    <span class="session-sep">·</span>
+                    <span class="session-key" id="sessionKey"></span>
+                </div>
+                <div class="navbar-phase">Early Access • Phase 1/4</div>
             </div>
         </div>
     </div>
@@ -337,12 +345,12 @@
         <!-- ===== POSITIONEN TAB ===== -->
         <div id="positions" class="tab-content">
             <div style="margin-bottom: 20px;">
-                <h2 style="margin-bottom: 8px; font-size: 32px; font-weight: 700;">📊 Portfolio Analyse</h2>
+                <h2 style="margin-bottom: 8px; font-size: 32px; font-weight: 700;">Portfolio Analyse</h2>
                 <p style="color: #94a3b8; font-size: 14px; margin: 0;">Offene & geschlossene Positionen mit Live-Gewichtung</p>
             </div>
 
             <!-- ===== PORTFOLIO STATS ===== -->
-            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 32px;">
+            <div class="stat-grid-4">
                 <!-- Euro in Positionen -->
                 <div class="dashboard-stat" style="background: linear-gradient(135deg, rgba(236, 72, 153, 0.1) 0%, rgba(236, 72, 153, 0.05) 100%); border: 1px solid rgba(236, 72, 153, 0.2); border-radius: 14px; padding: 20px; backdrop-filter: blur(10px);">
                     <div style="color: #64748b; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600; margin-bottom: 12px;">Portfolio Exposure</div>
@@ -370,7 +378,7 @@
 
             <!-- ===== PORTFOLIO COMPOSITION ===== -->
             <div style="margin-bottom: 40px;">
-                <h3 style="font-size: 18px; font-weight: 600; margin-bottom: 20px;">📊 Portfolio Gewichtung</h3>
+                <h3 style="font-size: 18px; font-weight: 600; margin-bottom: 20px;">Portfolio Gewichtung</h3>
                 <div style="background: linear-gradient(135deg, rgba(168, 85, 247, 0.05) 0%, rgba(59, 130, 246, 0.05) 100%); border: 1px solid rgba(168, 85, 247, 0.1); border-radius: 16px; padding: 32px; backdrop-filter: blur(10px);">
                     <!-- Stacked Bar Chart -->
                     <div style="margin-bottom: 28px;">
@@ -426,7 +434,7 @@
 
             <!-- ===== GESCHLOSSENE POSITIONEN ===== -->
             <div style="margin-top: 60px; position: relative; min-height: 300px;">
-                <h3 style="font-size: 20px; font-weight: 600; color: #f1f5f9; margin-bottom: 30px;">📊 Geschlossene Positionen</h3>
+                <h3 style="font-size: 20px; font-weight: 600; color: #f1f5f9; margin-bottom: 30px;">Geschlossene Positionen</h3>
                 <div class="positions-container" id="closedPositionsContainer"></div>
                 <div id="noClosedPositions" style="text-align: center; padding: 40px 20px; color: #64748b;">
                     <p style="font-size: 14px;">Noch keine Positionen geschlossen</p>
@@ -467,12 +475,12 @@
         <!-- ===== CALENDAR TAB ===== -->
         <div id="calendar" class="tab-content">
             <div style="margin-bottom: 32px;">
-                <h2 style="margin-bottom: 8px; font-size: 32px; font-weight: 700;">📅 P&L-Kalender</h2>
+                <h2 style="margin-bottom: 8px; font-size: 32px; font-weight: 700;">P&L-Kalender</h2>
                 <p style="color: #94a3b8; font-size: 14px; margin: 0;">Tägliche & monatliche Performance-Analyse mit historischen Daten</p>
             </div>
 
             <!-- PnL Calendar Stats Section -->
-            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 32px;">
+            <div class="stat-grid">
                 <!-- Total P&L -->
                 <div class="dashboard-stat" style="background: linear-gradient(135deg, rgba(16, 185, 129, 0.1) 0%, rgba(16, 185, 129, 0.05) 100%); border: 1px solid rgba(16, 185, 129, 0.2); border-radius: 14px; padding: 20px; backdrop-filter: blur(10px);">
                     <div style="color: #64748b; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600; margin-bottom: 12px;">Total P&L</div>
@@ -514,8 +522,8 @@
 
             <!-- Calendar Controls -->
             <div style="display: flex; gap: 12px; margin-bottom: 28px; align-items: center;">
-                <button class="calendar-btn premium-btn active" data-view="daily" style="background: linear-gradient(135deg, #9333ea 0%, #8b5cf6 100%); border: none; color: white; padding: 12px 24px; border-radius: 10px; font-weight: 600; font-size: 14px; cursor: pointer; transition: all 0.3s ease;">📆 Täglich</button>
-                <button class="calendar-btn premium-btn" data-view="monthly" style="background: rgba(168, 85, 247, 0.1); border: 1px solid rgba(168, 85, 247, 0.2); color: #cbd5e1; padding: 12px 24px; border-radius: 10px; font-weight: 600; font-size: 14px; cursor: pointer; transition: all 0.3s ease;">📊 Monatlich</button>
+                <button class="calendar-btn filter-btn active" data-view="daily">📆 Täglich</button>
+                <button class="calendar-btn filter-btn" data-view="monthly">📊 Monatlich</button>
                 <div style="flex: 1;"></div>
                 <div style="color: #94a3b8; font-size: 12px; font-weight: 500; text-transform: uppercase;">
                     <span id="calendarTradeCount">0</span> Trades • <span id="calendarTradingDays">0</span> Tage
@@ -538,7 +546,7 @@
         <!-- ===== ROADMAP TAB ===== -->
         <div id="roadmap" class="tab-content">
             <div style="margin-bottom: 40px;">
-                <h2 style="margin-bottom: 8px; font-size: 32px; font-weight: 700;">📍 Product Roadmap</h2>
+                <h2 style="margin-bottom: 8px; font-size: 32px; font-weight: 700;">Product Roadmap</h2>
                 <p style="color: #94a3b8; font-size: 14px; margin: 0;">CapitalFlow Development Phases • 6/17 Features Complete</p>
             </div>
 
@@ -832,6 +840,8 @@
         </div>
     </div>
 
+    <!-- Zugangsschluessel zuerst laden - app.js braucht die Liste -->
+    <script src="js/keys.js"></script>
     <script src="js/app.js"></script>
 </body>
 </html>

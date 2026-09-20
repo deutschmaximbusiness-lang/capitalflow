@@ -1,4 +1,3 @@
-
 /* ===== ANIMATIONS ===== */
 @keyframes fadeInUp {
     from {
@@ -120,12 +119,81 @@
     left: 0;
     width: 100%;
     height: 100%;
-    background: linear-gradient(135deg, rgba(10, 10, 21, 0.95) 0%, rgba(15, 15, 30, 0.98) 100%);
-    backdrop-filter: blur(20px);
+    /* Gleicher Aufbau wie das Banner: Grundverlauf, feines Raster,
+       violetter Schein mittig, rosa Schein unten rechts */
+    background-color: #06040d;
+    background-image:
+        radial-gradient(ellipse 42% 62% at 50% 46%,
+            rgba(168, 85, 247, 0.13) 0%,
+            rgba(124, 58, 237, 0.04) 60%,
+            rgba(124, 58, 237, 0) 100%),
+        radial-gradient(ellipse 30% 45% at 80% 85%,
+            rgba(236, 72, 153, 0.07) 0%,
+            rgba(236, 72, 153, 0) 100%),
+        repeating-linear-gradient(
+            to right,
+            rgba(168, 85, 247, 0.028) 0 1px,
+            transparent 1px 48px),
+        repeating-linear-gradient(
+            to bottom,
+            rgba(168, 85, 247, 0.028) 0 1px,
+            transparent 1px 48px),
+        linear-gradient(135deg, #0b0515 0%, #06040d 55%, #030208 100%);
     display: flex;
     justify-content: center;
     align-items: center;
     z-index: 9999;
+}
+
+/* Der Lichtkegel legt ein helleres Raster frei, statt nur zu leuchten.
+   Die Linien sitzen im selben 48px-Takt wie im Hintergrund, dadurch
+   liegen sie exakt uebereinander und wirken wie dieselben Linien.
+   Position kommt aus --mx/--my, die von app.js gesetzt werden. */
+.login-screen::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background-image:
+        repeating-linear-gradient(
+            to right,
+            rgba(216, 180, 254, 0.14) 0 1px,
+            transparent 1px 48px),
+        repeating-linear-gradient(
+            to bottom,
+            rgba(216, 180, 254, 0.14) 0 1px,
+            transparent 1px 48px),
+        radial-gradient(
+            220px circle at var(--mx, 50%) var(--my, 50%),
+            rgba(168, 85, 247, 0.05) 0%,
+            rgba(168, 85, 247, 0) 70%);
+    -webkit-mask-image: radial-gradient(
+        190px circle at var(--mx, 50%) var(--my, 50%),
+        #000 0%, rgba(0, 0, 0, 0.4) 40%, transparent 75%);
+    mask-image: radial-gradient(
+        190px circle at var(--mx, 50%) var(--my, 50%),
+        #000 0%, rgba(0, 0, 0, 0.4) 40%, transparent 75%);
+    opacity: 0;
+    transition: opacity 0.5s ease;
+    pointer-events: none;
+}
+
+.login-screen.spotlight-on::before {
+    opacity: 1;
+}
+
+/* Lichtkante am unteren Rand, wie im Banner */
+.login-screen::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    bottom: 0;
+    width: 100%;
+    height: 3px;
+    background: linear-gradient(to right,
+        rgba(168, 85, 247, 0) 0%,
+        rgba(168, 85, 247, 0.3) 50%,
+        rgba(168, 85, 247, 0) 100%);
+    pointer-events: none;
 }
 
 .login-screen.hidden {
@@ -133,8 +201,9 @@
 }
 
 .login-container {
-    background: linear-gradient(135deg, rgba(10, 10, 21, 0.9) 0%, rgba(15, 15, 30, 0.95) 100%);
-    border: 1px solid rgba(168, 85, 247, 0.1);
+    position: relative;
+    background: linear-gradient(135deg, rgba(10, 10, 21, 0.88) 0%, rgba(15, 15, 30, 0.94) 100%);
+    border: 1px solid rgba(168, 85, 247, 0.18);
     border-radius: 20px;
     padding: 40px 32px;
     max-width: 380px;
@@ -742,6 +811,8 @@ body::before {
 .navbar-content {
     display: flex;
     align-items: center;
+    justify-content: space-between;
+    gap: 16px;
     width: 100%;
 }
 
@@ -783,23 +854,38 @@ body::before {
 
 .navbar-title {
     font-size: 20px;
-    font-weight: 700;
+    font-weight: 800;
     letter-spacing: -0.5px;
-    background: linear-gradient(135deg, #d8b4fe 0%, #c084fc 50%, #a855f7 100%);
+    color: #d8b4fe;
+    transition: all 0.4s ease;
+    line-height: 1.1;
+    -webkit-font-smoothing: antialiased;
+}
+
+/* "Flow" im Verlauf - gleiche Farben wie im Login */
+.navbar-title-accent {
+    font-weight: 800;
+    background: linear-gradient(135deg, #c084fc 0%, #f472b6 100%);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
-    transition: all 0.4s ease;
-    line-height: 1.1;
+}
+
+/* Volltonfarbe statt Verlauf: bei 11px ist ein Verlauf nicht
+   erkennbar und laesst den Text durch das andere Antialiasing
+   nur duenner und blasser wirken */
+.navbar-subtitle-accent {
+    color: #c084fc;
+    font-weight: 700;
 }
 
 .navbar-subtitle {
     font-size: 11px;
     font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 1.2px;
-    color: #94a3b8;
+    letter-spacing: 0.2px;
+    color: #64748b;
     transition: all 0.4s ease;
+    white-space: nowrap;
 }
 
 .navbar-phase {
@@ -808,19 +894,24 @@ body::before {
     letter-spacing: 0.8px;
     color: #a855f7;
     font-weight: 700;
-    margin-top: 2px;
     transition: all 0.4s ease;
+    /* steht jetzt rechts in der Navbar, nicht mehr unter dem Logo */
+    flex-shrink: 0;
+    padding: 7px 14px;
+    border-radius: 999px;
+    background: rgba(168, 85, 247, 0.1);
+    border: 1px solid rgba(168, 85, 247, 0.25);
+    white-space: nowrap;
 }
 
-.navbar-logo-section:hover .navbar-phase {
+.navbar-phase:hover {
     color: #d8b4fe;
+    border-color: rgba(168, 85, 247, 0.5);
+    background: rgba(168, 85, 247, 0.18);
 }
 
 .navbar-logo-section:hover .navbar-title {
-    background: linear-gradient(135deg, #f3e8ff 0%, #e9d5ff 50%, #d8b4fe 100%);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
+    color: #f3e8ff;
     filter: brightness(1.1);
 }
 
@@ -958,13 +1049,13 @@ h3 {
 .form-group select {
     color-scheme: dark;
     background-color: rgba(15, 15, 30, 0.8);
-    font-family: 'Segoe UI', 'Helvetica Neue', sans-serif;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
 }
 
 .form-group select option {
     background: var(--card-bg);
     color: #e2e8f0;
-    font-family: 'Segoe UI', 'Helvetica Neue', sans-serif;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
 }
 
 .form-group input:focus,
@@ -1098,7 +1189,7 @@ h3 {
     background: rgba(168, 85, 247, 0.05);
     border-radius: 12px;
     border: 1px solid rgba(168, 85, 247, 0.15);
-    font-family: 'Segoe UI', 'Helvetica Neue', sans-serif;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
 }
 
 .filter-btn {
@@ -1108,11 +1199,11 @@ h3 {
     color: #cbd5e1;
     border-radius: 8px;
     cursor: pointer;
-    font-weight: 600;
+    font-weight: 700;
     font-size: 13px;
-    font-family: 'Segoe UI', 'Helvetica Neue', sans-serif;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
     transition: all 0.3s ease;
-    letter-spacing: 0.5px;
+    letter-spacing: 0.2px;
 }
 
 .filter-btn:hover {
@@ -1383,30 +1474,7 @@ h3 {
     margin-bottom: 30px;
 }
 
-.calendar-btn {
-    padding: 10px 20px;
-    background: rgba(94, 109, 241, 0.1);
-    border: 1px solid rgba(94, 109, 241, 0.2);
-    color: #cbd5e1;
-    border-radius: 8px;
-    cursor: pointer;
-    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-    font-weight: 600;
-    font-size: 13px;
-    transition: all 0.35s cubic-bezier(0.23, 1, 0.32, 1);
-}
-
-.calendar-btn:hover {
-    border-color: rgba(94, 109, 241, 0.4);
-    background: rgba(94, 109, 241, 0.15);
-}
-
-.calendar-btn.active {
-    background: linear-gradient(135deg, rgba(168, 85, 247, 0.2) 0%, rgba(236, 72, 153, 0.1) 100%);
-    border: 1px solid rgba(168, 85, 247, 0.4);
-    color: #e2e8f0;
-    box-shadow: 0 8px 24px rgba(168, 85, 247, 0.25), 0 0 20px rgba(168, 85, 247, 0.15);
-}
+/* .calendar-btn nutzt jetzt .filter-btn - eigene Regeln entfernt */
 
 .calendar-grid-daily,
 .calendar-grid-weekly,
@@ -1912,6 +1980,259 @@ h3 {
 }
 
 /* ===== TOAST ===== */
+/* ===== STAT GRID =====
+   Feste Spaltenzahl statt auto-fit: sonst rutscht bei 6 Karten
+   die letzte allein in eine eigene Zeile. */
+.stat-grid {
+    display: grid;
+    gap: 16px;
+    margin-bottom: 32px;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+/* Variante fuer vier Karten: 4 nebeneinander, dann 2x2 */
+.stat-grid-4 {
+    display: grid;
+    gap: 16px;
+    margin-bottom: 32px;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+@media (max-width: 1100px) {
+    .stat-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+    .stat-grid-4 {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+@media (max-width: 640px) {
+    .stat-grid,
+    .stat-grid-4 {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* ===== NEUER KEY IM ADMIN-PANEL ===== */
+.newkey-card {
+    background: linear-gradient(135deg, rgba(20, 12, 38, 0.9) 0%, rgba(12, 7, 24, 0.95) 100%);
+    border: 1px solid rgba(168, 85, 247, 0.25);
+    border-radius: 14px;
+    padding: 24px;
+}
+
+.newkey-warn {
+    background: rgba(251, 146, 60, 0.1);
+    border: 1px solid rgba(251, 146, 60, 0.3);
+    color: #fb923c;
+    border-radius: 10px;
+    padding: 12px 16px;
+    font-size: 13px;
+    font-weight: 600;
+    margin-bottom: 22px;
+}
+
+.newkey-label {
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    color: #64748b;
+    margin-bottom: 8px;
+}
+
+.newkey-value {
+    font-family: 'Courier New', monospace;
+    font-size: 19px;
+    font-weight: 700;
+    color: #34d399;
+    background: rgba(16, 185, 129, 0.08);
+    border: 1px solid rgba(16, 185, 129, 0.25);
+    border-radius: 10px;
+    padding: 14px 16px;
+    word-break: break-all;
+    user-select: all;
+}
+
+.newkey-code {
+    font-family: 'Courier New', monospace;
+    font-size: 12px;
+    color: #cbd5e1;
+    background: rgba(0, 0, 0, 0.35);
+    border: 1px solid rgba(168, 85, 247, 0.2);
+    border-radius: 10px;
+    padding: 14px 16px;
+    word-break: break-all;
+    user-select: all;
+    line-height: 1.6;
+}
+
+.newkey-btn {
+    margin-top: 10px;
+}
+
+.newkey-steps {
+    margin-top: 22px;
+    padding-top: 18px;
+    border-top: 1px solid rgba(168, 85, 247, 0.15);
+    font-size: 13px;
+    color: #94a3b8;
+    line-height: 1.7;
+}
+
+.newkey-steps code {
+    background: rgba(168, 85, 247, 0.15);
+    padding: 2px 6px;
+    border-radius: 4px;
+    color: #d8b4fe;
+    font-size: 12px;
+}
+
+/* ===== SESSION-ANZEIGE IN DER NAVBAR ===== */
+.navbar-right {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-shrink: 0;
+}
+
+.session-badge {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 7px 14px;
+    border-radius: 999px;
+    background: rgba(16, 185, 129, 0.08);
+    border: 1px solid rgba(16, 185, 129, 0.25);
+    font-size: 11px;
+    font-weight: 700;
+    white-space: nowrap;
+    transition: all 0.3s ease;
+}
+
+.session-badge:hover {
+    background: rgba(16, 185, 129, 0.14);
+    border-color: rgba(16, 185, 129, 0.45);
+}
+
+.session-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: #10b981;
+    box-shadow: 0 0 9px rgba(16, 185, 129, 0.9);
+    flex-shrink: 0;
+    animation: sessionPulse 2.4s ease-in-out infinite;
+}
+
+@keyframes sessionPulse {
+    0%, 100% { opacity: 1; }
+    50%      { opacity: 0.45; }
+}
+
+.session-name {
+    color: #34d399;
+}
+
+.session-sep {
+    color: rgba(52, 211, 153, 0.4);
+}
+
+.session-key {
+    color: #64748b;
+    font-weight: 600;
+    letter-spacing: 0.3px;
+}
+
+@media (max-width: 980px) {
+    .session-key,
+    .session-sep {
+        display: none;
+    }
+}
+
+@media (max-width: 640px) {
+    .session-badge {
+        padding: 6px 10px;
+        font-size: 10px;
+    }
+}
+
+/* ===== BEGRUESSUNG NACH DEM LOGIN ===== */
+.welcome-note {
+    position: fixed;
+    top: 96px;
+    left: 50%;
+    z-index: 5000;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 14px 26px;
+    border-radius: 999px;
+    background: linear-gradient(135deg, rgba(20, 12, 38, 0.94) 0%, rgba(12, 7, 24, 0.96) 100%);
+    border: 1px solid rgba(168, 85, 247, 0.28);
+    box-shadow: 0 18px 50px rgba(0, 0, 0, 0.45),
+                0 0 34px rgba(168, 85, 247, 0.18);
+    backdrop-filter: blur(20px);
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    font-size: 15px;
+    font-weight: 600;
+    color: #94a3b8;
+    white-space: nowrap;
+    pointer-events: none;
+    transform: translate(-50%, -14px);
+    opacity: 0;
+    animation: welcomeIn 0.5s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+.welcome-note.leaving {
+    animation: welcomeOut 0.45s ease forwards;
+}
+
+.welcome-note-name {
+    font-weight: 800;
+    background: linear-gradient(135deg, #c084fc 0%, #f472b6 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.welcome-note-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: #10b981;
+    box-shadow: 0 0 10px rgba(16, 185, 129, 0.8);
+    flex-shrink: 0;
+}
+
+@keyframes welcomeIn {
+    from { opacity: 0; transform: translate(-50%, -14px); }
+    to   { opacity: 1; transform: translate(-50%, 0); }
+}
+
+@keyframes welcomeOut {
+    from { opacity: 1; transform: translate(-50%, 0); }
+    to   { opacity: 0; transform: translate(-50%, -12px); }
+}
+
+@media (max-width: 640px) {
+    .welcome-note {
+        top: 84px;
+        font-size: 13px;
+        padding: 12px 20px;
+    }
+}
+
+/* ===== BEGRUESSUNG ENDE ===== */
+
+.toast-error {
+    background: #ef4444 !important;
+    box-shadow: 0 0 25px rgba(239, 68, 68, 0.4), 0 10px 35px rgba(239, 68, 68, 0.2) !important;
+    border: 1px solid rgba(239, 68, 68, 0.5) !important;
+}
+
 .toast {
     position: fixed;
     bottom: 30px;
@@ -2520,7 +2841,7 @@ h3 {
     color: #e2e8f0;
     padding: 12px 16px;
     border-radius: 10px;
-    font-family: 'Segoe UI', 'Helvetica Neue', sans-serif;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
     font-size: 14px;
     cursor: pointer;
     transition: all 0.3s ease;
@@ -2580,7 +2901,7 @@ h3 {
     transition: all 0.2s ease;
     border-left: 3px solid transparent;
     font-size: 14px;
-    font-family: 'Segoe UI', 'Helvetica Neue', sans-serif;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
 }
 
 .custom-option:hover {
@@ -2928,8 +3249,15 @@ h3 {
         font-size: 18px;
     }
 
-    .navbar-subtitle, .navbar-phase {
+    /* Slogan ist zu lang fuer schmale Navbars */
+    .navbar-subtitle {
+        display: none;
+    }
+
+    .navbar-phase {
         font-size: 9px;
+        padding: 5px 10px;
+        letter-spacing: 0.4px;
     }
 
     .container {

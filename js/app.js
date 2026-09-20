@@ -1,3 +1,145 @@
+// ===== SHA-256 =====
+// Eigene Umsetzung statt crypto.subtle: das steht nur in sicheren Kontexten
+// zur Verfuegung und faellt weg, sobald die Datei per Doppelklick
+// (file://) geoeffnet wird.
+function sha256Hex(message) {
+    const K = [
+        0x428a2f98,0x71374491,0xb5c0fbcf,0xe9b5dba5,0x3956c25b,0x59f111f1,
+        0x923f82a4,0xab1c5ed5,0xd807aa98,0x12835b01,0x243185be,0x550c7dc3,
+        0x72be5d74,0x80deb1fe,0x9bdc06a7,0xc19bf174,0xe49b69c1,0xefbe4786,
+        0x0fc19dc6,0x240ca1cc,0x2de92c6f,0x4a7484aa,0x5cb0a9dc,0x76f988da,
+        0x983e5152,0xa831c66d,0xb00327c8,0xbf597fc7,0xc6e00bf3,0xd5a79147,
+        0x06ca6351,0x14292967,0x27b70a85,0x2e1b2138,0x4d2c6dfc,0x53380d13,
+        0x650a7354,0x766a0abb,0x81c2c92e,0x92722c85,0xa2bfe8a1,0xa81a664b,
+        0xc24b8b70,0xc76c51a3,0xd192e819,0xd6990624,0xf40e3585,0x106aa070,
+        0x19a4c116,0x1e376c08,0x2748774c,0x34b0bcb5,0x391c0cb3,0x4ed8aa4a,
+        0x5b9cca4f,0x682e6ff3,0x748f82ee,0x78a5636f,0x84c87814,0x8cc70208,
+        0x90befffa,0xa4506ceb,0xbef9a3f7,0xc67178f2];
+
+    let H = [0x6a09e667,0xbb67ae85,0x3c6ef372,0xa54ff53a,
+             0x510e527f,0x9b05688c,0x1f83d9ab,0x5be0cd19];
+
+    // UTF-8 kodieren
+    const bytes = [];
+    for (const ch of unescape(encodeURIComponent(message))) {
+        bytes.push(ch.charCodeAt(0));
+    }
+
+    const bitLen = bytes.length * 8;
+    bytes.push(0x80);
+    while (bytes.length % 64 !== 56) bytes.push(0);
+    for (let i = 7; i >= 0; i--) {
+        bytes.push((i < 4 ? Math.floor(bitLen / Math.pow(2, 8 * i)) : 0) & 0xff);
+    }
+
+    const rotr = (x, n) => (x >>> n) | (x << (32 - n));
+
+    for (let pos = 0; pos < bytes.length; pos += 64) {
+        const w = new Array(64);
+        for (let i = 0; i < 16; i++) {
+            w[i] = (bytes[pos + i*4] << 24) | (bytes[pos + i*4 + 1] << 16) |
+                   (bytes[pos + i*4 + 2] << 8) | bytes[pos + i*4 + 3];
+        }
+        for (let i = 16; i < 64; i++) {
+            const s0 = rotr(w[i-15],7) ^ rotr(w[i-15],18) ^ (w[i-15] >>> 3);
+            const s1 = rotr(w[i-2],17) ^ rotr(w[i-2],19) ^ (w[i-2] >>> 10);
+            w[i] = (w[i-16] + s0 + w[i-7] + s1) | 0;
+        }
+        let [a,b,c,d,e,f,g,h] = H;
+        for (let i = 0; i < 64; i++) {
+            const S1 = rotr(e,6) ^ rotr(e,11) ^ rotr(e,25);
+            const ch = (e & f) ^ (~e & g);
+            const t1 = (h + S1 + ch + K[i] + w[i]) | 0;
+            const S0 = rotr(a,2) ^ rotr(a,13) ^ rotr(a,22);
+            const maj = (a & b) ^ (a & c) ^ (b & c);
+            const t2 = (S0 + maj) | 0;
+            h = g; g = f; f = e; e = (d + t1) | 0;
+            d = c; c = b; b = a; a = (t1 + t2) | 0;
+        }
+        H = H.map((v, i) => (v + [a,b,c,d,e,f,g,h][i]) | 0);
+    }
+
+    return H.map(v => (v >>> 0).toString(16).padStart(8, '0')).join('');
+}
+
+function sha256Hex_selftest() {
+    return sha256Hex('abc') ===
+        'ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad';
+}
+
+// ===== DATENTRENNUNG PRO ACCESS KEY =====
+// Jeder Key bekommt seinen eigenen Datenbestand. Statt jeden einzelnen
+// localStorage-Aufruf umzuschreiben, wird hier einmal zentral ein Suffix
+// an die Datenschluessel gehaengt: 'trades' wird zu 'trades::CF-XXXX'.
+// Fuer den restlichen Code aendert sich dadurch nichts.
+(function scopeStoragePerUser() {
+    // Nur diese Schluessel werden getrennt. Anmeldedaten bleiben global,
+    // sonst koennte sich niemand mehr einloggen.
+    const DATA_KEYS = ['trades', 'positions', 'closedPositions'];
+    const CURRENT = 'capitalflow_current_key';
+
+    const raw = {
+        get: localStorage.getItem.bind(localStorage),
+        set: localStorage.setItem.bind(localStorage),
+        remove: localStorage.removeItem.bind(localStorage)
+    };
+
+    // Rohzugriff ohne Trennung - wird fuer Migration und Export gebraucht
+    window.cfRawStorage = raw;
+
+    function scoped(key) {
+        if (!DATA_KEYS.includes(key)) return key;
+        const user = raw.get(CURRENT);
+        // Ohne angemeldeten Key gibt es keinen gueltigen Ablageort
+        if (!user) return null;
+        return key + '::' + user;
+    }
+
+    // Am Prototyp ueberschreiben, nicht am Objekt selbst: eine direkte
+    // Zuweisung auf localStorage legt dort einen sichtbaren Eintrag an,
+    // der beim Durchlaufen des Speichers als Datensatz erscheint.
+    const proto = Object.getPrototypeOf(localStorage);
+    function override(name, fn) {
+        Object.defineProperty(proto, name, {
+            value: fn, writable: true, configurable: true, enumerable: false
+        });
+    }
+
+    override('getItem', function (key) {
+        const k = scoped(key);
+        return k === null ? null : raw.get(k);
+    });
+    override('setItem', function (key, val) {
+        const k = scoped(key);
+        // Vor dem Login nicht schreiben - sonst landen Daten in einem
+        // Topf, den spaeter jeder Key sehen wuerde
+        if (k === null) return;
+        return raw.set(k, val);
+    });
+    override('removeItem', function (key) {
+        const k = scoped(key);
+        if (k === null) return;
+        return raw.remove(k);
+    });
+
+    // Einmalige Uebernahme: Daten aus der Zeit vor der Trennung gehoeren
+    // dem ersten Key, der sich danach anmeldet.
+    window.cfClaimLegacyData = function (userKey) {
+        if (raw.get('capitalflow_legacy_claimed')) return false;
+        let moved = false;
+        DATA_KEYS.forEach(function (k) {
+            const old = raw.get(k);
+            const target = k + '::' + userKey;
+            if (old && old !== '[]' && !raw.get(target)) {
+                raw.set(target, old);
+                raw.remove(k);
+                moved = true;
+            }
+        });
+        raw.set('capitalflow_legacy_claimed', 'true');
+        return moved;
+    };
+})();
 
 // ===== COUNTDOWN TIMER ===== 
 function initCountdownTimer() {
@@ -25,20 +167,14 @@ function initCountdownTimer() {
 // ===== TRADING JOURNAL APP =====
 
 // ===== LOGIN SYSTEM =====
-const ADMIN_KEY = 'Maxim1707';
+// Der Admin-Key steht nicht mehr im Klartext hier, sondern nur
+// als Hash in js/keys.js
 
 function generateUserKey() {
     return 'CF-' + Math.random().toString(36).substr(2, 16).toUpperCase();
 }
 
-function getAllUserKeys() {
-    const keys = JSON.parse(localStorage.getItem('capitalflow_user_keys')) || {};
-    return keys;
-}
-
-function saveUserKeys(keys) {
-    localStorage.setItem('capitalflow_user_keys', JSON.stringify(keys));
-}
+// Keys liegen jetzt als Hash-Liste in js/keys.js, nicht mehr im Browser.
 
 function initLoginSystem() {
     const loginScreen = document.getElementById('loginScreen');
@@ -57,6 +193,13 @@ function initLoginSystem() {
     const adminUserNameInput = document.getElementById('adminUserNameInput');
     
     // Check if logged in
+    // Sitzung ohne aktiven Key stammt aus der Zeit vor der Datentrennung -
+    // in dem Fall neu anmelden lassen, sonst waere unklar, wem die Daten gehoeren
+    if (localStorage.getItem('capitalflow_logged_in') === 'true' &&
+        !window.cfRawStorage.get('capitalflow_current_key')) {
+        localStorage.removeItem('capitalflow_logged_in');
+    }
+
     const isLoggedIn = localStorage.getItem('capitalflow_logged_in') === 'true';
     const isAdminLoggedIn = sessionStorage.getItem('capitalflow_admin_logged_in') === 'true';
     
@@ -68,6 +211,7 @@ function initLoginSystem() {
         navbar.style.display = 'flex';
         sidebar.style.display = 'block';
         container.style.display = 'block';
+        renderSessionBadge();
     } else if (isAdminLoggedIn) {
         // Admin logged in - show admin panel only
         loginScreen.classList.add('hidden');
@@ -94,7 +238,9 @@ function initLoginSystem() {
         }
 
         // Admin-Key erkannt -> direkt ins Admin Panel
-        if (enteredKey === ADMIN_KEY) {
+        const enteredHash = sha256Hex(enteredKey);
+
+        if (enteredHash === ADMIN_KEY_HASH) {
             loginKeyInput.value = '';
             loginScreen.classList.add('hidden');
             adminPanel.classList.remove('hidden');
@@ -102,14 +248,29 @@ function initLoginSystem() {
             sidebar.style.display = 'none';
             container.style.display = 'none';
             sessionStorage.setItem('capitalflow_admin_logged_in', 'true');
+            // Admin hat keine eigenen Trades - aktiven Key freigeben,
+            // sonst wirkt im Hintergrund noch der vorherige Nutzer
+            window.cfRawStorage.remove('capitalflow_current_key');
+            window.cfRawStorage.remove('capitalflow_current_name');
+            localStorage.removeItem('capitalflow_logged_in');
             renderKeysList();
             return;
         }
 
-        const userKeys = getAllUserKeys();
-        const keyExists = Object.values(userKeys).some(k => k.key === enteredKey);
+        // Gegen die Hash-Liste aus js/keys.js pruefen. Dadurch gilt ein Key
+        // in JEDEM Browser, der die Datei laedt - nicht nur in dem, in dem
+        // er erzeugt wurde.
+        const matched = (typeof AUTHORIZED_KEYS !== 'undefined'
+            ? AUTHORIZED_KEYS : []).find(k => k.hash === enteredHash);
+        const keyExists = Boolean(matched);
         
         if (keyExists) {
+            // Aktiven Key setzen, bevor irgendwelche Daten gelesen werden
+            window.cfRawStorage.set('capitalflow_current_key', enteredKey);
+            window.cfRawStorage.set('capitalflow_current_name',
+                                    (matched && matched.name) || 'Verbunden');
+            window.cfClaimLegacyData(enteredKey);
+
             // Fade out login screen
             loginScreen.style.opacity = '0';
             loginScreen.style.transition = 'opacity 0.4s ease';
@@ -125,6 +286,24 @@ function initLoginSystem() {
                 navbar.classList.add('app-enter');
                 sidebar.classList.add('app-enter');
                 container.classList.add('app-enter');
+
+                // Alle Ansichten fuer DIESEN Key neu aufbauen. Ohne das
+                // bliebe stehen, was beim Seitenaufbau gerendert wurde.
+                // Einzeln abgesichert: faellt eine Ansicht aus, laufen die
+                // anderen trotzdem durch.
+                [loadTrades, loadPositions, loadDashboard,
+                 loadAnalytics, loadCalendar].forEach((fn) => {
+                    try {
+                        if (typeof fn === 'function') fn();
+                    } catch (err) {
+                        console.error('Ansicht konnte nicht geladen werden:', err);
+                    }
+                });
+
+                // Wer schon Trades hat, ist kein Neuzugang
+                const existing = JSON.parse(localStorage.getItem('trades')) || [];
+                showWelcome(matched && matched.name, existing.length > 0);
+                renderSessionBadge();
             }, 400);
         } else {
             showToast('Invalid key! Contact your admin.', 'error');
@@ -146,6 +325,8 @@ function initLoginSystem() {
         container.style.display = 'none';
         normalLoginForm.style.display = 'flex';
         loginKeyInput.value = '';
+        // Neu laden, damit kein Zustand aus der Admin-Sitzung haengen bleibt
+        window.location.reload();
     });
     
     // Navbar logout button
@@ -158,61 +339,90 @@ function initLoginSystem() {
     
     // Generate new key
     generateNewKeyBtn.addEventListener('click', () => {
-        const userName = adminUserNameInput.value.trim() || 'User ' + Date.now();
+        const userName = adminUserNameInput.value.trim();
+        if (!userName) {
+            showToast('❌ Bitte einen Namen eingeben!', 'error');
+            return;
+        }
+
         const newKey = generateUserKey();
-        
-        const userKeys = getAllUserKeys();
-        userKeys[Date.now()] = {
-            name: userName,
-            key: newKey,
-            createdAt: new Date().toLocaleString('de-DE')
-        };
-        
-        saveUserKeys(userKeys);
+        const hash = sha256Hex(newKey);
+        const today = new Date().toISOString().slice(0, 10);
+
+        // Der Key wird bewusst NICHT gespeichert - nur hier einmal
+        // angezeigt. Gespeichert wird allein der Hash, und zwar von Hand
+        // in js/keys.js.
+        renderNewKeyResult(userName, newKey, hash, today);
         adminUserNameInput.value = '';
-        renderKeysList();
         showToast('Key generated! ✅', 'success');
     });
 }
 
-function renderKeysList() {
-    const keysList = document.getElementById('keysList');
-    const userKeys = getAllUserKeys();
-    
-    if (Object.keys(userKeys).length === 0) {
-        keysList.innerHTML = '<p style="color: #94a3b8; text-align: center; padding: 20px;">No keys generated yet</p>';
-        return;
-    }
-    
-    keysList.innerHTML = Object.entries(userKeys).map(([id, data]) => `
-        <div class="key-item">
-            <div class="key-item-info">
-                <div class="key-item-name">${data.name}</div>
-                <div class="key-item-key">${data.key}</div>
-                <div style="font-size: 11px; color: #64748b; margin-top: 4px;">Created: ${data.createdAt}</div>
-            </div>
-            <div class="key-item-actions">
-                <button class="key-btn-copy" onclick="copyToClipboard('${data.key}')">Copy</button>
-                <button class="key-btn-delete" onclick="deleteKey('${id}')">Delete</button>
-            </div>
-        </div>
-    `).join('');
+function renderNewKeyResult(name, key, hash, today) {
+    const box = document.getElementById('keysList');
+    if (!box) return;
+
+    const line = '    { name: "' + name + '", hash: "' + hash +
+                 '", added: "' + today + '" },';
+
+    box.innerHTML =
+      '<div class="newkey-card">' +
+        '<div class="newkey-warn">Der Key wird nur jetzt angezeigt. ' +
+        'Notiere ihn, bevor du das Panel verlaesst.</div>' +
+
+        '<div class="newkey-label">Key fuer ' + escapeHtml(name) + '</div>' +
+        '<div class="newkey-value">' + escapeHtml(key) + '</div>' +
+        '<button class="admin-btn-primary newkey-btn" ' +
+          'onclick="copyToClipboard(\'' + key + '\')">Key kopieren</button>' +
+
+        '<div class="newkey-label" style="margin-top:22px;">' +
+        'Diese Zeile in js/keys.js einfuegen</div>' +
+        '<div class="newkey-code">' + escapeHtml(line) + '</div>' +
+        '<button class="admin-btn-primary newkey-btn" ' +
+          'onclick="copyToClipboard(this.dataset.line)" ' +
+          'data-line="' + escapeHtml(line) + '">Zeile kopieren</button>' +
+
+        '<div class="newkey-steps">' +
+          '<strong>Danach:</strong> Zeile in <code>js/keys.js</code> in die ' +
+          'Liste <code>AUTHORIZED_KEYS</code> einfuegen, speichern, ' +
+          'committen und pushen. Erst dann funktioniert der Key.' +
+        '</div>' +
+      '</div>';
 }
 
+function renderKeysList() {
+    const box = document.getElementById('keysList');
+    if (!box) return;
+
+    const keys = (typeof AUTHORIZED_KEYS !== 'undefined') ? AUTHORIZED_KEYS : [];
+    if (keys.length === 0) {
+        box.innerHTML = '<p style="color:#94a3b8;text-align:center;padding:20px;">' +
+            'Noch keine Keys in js/keys.js eingetragen</p>';
+        return;
+    }
+
+    box.innerHTML = keys.map(function (k) {
+        return '<div class="key-item">' +
+            '<div class="key-item-info">' +
+              '<div class="key-item-name">' + escapeHtml(k.name) + '</div>' +
+              '<div class="key-item-key">Hash ' +
+                escapeHtml(String(k.hash).slice(0, 16)) + '…</div>' +
+              '<div style="font-size:11px;color:#64748b;margin-top:4px;">' +
+                'Eingetragen: ' + escapeHtml(k.added || '—') + '</div>' +
+            '</div>' +
+          '</div>';
+    }).join('');
+}
 function copyToClipboard(text) {
     navigator.clipboard.writeText(text).then(() => {
         showToast('Key copied! 📋', 'success');
     });
 }
 
-function deleteKey(id) {
-    if (confirm('Delete this key?')) {
-        const userKeys = getAllUserKeys();
-        delete userKeys[id];
-        saveUserKeys(userKeys);
-        renderKeysList();
-        showToast('Key deleted!', 'success');
-    }
+function deleteKey() {
+    // Keys werden nicht mehr im Browser verwaltet, sondern in js/keys.js.
+    showToast('Zugang entziehen: Zeile in js/keys.js loeschen und pushen',
+              'error');
 }
 
 // ===== LOGOUT MODAL =====
@@ -228,6 +438,9 @@ function cancelLogout() {
 
 function confirmLogout() {
     localStorage.removeItem('capitalflow_logged_in');
+    // Aktiven Key freigeben, sonst sieht der naechste Nutzer fremde Daten
+    window.cfRawStorage.remove('capitalflow_current_key');
+    window.cfRawStorage.remove('capitalflow_current_name');
     window.location.reload();
 }
 
@@ -554,6 +767,12 @@ function handleTabChange(tabId) {
     if (tabId === 'analytics') {
         setTimeout(() => loadAnalytics(), 100);
     }
+    if (tabId === 'journal') {
+        setTimeout(() => loadTrades(), 100);
+    }
+    if (tabId === 'positions') {
+        setTimeout(() => loadPositions(), 100);
+    }
 }
 
 function setupFilterButtons() {
@@ -724,7 +943,7 @@ function loadTrades() {
         <div class="trade-card">
             <div class="trade-header">
                 <div class="trade-ticker">
-                    ${trade.ticker}
+                    ${escapeHtml(trade.ticker)}
                     ${trade.leverage > 1 ? `<span class="trade-leverage-badge">${trade.leverage.toFixed(0)}x</span>` : ''}
                 </div>
                 <div class="trade-pnl ${trade.pnl > 0 ? 'profit' : 'loss'}">
@@ -759,7 +978,7 @@ function loadTrades() {
                 <span class="trade-detail-label">Datum</span>
                 <span class="trade-detail-value">${trade.date}</span>
             </div>
-            ${trade.notes ? `<div class="trade-detail"><span class="trade-detail-label">Notes</span><span class="trade-detail-value">${trade.notes}</span></div>` : ''}
+            ${trade.notes ? `<div class="trade-detail"><span class="trade-detail-label">Notes</span><span class="trade-detail-value">${escapeHtml(trade.notes)}</span></div>` : ''}
             ${trade.screenshot && trade.screenshot.trim() ? `<div class="trade-screenshot"><img src="${trade.screenshot}" alt="Trade Setup" onclick="openScreenshotModal('${trade.screenshot}')" style="cursor: pointer;"></div>` : ''}
             <button class="trade-delete" onclick="confirmDelete(${trade.id})">🗑️ Löschen</button>
         </div>
@@ -821,25 +1040,9 @@ function loadCalendar() {
             const view = btn.getAttribute('data-view');
             currentCalendarView = view;
             
-            // Update active state and styling
-            calendarBtns.forEach(b => {
-                b.classList.remove('active');
-                if (b.getAttribute('data-view') === 'daily') {
-                    b.style.background = 'rgba(168, 85, 247, 0.1)';
-                    b.style.border = '1px solid rgba(168, 85, 247, 0.2)';
-                    b.style.color = '#cbd5e1';
-                } else {
-                    b.style.background = 'rgba(168, 85, 247, 0.1)';
-                    b.style.border = '1px solid rgba(168, 85, 247, 0.2)';
-                    b.style.color = '#cbd5e1';
-                }
-            });
-            
-            // Active button styling
+            // Aktiven Button umschalten - Styling kommt aus .filter-btn/.active
+            calendarBtns.forEach(b => b.classList.remove('active'));
             btn.classList.add('active');
-            btn.style.background = 'linear-gradient(135deg, #9333ea 0%, #8b5cf6 100%)';
-            btn.style.border = 'none';
-            btn.style.color = 'white';
             
             // Render new calendar
             if (view === 'daily') renderDailyCalendar(trades, calendarContent);
@@ -1324,8 +1527,12 @@ function renderDashboardCharts(trades, stats) {
     }
     
     const status = tradeScore >= 75 ? 'Excellent' : tradeScore >= 50 ? 'Good' : tradeScore >= 25 ? 'Fair' : 'Improving';
-    document.getElementById('tradeScoreValue').textContent = tradeScore;
-    document.getElementById('tradeScoreStatus').textContent = status;
+    // Diese Elemente stammen aus einer aelteren Dashboard-Version und
+    // existieren im HTML nicht mehr - ohne Pruefung bricht die Funktion hier ab
+    const scoreValueEl = document.getElementById('tradeScoreValue');
+    const scoreStatusEl = document.getElementById('tradeScoreStatus');
+    if (scoreValueEl) scoreValueEl.textContent = tradeScore;
+    if (scoreStatusEl) scoreStatusEl.textContent = status;
     
     // Render Radar Chart
     if (window.tradeScoreChartInstance) window.tradeScoreChartInstance.destroy();
@@ -1967,7 +2174,7 @@ function renderCharts(trades, stats, winRateByDay, recentTrades) {
         recentTradesContainer.innerHTML = recentTrades.map(trade => `
             <div class="trade-card" style="margin-bottom: 12px;">
                 <div class="trade-header">
-                    <span class="trade-ticker">${trade.ticker}</span>
+                    <span class="trade-ticker">${escapeHtml(trade.ticker)}</span>
                     <span class="trade-pnl ${trade.pnl >= 0 ? 'positive' : 'negative'}">€${trade.pnl.toFixed(2)} ${trade.pnl >= 0 ? '+' : ''}${trade.pnlPercent.toFixed(1)}%</span>
                 </div>
                 <div class="trade-detail">
@@ -2014,6 +2221,7 @@ function loadPositions() {
             </div>
         `;
         updatePortfolioSummary();
+        displayClosedPositions();
         return;
     }
     
@@ -2023,7 +2231,7 @@ function loadPositions() {
             <div class="position-card" data-position-id="${idx}">
                 <div class="position-header">
                     <div>
-                        <div class="position-ticker">${pos.ticker}</div>
+                        <div class="position-ticker">${escapeHtml(pos.ticker)}</div>
                         <div class="position-entry">Entry: €${parseFloat(pos.entry).toFixed(2)}</div>
                     </div>
                 </div>
@@ -2040,7 +2248,7 @@ function loadPositions() {
                 </div>
                 
                 <div class="position-thesis">
-                    <strong>These:</strong> ${pos.thesis}
+                    <strong>These:</strong> ${escapeHtml(pos.thesis)}
                 </div>
                 
                 ${pos.screenshot ? `
@@ -2071,14 +2279,27 @@ function addPosition(event) {
         const thesis = document.getElementById('positionsThesis').value.trim();
         
         if (!ticker || !entry || !size || !thesis) {
-            showToast('❌ Alle Felder ausfüllen!');
+            showToast('❌ Alle Felder ausfüllen!', 'error');
+            return;
+        }
+        
+        const entryNum = parseFloat(entry);
+        const sizeNum = parseFloat(size);
+        
+        // Entry 0 wuerde beim Schliessen eine Division durch null ausloesen
+        if (isNaN(entryNum) || entryNum <= 0) {
+            showToast('❌ Entry Price muss groesser als 0 sein!', 'error');
+            return;
+        }
+        if (isNaN(sizeNum) || sizeNum <= 0) {
+            showToast('❌ Position Size muss groesser als 0 sein!', 'error');
             return;
         }
         
         const position = {
             ticker: ticker.toUpperCase(),
-            entry: parseFloat(entry),
-            size: parseFloat(size),
+            entry: entryNum,
+            size: sizeNum,
             thesis,
             screenshot: positionsScreenshotData,
             dateOpened: new Date().toISOString()
@@ -2097,7 +2318,7 @@ function addPosition(event) {
         showToast(`✅ Position ${ticker} geöffnet!`);
     } catch (error) {
         console.error('Fehler beim Öffnen der Position:', error);
-        showToast('❌ Fehler beim Öffnen der Position!');
+        showToast('❌ Fehler beim Öffnen der Position!', 'error');
     }
 }
 
@@ -2149,30 +2370,27 @@ function closePosition(idx) {
 }
 
 function confirmClosePositionModal() {
-    console.log('confirmClosePositionModal called, positionToClose:', positionToClose);
     
     if (positionToClose === null) return;
     
     const exitPriceInput = document.getElementById('modalExitPrice').value;
     const exitReason = document.getElementById('modalExitReason').value.trim();
     
-    console.log('exitPrice input:', exitPriceInput);
-    console.log('exitReason:', exitReason);
     
     // Validierung
     if (!exitPriceInput || exitPriceInput === '') {
-        showToast('❌ Exit Price erforderlich!');
+        showToast('❌ Exit Price erforderlich!', 'error');
         return;
     }
     
     const exitPrice = parseFloat(exitPriceInput);
     if (isNaN(exitPrice) || exitPrice <= 0) {
-        showToast('❌ Exit Price muss eine Zahl > 0 sein!');
+        showToast('❌ Exit Price muss eine Zahl > 0 sein!', 'error');
         return;
     }
     
     if (!exitReason) {
-        showToast('❌ Grund zum Schließen erforderlich!');
+        showToast('❌ Grund zum Schließen erforderlich!', 'error');
         return;
     }
     
@@ -2181,7 +2399,6 @@ function confirmClosePositionModal() {
         const closedPositions = JSON.parse(localStorage.getItem('closedPositions')) || [];
         const position = positions[positionToClose];
         
-        console.log('position to close:', position);
         
         // Berechne P&L
         const shares = position.size / position.entry;
@@ -2198,13 +2415,11 @@ function confirmClosePositionModal() {
             dateClosed: new Date().toISOString()
         };
         
-        console.log('closedPosition to save:', closedPosition);
         
         // Speichere geschlossene Position
         closedPositions.push(closedPosition);
         localStorage.setItem('closedPositions', JSON.stringify(closedPositions));
         
-        console.log('closedPositions after save:', JSON.parse(localStorage.getItem('closedPositions')));
         
         // Lösche offene Position
         positions.splice(positionToClose, 1);
@@ -2219,7 +2434,7 @@ function confirmClosePositionModal() {
         showToast(`✅ Position ${position.ticker} geschlossen! P&L: €${closedPosition.pnl.toFixed(2)}`);
     } catch (error) {
         console.error('Fehler:', error);
-        showToast('❌ Fehler beim Schließen der Position!');
+        showToast('❌ Fehler beim Schließen der Position!', 'error');
     }
 }
 
@@ -2267,7 +2482,7 @@ function displayClosedPositions() {
             <div class="position-card" style="border-left: 4px solid ${pnlColor};">
                 <div class="position-header">
                     <div>
-                        <div class="position-ticker">${pos.ticker}</div>
+                        <div class="position-ticker">${escapeHtml(pos.ticker)}</div>
                         <div class="position-entry">Entry: €${parseFloat(pos.entry).toFixed(2)} → Exit: €${parseFloat(pos.exitPrice).toFixed(2)}</div>
                     </div>
                     <div style="text-align: right;">
@@ -2288,11 +2503,11 @@ function displayClosedPositions() {
                 </div>
                 
                 <div class="position-thesis">
-                    <strong>These:</strong> ${pos.thesis}
+                    <strong>These:</strong> ${escapeHtml(pos.thesis)}
                 </div>
                 
                 <div class="position-thesis" style="margin-top: 12px; color: #cbd5e1; font-size: 13px; border-top: 1px solid rgba(168, 85, 247, 0.1); padding-top: 12px;">
-                    <strong>Grund zum Schließen:</strong> ${pos.exitReason}
+                    <strong>Grund zum Schließen:</strong> ${escapeHtml(pos.exitReason)}
                 </div>
                 
                 ${pos.screenshot ? `
@@ -2383,7 +2598,7 @@ function renderPortfolioCompositionChart(positions) {
                 cursor: pointer;
             " 
             class="portfolio-bar-segment"
-            title="${pos.ticker}: ${percentage.toFixed(1)}% (€${pos.size.toFixed(2)})"
+            title="${escapeHtml(pos.ticker)}: ${percentage.toFixed(1)}% (€${pos.size.toFixed(2)})"
             onmouseover="this.style.filter='brightness(1.2)'; this.style.flex='${percentage * 1.1}'"
             onmouseout="this.style.filter='brightness(1)'; this.style.flex='${percentage}'">
                 ${percentage > 8 ? `<span style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-weight: 700; font-size: 12px; color: white; text-shadow: 0 1px 3px rgba(0,0,0,0.5);">${percentage.toFixed(0)}%</span>` : ''}
@@ -2409,7 +2624,7 @@ function renderPortfolioCompositionChart(positions) {
             onmouseout="this.style.transform='translateY(0)'; this.style.borderColor='rgba(${parseInt(color.slice(1,3),16)}, ${parseInt(color.slice(3,5),16)}, ${parseInt(color.slice(5,7),16)}, 0.3)'">
                 <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 12px;">
                     <div style="width: 10px; height: 10px; border-radius: 50%; background: ${color}; box-shadow: 0 0 12px ${color}80;"></div>
-                    <div style="font-weight: 700; font-size: 14px; color: #f1f5f9;">${pos.ticker}</div>
+                    <div style="font-weight: 700; font-size: 14px; color: #f1f5f9;">${escapeHtml(pos.ticker)}</div>
                 </div>
                 <div style="font-size: 16px; font-weight: 800; color: #f1f5f9; margin-bottom: 4px;">€${pos.size.toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
                 <div style="font-size: 12px; color: #94a3b8; font-weight: 600;">${percentage.toFixed(1)}% des Portfolios</div>
@@ -2621,9 +2836,69 @@ function calculateSetupTypeStats(trades) {
 }
 
 // ===== UTILITIES =====
-function showToast(message) {
+// Wandelt HTML-Sonderzeichen in Entities um, damit Nutzereingaben
+// nicht als Markup interpretiert werden
+function escapeHtml(value) {
+    if (value === null || value === undefined) return '';
+    return String(value)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+}
+
+// Kurze Begruessung nach dem Login. Neue Keys ohne Daten werden
+// begruesst, wiederkehrende mit "Willkommen zurueck".
+// Zeigt dauerhaft an, mit welchem Key man verbunden ist.
+// Der Key wird gekuerzt dargestellt - er steht sonst bei jedem
+// Screenshot und jedem Blick ueber die Schulter offen da.
+function renderSessionBadge() {
+    const badge = document.getElementById('sessionBadge');
+    if (!badge) return;
+
+    const activeKey = window.cfRawStorage.get('capitalflow_current_key');
+    if (!activeKey) {
+        badge.style.display = 'none';
+        return;
+    }
+
+    const name = window.cfRawStorage.get('capitalflow_current_name')
+        || 'Verbunden';
+
+    const nameEl = document.getElementById('sessionName');
+    const keyEl = document.getElementById('sessionKey');
+    if (nameEl) nameEl.textContent = name;
+    if (keyEl) {
+        keyEl.textContent = activeKey.length > 10
+            ? activeKey.slice(0, 3) + '…' + activeKey.slice(-4)
+            : activeKey;
+    }
+    badge.style.display = 'flex';
+}
+
+function showWelcome(name, isReturning) {
+    if (!name) return;
+    document.querySelectorAll('.welcome-note').forEach(n => n.remove());
+
+    const note = document.createElement('div');
+    note.className = 'welcome-note';
+    const greeting = isReturning ? 'Willkommen zurück,' : 'Willkommen,';
+    note.innerHTML = '<span class="welcome-note-dot"></span>' +
+        escapeHtml(greeting) + ' <span class="welcome-note-name">' +
+        escapeHtml(name) + '</span>';
+    document.body.appendChild(note);
+
+    setTimeout(() => {
+        note.classList.add('leaving');
+        setTimeout(() => note.remove(), 500);
+    }, 3200);
+}
+
+function showToast(message, type) {
     const toast = document.createElement('div');
-    toast.className = 'toast';
+    // type: 'error' faerbt rot, alles andere bleibt gruen
+    toast.className = type === 'error' ? 'toast toast-error' : 'toast';
     toast.textContent = message;
     document.body.appendChild(toast);
     
@@ -2705,9 +2980,7 @@ function updateCalendarStats(trades) {
         document.getElementById("worstDayStat").textContent = "€ 0.00";
         document.getElementById("worstDayDateStat").textContent = "—";
         document.getElementById("winningDaysStat").textContent = "0%";
-        document.getElementById("winningDaysCountStat").textContent = "0 von 0";
         document.getElementById("losingDaysStat").textContent = "0%";
-        document.getElementById("losingDaysCountStat").textContent = "0 von 0";
         document.getElementById("avgDailyPnLStat").textContent = "€ 0.00";
         document.getElementById("calendarTradeCount").textContent = "0";
         document.getElementById("calendarTradingDays").textContent = "0";
@@ -2763,3 +3036,59 @@ function updateCalendarStats(trades) {
     updateElement("calendarTradeCount", trades.length);
     updateElement("calendarTradingDays", tradingDays);
 }
+
+// ===== LOGIN: LICHTKEGEL =====
+(function initLoginSpotlight() {
+    function start() {
+        const screen = document.getElementById('loginScreen');
+        if (!screen) return;
+
+        // Ohne Hover (Touch) bliebe der Kegel nach einer Beruehrung stehen
+        if (!window.matchMedia('(hover: hover)').matches) return;
+        // Wer Animationen reduziert haben will, bekommt keinen bewegten Effekt
+        if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+
+        let targetX = window.innerWidth / 2;
+        let targetY = window.innerHeight / 2;
+        let x = targetX;
+        let y = targetY;
+        let running = false;
+
+        function loop() {
+            // Traegheit: der Kegel naehert sich pro Bild nur zu 12 Prozent
+            // an die Mausposition an, dadurch laeuft er weich nach
+            x += (targetX - x) * 0.12;
+            y += (targetY - y) * 0.12;
+
+            screen.style.setProperty('--mx', x.toFixed(1) + 'px');
+            screen.style.setProperty('--my', y.toFixed(1) + 'px');
+
+            // Stoppen, sobald der Kegel angekommen ist - spart Rechenzeit
+            if (Math.abs(targetX - x) < 0.5 && Math.abs(targetY - y) < 0.5) {
+                running = false;
+                return;
+            }
+            requestAnimationFrame(loop);
+        }
+
+        screen.addEventListener('mousemove', (e) => {
+            targetX = e.clientX;
+            targetY = e.clientY;
+            screen.classList.add('spotlight-on');
+            if (!running) {
+                running = true;
+                requestAnimationFrame(loop);
+            }
+        });
+
+        screen.addEventListener('mouseleave', () => {
+            screen.classList.remove('spotlight-on');
+        });
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', start);
+    } else {
+        start();
+    }
+})();
