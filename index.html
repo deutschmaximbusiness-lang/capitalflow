@@ -211,6 +211,14 @@
                         <input type="text" id="ticker" placeholder="z.B. AAPL" required>
                     </div>
                     <div class="form-group">
+                        <label>Richtung</label>
+                        <div class="direction-toggle">
+                            <button type="button" class="direction-btn active" data-direction="long" id="dirLongBtn">Long</button>
+                            <button type="button" class="direction-btn" data-direction="short" id="dirShortBtn">Short</button>
+                        </div>
+                        <input type="hidden" id="direction" value="long">
+                    </div>
+                    <div class="form-group">
                         <label>Entry Preis ($)</label>
                         <input type="number" id="entryPrice" placeholder="0.00" step="0.01" required>
                     </div>
@@ -231,7 +239,7 @@
                     </div>
                     <div class="form-group">
                         <label>Hebel <span style="color: #94a3b8; font-size: 11px;">(Leer = Normal)</span></label>
-                        <input type="number" id="leverage" placeholder="z.B. 10 oder 3.2" step="0.1" min="1">
+                        <input type="number" id="leverage" placeholder="z.B. 10 oder 3.2" step="0.01" min="1">
                     </div>
                     <div class="form-group">
                         <label>Grund</label>
@@ -464,11 +472,64 @@
 
         <!-- ===== TRANSACTIONS TAB ===== -->
         <div id="transactions" class="tab-content">
-            <h2>Transaktionen</h2>
-            <!-- ===== COMING SOON OVERLAY ===== -->
-            <div class="coming-soon-overlay" id="transactionsComingSoonOverlay">
-                <h2>💳 Coming Soon</h2>
-                <p>Verfügbar in Phase 2</p>
+            <div style="margin-bottom: 20px;">
+                <h2 style="margin-bottom: 8px; font-size: 32px; font-weight: 700;">Transaktionen</h2>
+                <p style="color: #94a3b8; font-size: 14px; margin: 0;">Ein- und Auszahlungen – Grundlage für Kontostand und Rendite</p>
+            </div>
+
+            <!-- ===== KENNZAHLEN ===== -->
+            <div class="stat-grid-4">
+                <div class="dashboard-stat" style="background: linear-gradient(135deg, rgba(168, 85, 247, 0.1) 0%, rgba(168, 85, 247, 0.05) 100%); border: 1px solid rgba(168, 85, 247, 0.2); border-radius: 14px; padding: 20px; backdrop-filter: blur(10px);">
+                    <div style="color: #64748b; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600; margin-bottom: 12px;">Netto eingezahlt</div>
+                    <div id="txNetDeposit" style="font-size: 28px; font-weight: 800; color: #a855f7; line-height: 1;">€0.00</div>
+                </div>
+                <div class="dashboard-stat" style="background: linear-gradient(135deg, rgba(16, 185, 129, 0.1) 0%, rgba(16, 185, 129, 0.05) 100%); border: 1px solid rgba(16, 185, 129, 0.2); border-radius: 14px; padding: 20px; backdrop-filter: blur(10px);">
+                    <div style="color: #64748b; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600; margin-bottom: 12px;">Kontostand</div>
+                    <div id="txBalance" style="font-size: 28px; font-weight: 800; color: #10b981; line-height: 1;">€0.00</div>
+                </div>
+                <div class="dashboard-stat" style="background: linear-gradient(135deg, rgba(59, 130, 246, 0.1) 0%, rgba(59, 130, 246, 0.05) 100%); border: 1px solid rgba(59, 130, 246, 0.2); border-radius: 14px; padding: 20px; backdrop-filter: blur(10px);">
+                    <div style="color: #64748b; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600; margin-bottom: 12px;">Rendite</div>
+                    <div id="txReturn" style="font-size: 28px; font-weight: 800; color: #3b82f6; line-height: 1;">0.00%</div>
+                </div>
+                <div class="dashboard-stat" style="background: linear-gradient(135deg, rgba(251, 146, 60, 0.1) 0%, rgba(251, 146, 60, 0.05) 100%); border: 1px solid rgba(251, 146, 60, 0.2); border-radius: 14px; padding: 20px; backdrop-filter: blur(10px);">
+                    <div style="color: #64748b; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600; margin-bottom: 12px;">Buchungen</div>
+                    <div id="txCount" style="font-size: 28px; font-weight: 800; color: #fb923c; line-height: 1;">0</div>
+                </div>
+            </div>
+
+            <!-- ===== FORMULAR ===== -->
+            <div class="form-section" style="margin-bottom: 40px;">
+                <h3>Buchung erfassen</h3>
+                <form id="transactionForm" novalidate>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="txType">Art</label>
+                            <select id="txType" required>
+                                <option value="deposit">Einzahlung</option>
+                                <option value="withdrawal">Auszahlung</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="txAmount">Betrag (€)</label>
+                            <input type="number" id="txAmount" step="0.01" min="0" placeholder="1000" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="txDate">Datum</label>
+                            <input type="date" id="txDate" required>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="txNote">Notiz (optional)</label>
+                        <input type="text" id="txNote" placeholder="z.B. Sparplan, Gewinnentnahme">
+                    </div>
+                    <button type="submit" class="submit-btn">Buchung speichern</button>
+                </form>
+            </div>
+
+            <!-- ===== LISTE ===== -->
+            <div>
+                <h3 style="font-size: 20px; font-weight: 600; color: #f1f5f9; margin-bottom: 20px;">Verlauf</h3>
+                <div id="transactionsList"></div>
             </div>
         </div>
 
@@ -547,7 +608,7 @@
         <div id="roadmap" class="tab-content">
             <div style="margin-bottom: 40px;">
                 <h2 style="margin-bottom: 8px; font-size: 32px; font-weight: 700;">Product Roadmap</h2>
-                <p style="color: #94a3b8; font-size: 14px; margin: 0;">CapitalFlow Development Phases • 6/17 Features Complete</p>
+                <p style="color: #94a3b8; font-size: 14px; margin: 0;">CapitalFlow Development Phases • 7/17 Features Complete</p>
             </div>
 
 </html>            <!-- ===== PHASE 1 ===== -->
@@ -633,13 +694,13 @@
                         <p style="color: #94a3b8; font-size: 13px; margin: 0;">Cross-platform expansion & ecosystem</p>
                     </div>
                     <div style="text-align: right;">
-                        <div style="font-size: 36px; font-weight: 700; color: #f59e0b;">1/8</div>
+                        <div style="font-size: 36px; font-weight: 700; color: #f59e0b;">2/8</div>
                         <div style="font-size: 12px; color: #f59e0b; font-weight: 600;">🔄 IN PROGRESS</div>
                     </div>
                 </div>
                 
                 <div style="width: 100%; height: 8px; background: rgba(245, 158, 11, 0.1); border-radius: 4px; margin-bottom: 28px; overflow: hidden; border: 1px solid rgba(245, 158, 11, 0.2);">
-                    <div style="width: 12.5%; height: 100%; background: linear-gradient(90deg, #f59e0b 0%, #fbbf24 100%); border-radius: 4px; box-shadow: 0 0 20px rgba(245, 158, 11, 0.5);" transition="all 0.5s ease;"></div>
+                    <div style="width: 25%; height: 100%; background: linear-gradient(90deg, #f59e0b 0%, #fbbf24 100%); border-radius: 4px; box-shadow: 0 0 20px rgba(245, 158, 11, 0.5);" transition="all 0.5s ease;"></div>
                 </div>
                 
                 <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 16px;">
@@ -681,10 +742,12 @@
                         <p style="font-size: 11px; color: #94a3b8; margin: 0; line-height: 1.5;">UI Refinements</p>
                     </div>
                     
-                    <div class="roadmap-card-premium in-progress-card">
+                    <div class="roadmap-card-premium completed-card">
                         <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 14px;">
                             <div style="font-size: 32px;">📋</div>
-                            <div style="background: rgba(245, 158, 11, 0.25); color: #f59e0b; padding: 3px 6px; border-radius: 3px; font-size: 10px; font-weight: 700;">SOON</div>
+                            <svg style="width: 20px; height: 20px; color: #10b981; stroke-width: 3;" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                <polyline points="20 6 9 17 4 12"></polyline>
+                            </svg>
                         </div>
                         <h4 style="font-size: 13px; font-weight: 700; color: #e2e8f0; margin: 0 0 6px 0; text-transform: uppercase; letter-spacing: 0.5px;">Closed Pos</h4>
                         <p style="font-size: 11px; color: #94a3b8; margin: 0; line-height: 1.5;">Exit Archive</p>

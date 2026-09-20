@@ -75,7 +75,7 @@ function sha256Hex_selftest() {
 (function scopeStoragePerUser() {
     // Nur diese Schluessel werden getrennt. Anmeldedaten bleiben global,
     // sonst koennte sich niemand mehr einloggen.
-    const DATA_KEYS = ['trades', 'positions', 'closedPositions'];
+    const DATA_KEYS = ['trades', 'positions', 'closedPositions', 'transactions'];
     const CURRENT = 'capitalflow_current_key';
 
     const raw = {
@@ -291,7 +291,7 @@ function initLoginSystem() {
                 // bliebe stehen, was beim Seitenaufbau gerendert wurde.
                 // Einzeln abgesichert: faellt eine Ansicht aus, laufen die
                 // anderen trotzdem durch.
-                [loadTrades, loadPositions, loadDashboard,
+                [loadTrades, loadPositions, loadTransactions, loadDashboard,
                  loadAnalytics, loadCalendar].forEach((fn) => {
                     try {
                         if (typeof fn === 'function') fn();
@@ -496,6 +496,7 @@ let positionsScreenshotData = null;
 let positionToDelete = null;
 let positionToClose = null; // Für Close Position Modal
 let closedPositionToDelete = null; // Für Closed Position Delete Modal
+let transactionToDelete = null; // Für Transaktions-Löschdialog
 
 function displayScreenshot(base64Data) {
     screenshotData = base64Data;
@@ -623,6 +624,23 @@ document.addEventListener('DOMContentLoaded', () => {
     });
     
     // ===== POSITIONEN FORM =====
+    // Long/Short-Umschalter
+    document.querySelectorAll('.direction-btn').forEach((btn) => {
+        btn.addEventListener('click', () => {
+            document.querySelectorAll('.direction-btn')
+                .forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            const feld = document.getElementById('direction');
+            if (feld) feld.value = btn.getAttribute('data-direction');
+        });
+    });
+
+    const transactionForm = document.getElementById('transactionForm');
+    if (transactionForm) {
+        transactionForm.addEventListener('submit', addTransaction);
+        setTransactionDateToday();
+    }
+
     const positionsForm = document.getElementById('positionsForm');
     if (positionsForm) {
         positionsForm.addEventListener('submit', addPosition);
@@ -773,6 +791,9 @@ function handleTabChange(tabId) {
     if (tabId === 'positions') {
         setTimeout(() => loadPositions(), 100);
     }
+    if (tabId === 'transactions') {
+        setTimeout(() => loadTransactions(), 100);
+    }
 }
 
 function setupFilterButtons() {
@@ -842,12 +863,24 @@ function addTrade(e) {
         const errorType = document.getElementById('errorType').value || 'Kein Fehler';
         const notes = document.getElementById('notes').value;
         
-        // P&L Berechnung
+        const direction = document.getElementById('direction').value === 'short'
+            ? 'short' : 'long';
+
+        // P&L Berechnung. Bei Short dreht sich das Vorzeichen: dort
+        // verdienst du, wenn der Kurs faellt. Ohne diese Unterscheidung
+        // steht jeder gewonnene Short als Verlust in den Zahlen.
+        const richtung = direction === 'short' ? -1 : 1;
         const shares = positionSize / entryPrice;
-        const pnl = (exitPrice - entryPrice) * shares * leverage;
-        const pnlPercent = ((exitPrice - entryPrice) / entryPrice) * 100 * leverage;
-        const risk = stopLoss ? (entryPrice - stopLoss) * shares * leverage : 0;
-        const reward = (exitPrice - entryPrice) * shares * leverage;
+        const kursDiff = (exitPrice - entryPrice) * richtung;
+
+        const pnl = kursDiff * shares * leverage;
+        const pnlPercent = (kursDiff / entryPrice) * 100 * leverage;
+
+        // Der Stop liegt bei Short ueber dem Einstieg, deshalb hier
+        // ebenfalls gedreht - sonst waere das Risiko negativ
+        const risk = stopLoss
+            ? Math.abs(entryPrice - stopLoss) * shares * leverage : 0;
+        const reward = pnl;
         const riskReward = risk !== 0 ? reward / risk : 0;
         
         const date = new Date().toLocaleDateString('de-DE', { year: 'numeric', month: '2-digit', day: '2-digit' });
@@ -856,6 +889,7 @@ function addTrade(e) {
         const trade = {
             id: Date.now(),
             ticker,
+            direction,
             entryPrice,
             exitPrice,
             stopLoss: stopLoss || 0,
@@ -908,6 +942,15 @@ function getSetupTypeBadgeClass(setupType) {
 // Bringt einen Trade auf ein vollstaendiges, rechenbares Format.
 // Ohne das reicht EIN Altdatensatz ohne pnl, um beim Rendern
 // toFixed(undefined) auszuloesen und die ganze Liste lahmzulegen.
+// Hebel anzeigen ohne zu runden: 3 bleibt "3x", 3.2 bleibt "3,2x".
+// Gerechnet wurde schon immer mit dem genauen Wert - nur die Anzeige
+// hat auf ganze Zahlen gerundet.
+function formatLeverage(value) {
+    const n = parseFloat(value);
+    if (!Number.isFinite(n)) return '';
+    return (Number.isInteger(n) ? String(n) : String(n).replace('.', ',')) + 'x';
+}
+
 function normalizeTrade(trade, index) {
     const num = (v, fallback) => {
         const n = parseFloat(v);
@@ -937,6 +980,8 @@ function normalizeTrade(trade, index) {
         ...trade,
         id: trade.id || (Date.now() + index),
         ticker: trade.ticker || '—',
+        // Trades aus der Zeit vor dem Richtungsfeld sind Long
+        direction: trade.direction === 'short' ? 'short' : 'long',
         entryPrice: entry,
         exitPrice: exit,
         stopLoss: num(trade.stopLoss, 0),
@@ -1012,7 +1057,8 @@ function loadTrades() {
             <div class="trade-header">
                 <div class="trade-ticker">
                     ${escapeHtml(trade.ticker)}
-                    ${trade.leverage > 1 ? `<span class="trade-leverage-badge">${trade.leverage.toFixed(0)}x</span>` : ''}
+                    <span class="dir-badge dir-${trade.direction === 'short' ? 'short' : 'long'}">${trade.direction === 'short' ? 'SHORT' : 'LONG'}</span>
+                    ${trade.leverage > 1 ? `<span class="trade-leverage-badge">${formatLeverage(trade.leverage)}</span>` : ''}
                 </div>
                 <div class="trade-pnl ${trade.pnl > 0 ? 'profit' : 'loss'}">
                     <div>€${trade.pnl > 0 ? '+' : ''}${trade.pnl.toFixed(2)}</div>
@@ -1559,9 +1605,12 @@ function loadDashboard() {
                 <div style="color: #94a3b8; font-size: 12px; margin-top: 8px;">${stats.todayTrades.length} trades • ${stats.todayWinRate}% win</div>
             </div>
             <div class="dashboard-big-card">
-                <div style="color: #94a3b8; font-size: 12px; margin-bottom: 8px;">Current Balance</div>
-                <div style="font-size: 28px; font-weight: 700; color: #cbd5e1;">€${stats.totalPnL.toFixed(2)}</div>
-                <div style="color: #94a3b8; font-size: 12px; margin-top: 8px;">Broker account</div>
+                <div style="color: #94a3b8; font-size: 12px; margin-bottom: 8px;">Kontostand</div>
+                <div style="font-size: 28px; font-weight: 700; color: #cbd5e1;">€${getAccountBalance().toFixed(2)}</div>
+                <div style="color: #94a3b8; font-size: 12px; margin-top: 8px;">${
+                    getNetDeposits() > 0
+                        ? 'Netto eingezahlt €' + getNetDeposits().toFixed(2)
+                        : 'Noch keine Einzahlung erfasst'}</div>
             </div>
             <div class="dashboard-big-card">
                 <div style="color: #94a3b8; font-size: 12px; margin-bottom: 8px;">Total P&L</div>
@@ -1802,6 +1851,85 @@ function renderActivityHeatmap(trades) {
     container.innerHTML = html;
 }
 
+// Auswertung nach Richtung: viele Trader verdienen mit Longs und
+// verlieren mit Shorts (oder umgekehrt) - ohne Trennung geht das im
+// Gesamtergebnis unter.
+function buildDirectionBreakdown(trades) {
+    const gruppe = (dir) => {
+        const list = trades.filter(t =>
+            (t.direction === 'short' ? 'short' : 'long') === dir);
+        const wins = list.filter(t => (t.pnl || 0) > 0).length;
+        const pnl = list.reduce((sum, t) => sum + (t.pnl || 0), 0);
+        return {
+            anzahl: list.length,
+            wins: wins,
+            verluste: list.length - wins,
+            quote: list.length ? (wins / list.length) * 100 : 0,
+            pnl: pnl,
+            schnitt: list.length ? pnl / list.length : 0
+        };
+    };
+
+    const l = gruppe('long');
+    const shrt = gruppe('short');
+
+    if (l.anzahl === 0 && shrt.anzahl === 0) return '';
+
+    const karte = (titel, d, farbe, klasse) => {
+        const vz = d.pnl >= 0 ? '+' : '';
+        const pnlFarbe = d.pnl >= 0 ? '#10b981' : '#f87171';
+        const anteil = d.anzahl
+            ? Math.round((d.anzahl / (l.anzahl + shrt.anzahl)) * 100) : 0;
+        return `
+        <div class="dir-card ${klasse}">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;">
+                <div class="dir-card-title" style="color:${farbe};">${titel}</div>
+                <div style="font-size:11px;color:#64748b;font-weight:600;">${anteil}% aller Trades</div>
+            </div>
+            <div style="font-size:30px;font-weight:800;color:${pnlFarbe};line-height:1;margin-bottom:6px;">
+                ${vz}€${d.pnl.toFixed(2)}
+            </div>
+            <div style="font-size:12px;color:#94a3b8;margin-bottom:18px;">
+                ${d.anzahl} ${d.anzahl === 1 ? 'Trade' : 'Trades'} · Ø ${vz}€${d.schnitt.toFixed(2)}
+            </div>
+            <div style="height:6px;border-radius:3px;background:rgba(248,113,113,0.25);overflow:hidden;margin-bottom:8px;">
+                <div style="height:100%;width:${d.quote.toFixed(1)}%;background:#10b981;"></div>
+            </div>
+            <div style="display:flex;justify-content:space-between;font-size:12px;font-weight:600;">
+                <span style="color:#10b981;">${d.wins}W</span>
+                <span style="color:#cbd5e1;">${d.quote.toFixed(1)}% Trefferquote</span>
+                <span style="color:#f87171;">${d.verluste}L</span>
+            </div>
+        </div>`;
+    };
+
+    // Ein Satz, der die Zahlen einordnet
+    let fazit = '';
+    if (l.anzahl >= 5 && shrt.anzahl >= 5) {
+        if (l.pnl > 0 && shrt.pnl < 0) {
+            fazit = 'Deine Longs tragen das Ergebnis, die Shorts kosten dich Geld.';
+        } else if (shrt.pnl > 0 && l.pnl < 0) {
+            fazit = 'Deine Shorts tragen das Ergebnis, die Longs kosten dich Geld.';
+        } else if (Math.abs(l.quote - shrt.quote) > 15) {
+            fazit = l.quote > shrt.quote
+                ? 'Longs treffen deutlich häufiger als Shorts.'
+                : 'Shorts treffen deutlich häufiger als Longs.';
+        }
+    } else {
+        fazit = 'Ab etwa 5 Trades je Richtung wird der Vergleich aussagekräftig.';
+    }
+
+    return `
+        <div style="margin-bottom: 40px;">
+            <h3 style="font-size:18px;font-weight:600;margin-bottom:20px;">Long gegen Short</h3>
+            <div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;">
+                ${karte('LONG', l, '#10b981', 'dir-card-long')}
+                ${karte('SHORT', shrt, '#fb923c', 'dir-card-short')}
+            </div>
+            ${fazit ? `<p style="margin:16px 0 0 0;font-size:13px;color:#94a3b8;">${escapeHtml(fazit)}</p>` : ''}
+        </div>`;
+}
+
 function loadAnalytics() {
     const allTrades = JSON.parse(localStorage.getItem('trades')) || [];
     const trades = getFilteredTrades(allTrades);
@@ -1855,6 +1983,8 @@ function loadAnalytics() {
             <h2 style="margin-bottom: 8px;">Analytics</h2>
             <p style="color: #94a3b8; font-size: 14px;">Deep dive into your trading performance</p>
         </div>
+
+        ${buildDirectionBreakdown(trades)}
         
         <!-- ===== FILTER BUTTONS ===== -->
         <div class="trades-filter" style="margin-bottom: 40px;">
@@ -3220,3 +3350,178 @@ function updateCalendarStats(trades) {
         start();
     }
 })();
+
+// ===== TRANSAKTIONEN =====
+// Ein- und Auszahlungen. Erst dadurch ergibt der Kontostand einen Sinn:
+// vorher zeigte "Current Balance" nur die Summe der Trade-Ergebnisse,
+// also dieselbe Zahl wie "Total P&L" direkt daneben.
+
+function getTransactions() {
+    const raw = JSON.parse(localStorage.getItem('transactions')) || [];
+    // Gegen unvollstaendige Eintraege absichern, wie bei den Trades
+    return raw
+        .filter(t => t && typeof t === 'object' &&
+                     Number.isFinite(parseFloat(t.amount)))
+        .map((t, i) => ({
+            id: t.id || (Date.now() + i),
+            type: t.type === 'withdrawal' ? 'withdrawal' : 'deposit',
+            amount: Math.abs(parseFloat(t.amount)),
+            date: t.date || new Date().toISOString().slice(0, 10),
+            note: t.note || ''
+        }));
+}
+
+// Netto eingezahlt = alles was reinging minus alles was rausging.
+// Diese Zahl ist die Basis fuer Kontostand und Rendite.
+function getNetDeposits() {
+    return getTransactions().reduce((sum, t) =>
+        sum + (t.type === 'deposit' ? t.amount : -t.amount), 0);
+}
+
+function getAccountBalance() {
+    const trades = JSON.parse(localStorage.getItem('trades')) || [];
+    const pnl = trades.reduce((sum, t) => sum + (parseFloat(t.pnl) || 0), 0);
+    return getNetDeposits() + pnl;
+}
+
+function addTransaction(e) {
+    e.preventDefault();
+    try {
+        const type = document.getElementById('txType').value;
+        const amount = parseFloat(document.getElementById('txAmount').value);
+        const date = document.getElementById('txDate').value;
+        const note = document.getElementById('txNote').value.trim();
+
+        if (!Number.isFinite(amount) || amount <= 0) {
+            showToast('❌ Betrag muss groesser als 0 sein!', 'error');
+            return;
+        }
+        if (!date) {
+            showToast('❌ Bitte ein Datum waehlen!', 'error');
+            return;
+        }
+
+        // Auszahlung, die den Kontostand ins Minus zieht, ist meist ein
+        // Tippfehler - deshalb nachfragen statt still speichern
+        if (type === 'withdrawal' && amount > getAccountBalance()) {
+            if (!confirm('Die Auszahlung ist groesser als dein Kontostand. ' +
+                         'Trotzdem speichern?')) {
+                return;
+            }
+        }
+
+        const list = getTransactions();
+        list.push({ id: Date.now(), type, amount, date, note });
+        localStorage.setItem('transactions', JSON.stringify(list));
+
+        document.getElementById('transactionForm').reset();
+        setTransactionDateToday();
+        loadTransactions();
+        if (typeof loadDashboard === 'function') loadDashboard();
+
+        showToast(type === 'deposit'
+            ? `✅ Einzahlung über €${amount.toFixed(2)} gespeichert!`
+            : `✅ Auszahlung über €${amount.toFixed(2)} gespeichert!`);
+    } catch (err) {
+        console.error('Buchung konnte nicht gespeichert werden:', err);
+        showToast('❌ Buchung konnte nicht gespeichert werden!', 'error');
+    }
+}
+
+function deleteTransaction(id) {
+    transactionToDelete = id;
+    const modal = document.getElementById('deleteModal');
+    const title = document.getElementById('deleteModalTitle');
+    const text = document.getElementById('deleteModalText');
+    const btn = document.getElementById('deleteConfirmBtn');
+
+    title.textContent = '🗑️ Buchung löschen?';
+    text.textContent = 'Diese Buchung wird permanent gelöscht.';
+    btn.textContent = 'Ja, löschen';
+    btn.onclick = () => confirmDeleteTransaction();
+    modal.style.display = 'flex';
+}
+
+function confirmDeleteTransaction() {
+    if (transactionToDelete === null) return;
+    const list = getTransactions().filter(t => t.id !== transactionToDelete);
+    localStorage.setItem('transactions', JSON.stringify(list));
+
+    document.getElementById('deleteModal').style.display = 'none';
+    transactionToDelete = null;
+    loadTransactions();
+    if (typeof loadDashboard === 'function') loadDashboard();
+    showToast('✅ Buchung gelöscht!');
+}
+
+function setTransactionDateToday() {
+    const el = document.getElementById('txDate');
+    if (el && !el.value) el.value = new Date().toISOString().slice(0, 10);
+}
+
+function loadTransactions() {
+    const list = getTransactions()
+        .sort((a, b) => (b.date || '').localeCompare(a.date || ''));
+
+    const eingezahlt = list.filter(t => t.type === 'deposit')
+        .reduce((s, t) => s + t.amount, 0);
+    const ausgezahlt = list.filter(t => t.type === 'withdrawal')
+        .reduce((s, t) => s + t.amount, 0);
+    const netto = eingezahlt - ausgezahlt;
+    const stand = getAccountBalance();
+
+    // Rendite bezogen auf das eingesetzte Kapital. Ohne Einzahlung
+    // gibt es keine sinnvolle Bezugsgroesse.
+    const rendite = netto > 0 ? ((stand - netto) / netto) * 100 : 0;
+
+    const fmt = (v) => '€' + v.toLocaleString('de-DE',
+        { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+    const set = (id, value, color) => {
+        const el = document.getElementById(id);
+        if (!el) return;
+        el.textContent = value;
+        if (color) el.style.color = color;
+    };
+
+    set('txNetDeposit', fmt(netto));
+    set('txBalance', fmt(stand), stand >= netto ? '#10b981' : '#f87171');
+    set('txReturn', (rendite >= 0 ? '+' : '') + rendite.toFixed(2) + '%',
+        rendite >= 0 ? '#3b82f6' : '#f87171');
+    set('txCount', String(list.length));
+
+    const box = document.getElementById('transactionsList');
+    if (!box) return;
+
+    if (list.length === 0) {
+        box.innerHTML =
+            '<div style="text-align:center;padding:40px 20px;color:#64748b;">' +
+            '<p style="font-size:14px;">Noch keine Buchung erfasst</p>' +
+            '<p style="font-size:13px;margin-top:6px;">Trag deine erste ' +
+            'Einzahlung ein, damit Kontostand und Rendite stimmen.</p></div>';
+        return;
+    }
+
+    box.innerHTML = list.map(t => {
+        const ein = t.type === 'deposit';
+        const farbe = ein ? '#10b981' : '#fb923c';
+        const datum = new Date(t.date).toLocaleDateString('de-DE',
+            { day: '2-digit', month: '2-digit', year: 'numeric' });
+        return `
+            <div class="tx-row">
+                <div class="tx-icon" style="background:${farbe}1f;color:${farbe};">
+                    ${ein ? '↓' : '↑'}
+                </div>
+                <div class="tx-main">
+                    <div class="tx-type">${ein ? 'Einzahlung' : 'Auszahlung'}</div>
+                    <div class="tx-meta">${escapeHtml(datum)}${
+                        t.note ? ' · ' + escapeHtml(t.note) : ''}</div>
+                </div>
+                <div class="tx-amount" style="color:${farbe};">
+                    ${ein ? '+' : '−'}${fmt(t.amount)}
+                </div>
+                <button class="tx-delete" onclick="deleteTransaction(${t.id})"
+                        title="Buchung löschen">✕</button>
+            </div>`;
+    }).join('');
+}
