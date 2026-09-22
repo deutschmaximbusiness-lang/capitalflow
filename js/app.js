@@ -743,13 +743,10 @@ function handleTabChange(tabId) {
         tabContent.classList.add('active');
     }
     
-    // Coming-Soon-Overlay - nur noch der Portfolio-Tab hat eins.
-    // Positionen, Transaktionen und Setups sind fertig gebaut.
-    const portfolioOverlay = document.getElementById('portfolioComingSoonOverlay');
-    if (portfolioOverlay) {
-        portfolioOverlay.classList.toggle('visible', tabId === 'portfolio');
-    }
-    
+    // Kein Coming-Soon-Overlay mehr: der leere Portfolio-Tab ist raus,
+    // weil er mit "Portfolio Analyse" kollidiert hat und Nutzern nur
+    // gezeigt hat, was fehlt. Investoren-Features kommen in v2.
+
     // Lade spezielle Inhalte
     if (tabId === 'calendar') {
         setTimeout(() => loadCalendar(), 100);
