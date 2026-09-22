@@ -27,7 +27,12 @@ const AUTHORIZED_KEYS = [
     { name: "Matthis",       hash: "9f32d1fa366d5c4e05b77ac43d98297fd24ea3b90e45cdbbc7fdda25ce172551", added: "2026-09-20" },
 ];
 
-// Hash des Admin-Keys. Zum Ändern: als Admin einloggen und im Panel
-// den Punkt "Admin-Key ändern" nutzen.
+// Hash des Admin-Keys. Zum Ändern: in der Browser-Console sha256Hex(prompt())
+// aufrufen, den Key eingeben und den zurückgegebenen Hash hier eintragen.
+// Den Key selbst niemals in diese Datei schreiben - sie liegt öffentlich
+// auf GitHub, und die Historie vergisst nichts.
+//
+// Rotiert am 22.09.2026: der Vorgänger stand monatelang im Klartext in
+// app.js und ist damit dauerhaft aus der Git-Historie auslesbar.
 const ADMIN_KEY_HASH =
-    "5635661c38574e16348d7d64c462dddc5b277f2ecc51419a17462e2c1bab7c11";
+    "e73ade335aa678cf05f593758c18080e5e4ae7ce9a78980406d7f85af85b1605";
