@@ -75,7 +75,7 @@ function sha256Hex_selftest() {
 (function scopeStoragePerUser() {
     // Nur diese Schluessel werden getrennt. Anmeldedaten bleiben global,
     // sonst koennte sich niemand mehr einloggen.
-    const DATA_KEYS = ['trades', 'positions', 'closedPositions', 'transactions'];
+    const DATA_KEYS = ['trades', 'positions', 'closedPositions', 'transactions', 'setups'];
     const CURRENT = 'capitalflow_current_key';
 
     const raw = {
@@ -291,7 +291,7 @@ function initLoginSystem() {
                 // bliebe stehen, was beim Seitenaufbau gerendert wurde.
                 // Einzeln abgesichert: faellt eine Ansicht aus, laufen die
                 // anderen trotzdem durch.
-                [loadTrades, loadPositions, loadTransactions, loadDashboard,
+                [loadTrades, loadPositions, loadTransactions, loadSetups, loadDashboard,
                  loadAnalytics, loadCalendar].forEach((fn) => {
                     try {
                         if (typeof fn === 'function') fn();
@@ -615,6 +615,8 @@ document.addEventListener('DOMContentLoaded', () => {
                         displayScreenshot(event.target.result);
                     } else if (currentTab === 'positions') {
                         displayPositionsScreenshot(event.target.result);
+                    } else if (currentTab === 'setups') {
+                        displaySetupsScreenshot(event.target.result);
                     }
                 };
                 reader.readAsDataURL(blob);
@@ -624,14 +626,18 @@ document.addEventListener('DOMContentLoaded', () => {
     });
     
     // ===== POSITIONEN FORM =====
-    // Long/Short-Umschalter
-    document.querySelectorAll('.direction-btn').forEach((btn) => {
-        btn.addEventListener('click', () => {
-            document.querySelectorAll('.direction-btn')
-                .forEach(b => b.classList.remove('active'));
-            btn.classList.add('active');
-            const feld = document.getElementById('direction');
-            if (feld) feld.value = btn.getAttribute('data-direction');
+    // Long/Short-Umschalter. Jede Gruppe schaltet nur ihre eigenen
+    // Buttons und schreibt in ihr eigenes verstecktes Feld (data-target).
+    // Sonst wuerde ein Klick in den Setups den im Journal umschalten.
+    document.querySelectorAll('.direction-toggle').forEach((group) => {
+        const target = document.getElementById(group.dataset.target);
+        group.querySelectorAll('.direction-btn').forEach((btn) => {
+            btn.addEventListener('click', () => {
+                group.querySelectorAll('.direction-btn')
+                    .forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                if (target) target.value = btn.getAttribute('data-direction');
+            });
         });
     });
 
@@ -737,42 +743,11 @@ function handleTabChange(tabId) {
         tabContent.classList.add('active');
     }
     
-    // Coming Soon Overlays managen
-    const positionsOverlay = document.getElementById('positionsComingSoonOverlay');
-    const watchlistOverlay = document.getElementById('watchlistComingSoonOverlay');
+    // Coming-Soon-Overlay - nur noch der Portfolio-Tab hat eins.
+    // Positionen, Transaktionen und Setups sind fertig gebaut.
     const portfolioOverlay = document.getElementById('portfolioComingSoonOverlay');
-    const transactionsOverlay = document.getElementById('transactionsComingSoonOverlay');
-    
-    if (positionsOverlay) {
-        if (tabId === 'positions') {
-            positionsOverlay.classList.add('visible');
-        } else {
-            positionsOverlay.classList.remove('visible');
-        }
-    }
-    
-    if (watchlistOverlay) {
-        if (tabId === 'watchlist') {
-            watchlistOverlay.classList.add('visible');
-        } else {
-            watchlistOverlay.classList.remove('visible');
-        }
-    }
-    
     if (portfolioOverlay) {
-        if (tabId === 'portfolio') {
-            portfolioOverlay.classList.add('visible');
-        } else {
-            portfolioOverlay.classList.remove('visible');
-        }
-    }
-    
-    if (transactionsOverlay) {
-        if (tabId === 'transactions') {
-            transactionsOverlay.classList.add('visible');
-        } else {
-            transactionsOverlay.classList.remove('visible');
-        }
+        portfolioOverlay.classList.toggle('visible', tabId === 'portfolio');
     }
     
     // Lade spezielle Inhalte
@@ -793,6 +768,9 @@ function handleTabChange(tabId) {
     }
     if (tabId === 'transactions') {
         setTimeout(() => loadTransactions(), 100);
+    }
+    if (tabId === 'setups') {
+        setTimeout(() => loadSetups(), 100);
     }
 }
 
@@ -3525,3 +3503,419 @@ function loadTransactions() {
             </div>`;
     }).join('');
 }
+
+// ===== SETUPS =====
+// Setups beobachten, bevor man einsteigt. Schliesst die Luecke zwischen
+// Idee und Trade und liefert das Chance-Risiko-Verhaeltnis VOR dem Einstieg.
+
+const SETUPS_STATUS = {
+    watching:  { label: 'Beobachten',   color: '#a855f7' },
+    ready:     { label: 'Bereit',       color: '#10b981' },
+    entered:   { label: 'Eingestiegen', color: '#3b82f6' },
+    discarded: { label: 'Verworfen',    color: '#fb923c' }
+};
+
+let setupsScreenshotData = null;
+let setupsCurrentFilter = 'active';
+let setupsToDelete = null;
+
+function getSetups() {
+    const raw = JSON.parse(localStorage.getItem('setups')) || [];
+    return raw.filter(w => w && typeof w === 'object' && w.ticker)
+        .map((w, i) => ({
+            id: w.id || (Date.now() + i),
+            ticker: String(w.ticker).toUpperCase(),
+            direction: w.direction === 'short' ? 'short' : 'long',
+            entryFrom: parseFloat(w.entryFrom) || 0,
+            entryTo: parseFloat(w.entryTo) || 0,
+            stop: parseFloat(w.stop) || 0,
+            target: parseFloat(w.target) || 0,
+            leverage: parseFloat(w.leverage) > 0 ? parseFloat(w.leverage) : 1,
+            thesis: w.thesis || '',
+            screenshot: w.screenshot || null,
+            status: SETUPS_STATUS[w.status] ? w.status : 'watching',
+            created: w.created || new Date().toISOString(),
+            updated: w.updated || w.created || new Date().toISOString()
+        }));
+}
+
+function saveSetups(list) {
+    localStorage.setItem('setups', JSON.stringify(list));
+}
+
+// Einstieg ist die Mitte der Zone. Ist nur ein Wert gesetzt, zaehlt der.
+function setupsEntryPrice(from, to) {
+    if (from > 0 && to > 0) return (from + to) / 2;
+    return from > 0 ? from : to;
+}
+
+// Liefert CRV oder einen Hinweis, warum es sich nicht berechnen laesst.
+// Die Richtungspruefung faengt vertauschte Stops und Ziele ab - ein
+// haeufiger Tippfehler, der sonst ein voellig falsches CRV ergibt.
+function setupsCalcCrv(direction, entry, stop, target, leverage) {
+    if (!(entry > 0) || !(stop > 0) || !(target > 0)) {
+        return { ok: false, reason: 'unvollstaendig' };
+    }
+    const isLong = direction !== 'short';
+    if (isLong && !(stop < entry && entry < target)) {
+        return { ok: false, reason: 'Bei Long muss gelten: Stop < Einstieg < Ziel' };
+    }
+    if (!isLong && !(target < entry && entry < stop)) {
+        return { ok: false, reason: 'Bei Short muss gelten: Ziel < Einstieg < Stop' };
+    }
+    const risk = Math.abs(entry - stop);
+    const reward = Math.abs(target - entry);
+    // Der Hebel vergroessert Chance und Risiko gleich stark - das
+    // Verhaeltnis bleibt also gleich. Was sich aendert, ist der Anteil
+    // der Position, der im Spiel steht.
+    const lev = leverage > 0 ? leverage : 1;
+    return {
+        ok: true,
+        crv: reward / risk,
+        riskPct: (risk / entry) * 100 * lev,
+        rewardPct: (reward / entry) * 100 * lev,
+        leverage: lev
+    };
+}
+
+function setupsCrvColor(crv) {
+    if (crv >= 2) return '#10b981';
+    if (crv >= 1) return '#fbbf24';
+    return '#f87171';
+}
+
+function updateSetupsCrvPreview() {
+    const box = document.getElementById('setupsCrvPreview');
+    if (!box) return;
+    const dir = document.getElementById('setupsDirection').value;
+    const entry = setupsEntryPrice(
+        parseFloat(document.getElementById('setupsEntryFrom').value) || 0,
+        parseFloat(document.getElementById('setupsEntryTo').value) || 0);
+    const stop = parseFloat(document.getElementById('setupsStop').value) || 0;
+    const target = parseFloat(document.getElementById('setupsTarget').value) || 0;
+    const lev = parseFloat(document.getElementById('setupsLeverage').value) || 1;
+
+    const r = setupsCalcCrv(dir, entry, stop, target, lev);
+    box.classList.remove('setups-crv-warn');
+
+    if (!r.ok && r.reason === 'unvollstaendig') {
+        box.style.borderColor = '';
+        box.innerHTML = 'Einstieg, Stop und Ziel eintragen, um das Chance-Risiko-Verhältnis zu sehen';
+        return;
+    }
+    if (!r.ok) {
+        box.classList.add('setups-crv-warn');
+        box.innerHTML = '⚠️ ' + escapeHtml(r.reason);
+        return;
+    }
+    const c = setupsCrvColor(r.crv);
+    box.innerHTML =
+        '<span>Chance-Risiko</span>' +
+        '<strong style="color:' + c + ';">1 : ' + r.crv.toFixed(2) + '</strong>' +
+        '<span style="color:#f87171;">Risiko −' + r.riskPct.toFixed(2) + '%</span>' +
+        '<span style="color:#10b981;">Chance +' + r.rewardPct.toFixed(2) + '%</span>' +
+        (r.leverage > 1
+            ? '<span style="color:#d8b4fe;">mit ' + formatLeverage(r.leverage) + ' Hebel</span>'
+            : '');
+}
+
+function addSetupsItem(e) {
+    e.preventDefault();
+    try {
+        const ticker = document.getElementById('setupsTicker').value.trim().toUpperCase();
+        const direction = document.getElementById('setupsDirection').value;
+        const entryFrom = parseFloat(document.getElementById('setupsEntryFrom').value) || 0;
+        const entryTo = parseFloat(document.getElementById('setupsEntryTo').value) || 0;
+        const stop = parseFloat(document.getElementById('setupsStop').value) || 0;
+        const target = parseFloat(document.getElementById('setupsTarget').value) || 0;
+        const thesis = document.getElementById('setupsThesis').value.trim();
+        const levRaw = parseFloat(document.getElementById('setupsLeverage').value);
+        const leverage = levRaw > 0 ? levRaw : 1;
+
+        if (!ticker) {
+            showToast('❌ Ticker fehlt!', 'error');
+            return;
+        }
+        if (!(entryFrom > 0) && !(entryTo > 0)) {
+            showToast('❌ Mindestens einen Einstiegspreis angeben!', 'error');
+            return;
+        }
+        if (levRaw && levRaw < 1) {
+            showToast('❌ Hebel muss mindestens 1 sein!', 'error');
+            return;
+        }
+
+        // Vertauschte Werte speichern wir nicht still - lieber nachfragen
+        const check = setupsCalcCrv(direction, setupsEntryPrice(entryFrom, entryTo), stop, target);
+        if (!check.ok && check.reason !== 'unvollstaendig') {
+            showToast('❌ ' + check.reason, 'error');
+            return;
+        }
+
+        const list = getSetups();
+        const now = new Date().toISOString();
+        list.push({
+            id: Date.now(), ticker, direction,
+            entryFrom: Math.min(entryFrom || entryTo, entryTo || entryFrom),
+            entryTo: Math.max(entryFrom, entryTo),
+            stop, target, leverage, thesis,
+            screenshot: setupsScreenshotData,
+            status: 'watching', created: now, updated: now
+        });
+        saveSetups(list);
+
+        document.getElementById('setupsForm').reset();
+        resetSetupsDirection();
+        setupsScreenshotData = null;
+        document.getElementById('setupsScreenshotPreview').innerHTML = '';
+        updateSetupsCrvPreview();
+        loadSetups();
+        showToast(`✅ Setup ${ticker} gespeichert!`);
+    } catch (err) {
+        console.error('Setup konnte nicht gespeichert werden:', err);
+        showToast('❌ Setup konnte nicht gespeichert werden!', 'error');
+    }
+}
+
+function resetSetupsDirection() {
+    document.getElementById('setupsDirection').value = 'long';
+    document.querySelectorAll('[data-target="setupsDirection"] .direction-btn')
+        .forEach(b => b.classList.toggle('active', b.dataset.direction === 'long'));
+}
+
+function setSetupsStatus(id, status) {
+    if (!SETUPS_STATUS[status]) return;
+    const list = getSetups().map(w =>
+        w.id === id ? { ...w, status, updated: new Date().toISOString() } : w);
+    saveSetups(list);
+    loadSetups();
+}
+
+function deleteSetupsItem(id) {
+    setupsToDelete = id;
+    const w = getSetups().find(x => x.id === id);
+    document.getElementById('deleteModalTitle').textContent = '🗑️ Setup löschen?';
+    document.getElementById('deleteModalText').textContent =
+        (w ? w.ticker : 'Das Setup') + ' wird permanent gelöscht.';
+    const btn = document.getElementById('deleteConfirmBtn');
+    btn.textContent = 'Ja, löschen';
+    btn.onclick = () => {
+        saveSetups(getSetups().filter(x => x.id !== setupsToDelete));
+        document.getElementById('deleteModal').style.display = 'none';
+        setupsToDelete = null;
+        loadSetups();
+        showToast('✅ Setup gelöscht!');
+    };
+    document.getElementById('deleteModal').style.display = 'flex';
+}
+
+// Uebertraegt das Setup ins Journal-Formular. Dort fehlen dann nur noch
+// Ausstieg und Positionsgroesse - nichts muss doppelt getippt werden.
+function setupsToJournal(id) {
+    const w = getSetups().find(x => x.id === id);
+    if (!w) return;
+
+    const nav = document.querySelector('.nav-item[data-tab="journal"]');
+    if (nav) nav.click();
+
+    setTimeout(() => {
+        const set = (fid, v) => {
+            const el = document.getElementById(fid);
+            if (el && v !== undefined && v !== null && v !== 0) el.value = v;
+        };
+        set('ticker', w.ticker);
+        set('entryPrice', setupsEntryPrice(w.entryFrom, w.entryTo).toFixed(2));
+        set('stopLoss', w.stop || '');
+        set('leverage', w.leverage > 1 ? w.leverage : '');
+        set('reason', w.thesis);
+
+        const dirField = document.getElementById('direction');
+        if (dirField) dirField.value = w.direction;
+        document.querySelectorAll('[data-target="direction"] .direction-btn')
+            .forEach(b => b.classList.toggle('active', b.dataset.direction === w.direction));
+
+        setSetupsStatus(id, 'entered');
+
+        const form = document.getElementById('tradeForm');
+        if (form) form.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        const exit = document.getElementById('exitPrice');
+        if (exit) setTimeout(() => exit.focus(), 400);
+
+        showToast(`✅ ${w.ticker} ins Journal übernommen – Ausstieg und Größe ergänzen`);
+    }, 250);
+}
+
+function loadSetups() {
+    const all = getSetups();
+
+    // Kennzahlen
+    const active = all.filter(w => w.status === 'watching' || w.status === 'ready');
+    const crvs = active.map(w =>
+        setupsCalcCrv(w.direction, setupsEntryPrice(w.entryFrom, w.entryTo), w.stop, w.target))
+        .filter(r => r.ok).map(r => r.crv);
+
+    const setText = (id, v, color) => {
+        const el = document.getElementById(id);
+        if (!el) return;
+        el.textContent = v;
+        if (color) el.style.color = color;
+    };
+    setText('setupsActive', String(active.length));
+    setText('setupsReady', String(all.filter(w => w.status === 'ready').length));
+    setText('setupsDiscarded', String(all.filter(w => w.status === 'discarded').length));
+    if (crvs.length) {
+        const avg = crvs.reduce((a, b) => a + b, 0) / crvs.length;
+        setText('setupsAvgCrv', '1 : ' + avg.toFixed(2), setupsCrvColor(avg));
+    } else {
+        setText('setupsAvgCrv', '–', '#3b82f6');
+    }
+
+    // Filter
+    const shown = all.filter(w => {
+        if (setupsCurrentFilter === 'active') return w.status === 'watching' || w.status === 'ready';
+        if (setupsCurrentFilter === 'all') return true;
+        return w.status === setupsCurrentFilter;
+    }).sort((a, b) => {
+        // Bereite Setups nach oben, dann nach Aenderungsdatum
+        const rank = s => ({ ready: 0, watching: 1, entered: 2, discarded: 3 })[s];
+        return rank(a.status) - rank(b.status) ||
+               (b.updated || '').localeCompare(a.updated || '');
+    });
+
+    const box = document.getElementById('setupsContainer');
+    if (!box) return;
+
+    if (shown.length === 0) {
+        const msg = {
+            active: 'Keine aktiven Setups. Trag oben dein erstes ein.',
+            entered: 'Noch kein Setup ins Journal übernommen.',
+            discarded: 'Noch nichts verworfen.',
+            all: 'Noch kein Setup erfasst.'
+        }[setupsCurrentFilter];
+        box.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:40px 20px;color:#64748b;font-size:14px;">' +
+                        escapeHtml(msg) + '</div>';
+        return;
+    }
+
+    const fmt = v => v > 0 ? v.toFixed(2) : '–';
+
+    box.innerHTML = shown.map(w => {
+        const st = SETUPS_STATUS[w.status];
+        const entry = setupsEntryPrice(w.entryFrom, w.entryTo);
+        const r = setupsCalcCrv(w.direction, entry, w.stop, w.target, w.leverage);
+        const zone = (w.entryFrom > 0 && w.entryTo > 0 && w.entryFrom !== w.entryTo)
+            ? fmt(w.entryFrom) + ' – ' + fmt(w.entryTo) : fmt(entry);
+        const erledigt = w.status === 'entered' || w.status === 'discarded';
+
+        const statusBtns = ['watching', 'ready', 'discarded'].map(k =>
+            `<button class="setups-status-btn ${w.status === k ? 'active' : ''}"
+                     style="--st:${SETUPS_STATUS[k].color};"
+                     onclick="setSetupsStatus(${w.id}, '${k}')">${SETUPS_STATUS[k].label}</button>`
+        ).join('');
+
+        return `
+        <div class="setups-card setups-${w.status}" style="--st:${st.color};">
+            <div class="setups-card-head">
+                <div class="setups-card-ticker">
+                    ${escapeHtml(w.ticker)}
+                    <span class="dir-badge dir-${w.direction}">${w.direction === 'short' ? 'SHORT' : 'LONG'}</span>
+                    ${w.leverage > 1 ? `<span class="trade-leverage-badge">${formatLeverage(w.leverage)}</span>` : ''}
+                </div>
+                <span class="setups-status-pill">${st.label}</span>
+            </div>
+
+            <div class="setups-levels">
+                <div><span>Einstieg</span><strong>${zone}</strong></div>
+                <div><span>Stop</span><strong style="color:#f87171;">${fmt(w.stop)}</strong></div>
+                <div><span>Ziel</span><strong style="color:#10b981;">${fmt(w.target)}</strong></div>
+            </div>
+
+            ${r.ok ? `
+            <div class="setups-crv">
+                <span>Chance-Risiko</span>
+                <strong style="color:${setupsCrvColor(r.crv)};">1 : ${r.crv.toFixed(2)}</strong>
+            </div>
+            <div class="setups-risk-row">
+                <span style="color:#f87171;">Risiko −${r.riskPct.toFixed(2)}%</span>
+                <span style="color:#10b981;">Chance +${r.rewardPct.toFixed(2)}%</span>
+            </div>` : ''}
+
+            ${w.thesis ? `<div class="setups-thesis">${escapeHtml(w.thesis)}</div>` : ''}
+
+            ${w.screenshot ? `<div class="position-screenshot"><img src="${w.screenshot}" alt="Setup" onclick="openScreenshotModal(this.src)"></div>` : ''}
+
+            ${erledigt ? '' : `<div class="setups-status-row">${statusBtns}</div>`}
+
+            <div class="setups-actions">
+                ${w.status === 'entered' ? '' :
+                  `<button class="setups-btn-primary" onclick="setupsToJournal(${w.id})">Ins Journal übernehmen</button>`}
+                ${w.status === 'discarded' ?
+                  `<button class="setups-btn-ghost" onclick="setSetupsStatus(${w.id}, 'watching')">Wieder aufnehmen</button>` : ''}
+                <button class="setups-btn-delete" onclick="deleteSetupsItem(${w.id})" title="Löschen">✕</button>
+            </div>
+        </div>`;
+    }).join('');
+}
+
+// Gemeinsame Anzeige fuer Upload und Strg+V
+function displaySetupsScreenshot(dataUrl) {
+    setupsScreenshotData = dataUrl;
+    const box = document.getElementById('setupsScreenshotPreview');
+    if (!box) return;
+    box.innerHTML =
+        '<img src="' + dataUrl + '" alt="Setup" ' +
+        'style="max-width:100%;border-radius:8px;margin-top:10px;' +
+        'border:1px solid rgba(168,85,247,0.3);display:block;">' +
+        '<button type="button" onclick="clearSetupsScreenshot()" ' +
+        'style="margin-top:10px;padding:8px 16px;background:rgba(248,113,113,0.12);' +
+        'border:1px solid rgba(248,113,113,0.35);color:#f87171;border-radius:6px;' +
+        'cursor:pointer;font-size:12px;font-weight:600;">Bild entfernen</button>';
+    showToast('✅ Screenshot eingefügt!');
+}
+
+function clearSetupsScreenshot() {
+    setupsScreenshotData = null;
+    const box = document.getElementById('setupsScreenshotPreview');
+    if (box) box.innerHTML = '';
+}
+
+function initSetups() {
+    const form = document.getElementById('setupsForm');
+    if (!form || form.dataset.bound) return;
+    form.dataset.bound = '1';
+
+    form.addEventListener('submit', addSetupsItem);
+
+    ['setupsEntryFrom', 'setupsEntryTo', 'setupsStop', 'setupsTarget', 'setupsLeverage'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.addEventListener('input', updateSetupsCrvPreview);
+    });
+    document.querySelectorAll('[data-target="setupsDirection"] .direction-btn')
+        .forEach(b => b.addEventListener('click', () => setTimeout(updateSetupsCrvPreview, 0)));
+
+    document.querySelectorAll('#setupsFilter .filter-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            document.querySelectorAll('#setupsFilter .filter-btn')
+                .forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            setupsCurrentFilter = btn.dataset.setupsfilter;
+            loadSetups();
+        });
+    });
+
+    const area = document.getElementById('setupsScreenshotArea');
+    const input = document.getElementById('setupsScreenshotInput');
+    if (area && input) {
+        area.addEventListener('click', () => input.click());
+        input.addEventListener('change', () => {
+            const f = input.files && input.files[0];
+            if (!f) return;
+            const reader = new FileReader();
+            reader.onload = () => displaySetupsScreenshot(reader.result);
+            reader.readAsDataURL(f);
+            input.value = '';
+        });
+    }
+}
+
+document.addEventListener('DOMContentLoaded', initSetups);

@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="de">
 <head>
@@ -9,8 +10,22 @@
     <link rel="icon" type="image/png" sizes="192x192" href="img/capitalflow-icon-192.png">
     <link rel="apple-touch-icon" sizes="180x180" href="img/capitalflow-icon-180.png">
     <meta name="theme-color" content="#0a0a15">
+    <link rel="manifest" href="manifest.json">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="CapitalFlow">
+    <meta name="mobile-web-app-capable" content="yes">
     <link rel="stylesheet" href="css/style.css">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+    <!-- Chart.js liegt lokal: die installierte App funktioniert damit auch
+         ohne Internet, und es gibt keine Abhaengigkeit von einem fremden
+         Server. Der CDN-Aufruf springt nur ein, falls js/vendor/ beim
+         Kopieren ins Repo mal fehlt. -->
+    <script src="js/vendor/chart.min.js"></script>
+    <script>
+        if (typeof Chart === 'undefined') {
+            document.write('<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"><\/script>');
+        }
+    </script>
 </head>
 <body>
     <!-- ===== LOGIN SCREEN ===== -->
@@ -61,6 +76,12 @@
                 <button class="login-btn" id="loginBtn">Access CapitalFlow</button>
             </div>
             
+            <button class="pwa-install-btn pwa-install-login" id="pwaInstallBtnLogin" style="display: none;"
+                    onclick="cfInstallieren()" title="CapitalFlow als eigenes Programm installieren">
+                <svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true"><path fill="currentColor" d="M12 3a1 1 0 0 1 1 1v8.59l2.3-2.3a1 1 0 1 1 1.4 1.42l-4 4a1 1 0 0 1-1.4 0l-4-4a1 1 0 1 1 1.4-1.42l2.3 2.3V4a1 1 0 0 1 1-1zM5 18a1 1 0 0 1 1-1h12a1 1 0 1 1 0 2H6a1 1 0 0 1-1-1z"/></svg>
+                <span>Als Desktop-App installieren</span>
+            </button>
+
             <div class="login-footer" style="margin-top: 24px; text-align: center;">
                 <p style="color: #475569; font-size: 10px; margin: 0; text-transform: uppercase; letter-spacing: 0.4px; font-weight: 500;">CapitalFlow © 2026</p>
             </div>
@@ -121,6 +142,11 @@
                     <span class="session-sep">·</span>
                     <span class="session-key" id="sessionKey"></span>
                 </div>
+                <button class="pwa-install-btn" id="pwaInstallBtn" style="display: none;"
+                        onclick="cfInstallieren()" title="CapitalFlow als eigenes Programm installieren">
+                    <svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true"><path fill="currentColor" d="M12 3a1 1 0 0 1 1 1v8.59l2.3-2.3a1 1 0 1 1 1.4 1.42l-4 4a1 1 0 0 1-1.4 0l-4-4a1 1 0 1 1 1.4-1.42l2.3 2.3V4a1 1 0 0 1 1-1zM5 18a1 1 0 0 1 1-1h12a1 1 0 1 1 0 2H6a1 1 0 0 1-1-1z"/></svg>
+                    <span>App installieren</span>
+                </button>
                 <div class="navbar-phase">Early Access • Phase 1/4</div>
             </div>
         </div>
@@ -149,9 +175,9 @@
                 <svg class="nav-icon" viewBox="0 0 24 24" width="20" height="20"><path fill="currentColor" d="M19 3h-1V1h-2v2H8V1H6v2H5c-1.11 0-1.99.9-1.99 2L3 19c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V8h14v11z"/></svg>
                 <span>PnL-Kalender</span>
             </div>
-            <div class="nav-item" data-tab="watchlist">
+            <div class="nav-item" data-tab="setups">
                 <svg class="nav-icon" viewBox="0 0 24 24" width="20" height="20"><path fill="currentColor" d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/></svg>
-                <span>Watchlist</span>
+                <span>Setups</span>
             </div>
             <div class="nav-item" data-tab="portfolio">
                 <svg class="nav-icon" viewBox="0 0 24 24" width="20" height="20"><path fill="currentColor" d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm.5-13H11v6l5.25 3.15.75-1.23-4.5-2.67z"/></svg>
@@ -212,7 +238,7 @@
                     </div>
                     <div class="form-group">
                         <label>Richtung</label>
-                        <div class="direction-toggle">
+                        <div class="direction-toggle" data-target="direction">
                             <button type="button" class="direction-btn active" data-direction="long" id="dirLongBtn">Long</button>
                             <button type="button" class="direction-btn" data-direction="short" id="dirShortBtn">Short</button>
                         </div>
@@ -451,13 +477,102 @@
         </div>
 
         <!-- ===== WATCHLIST TAB ===== -->
-        <div id="watchlist" class="tab-content">
-            <h2>Watchlist</h2>
-            <!-- ===== COMING SOON OVERLAY ===== -->
-            <div class="coming-soon-overlay" id="watchlistComingSoonOverlay">
-                <h2>👁️ Coming Soon</h2>
-                <p>Verfügbar in Phase 2</p>
+        <div id="setups" class="tab-content">
+            <div style="margin-bottom: 20px;">
+                <h2 style="margin-bottom: 8px; font-size: 32px; font-weight: 700;">Setups</h2>
+                <p style="color: #94a3b8; font-size: 14px; margin: 0;">Setups planen, bevor du einsteigst</p>
             </div>
+
+            <!-- ===== KENNZAHLEN ===== -->
+            <div class="stat-grid-4">
+                <div class="dashboard-stat" style="background: linear-gradient(135deg, rgba(168, 85, 247, 0.1) 0%, rgba(168, 85, 247, 0.05) 100%); border: 1px solid rgba(168, 85, 247, 0.2); border-radius: 14px; padding: 20px;">
+                    <div style="color: #64748b; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600; margin-bottom: 12px;">Aktive Setups</div>
+                    <div id="setupsActive" style="font-size: 28px; font-weight: 800; color: #a855f7; line-height: 1;">0</div>
+                </div>
+                <div class="dashboard-stat" style="background: linear-gradient(135deg, rgba(16, 185, 129, 0.1) 0%, rgba(16, 185, 129, 0.05) 100%); border: 1px solid rgba(16, 185, 129, 0.2); border-radius: 14px; padding: 20px;">
+                    <div style="color: #64748b; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600; margin-bottom: 12px;">Bereit</div>
+                    <div id="setupsReady" style="font-size: 28px; font-weight: 800; color: #10b981; line-height: 1;">0</div>
+                </div>
+                <div class="dashboard-stat" style="background: linear-gradient(135deg, rgba(59, 130, 246, 0.1) 0%, rgba(59, 130, 246, 0.05) 100%); border: 1px solid rgba(59, 130, 246, 0.2); border-radius: 14px; padding: 20px;">
+                    <div style="color: #64748b; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600; margin-bottom: 12px;">Ø Chance-Risiko</div>
+                    <div id="setupsAvgCrv" style="font-size: 28px; font-weight: 800; color: #3b82f6; line-height: 1;">–</div>
+                </div>
+                <div class="dashboard-stat" style="background: linear-gradient(135deg, rgba(251, 146, 60, 0.1) 0%, rgba(251, 146, 60, 0.05) 100%); border: 1px solid rgba(251, 146, 60, 0.2); border-radius: 14px; padding: 20px;">
+                    <div style="color: #64748b; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600; margin-bottom: 12px;">Verworfen</div>
+                    <div id="setupsDiscarded" style="font-size: 28px; font-weight: 800; color: #fb923c; line-height: 1;">0</div>
+                </div>
+            </div>
+
+            <!-- ===== FORMULAR ===== -->
+            <div class="form-section" style="margin-bottom: 40px;">
+                <h3>Setup erfassen</h3>
+                <form id="setupsForm" novalidate>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="setupsTicker">Ticker</label>
+                            <input type="text" id="setupsTicker" placeholder="z.B. NVDA" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Richtung</label>
+                            <div class="direction-toggle" data-target="setupsDirection">
+                                <button type="button" class="direction-btn active" data-direction="long">Long</button>
+                                <button type="button" class="direction-btn" data-direction="short">Short</button>
+                            </div>
+                            <input type="hidden" id="setupsDirection" value="long">
+                        </div>
+                        <div class="form-group">
+                            <label for="setupsLeverage">Hebel (optional)</label>
+                            <input type="number" id="setupsLeverage" step="0.01" min="1" placeholder="z.B. 3 oder 3.2">
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="setupsEntryFrom">Einstieg von</label>
+                            <input type="number" id="setupsEntryFrom" step="0.01" placeholder="175.00">
+                        </div>
+                        <div class="form-group">
+                            <label for="setupsEntryTo">Einstieg bis</label>
+                            <input type="number" id="setupsEntryTo" step="0.01" placeholder="178.00">
+                        </div>
+                        <div class="form-group">
+                            <label for="setupsStop">Stop</label>
+                            <input type="number" id="setupsStop" step="0.01" placeholder="170.00">
+                        </div>
+                        <div class="form-group">
+                            <label for="setupsTarget">Kursziel</label>
+                            <input type="number" id="setupsTarget" step="0.01" placeholder="195.00">
+                        </div>
+                    </div>
+
+                    <div id="setupsCrvPreview" class="setups-crv-preview">Einstieg, Stop und Ziel eintragen, um das Chance-Risiko-Verhältnis zu sehen</div>
+
+                    <div class="form-group">
+                        <label for="setupsThesis">These</label>
+                        <textarea id="setupsThesis" rows="3" placeholder="Warum interessiert dich das Setup? Worauf wartest du?"></textarea>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Screenshot (optional)</label>
+                        <div class="screenshot-paste-area" id="setupsScreenshotArea">
+                            <p style="margin: 0; color: #cbd5e1;">📋 Strg+V zum Einfügen oder klicken zum Hochladen</p>
+                            <input type="file" accept="image/*" style="display: none;" id="setupsScreenshotInput">
+                        </div>
+                        <div id="setupsScreenshotPreview"></div>
+                    </div>
+
+                    <button type="submit" class="submit-btn">Setup speichern</button>
+                </form>
+            </div>
+
+            <!-- ===== LISTE ===== -->
+            <div class="trades-filter" id="setupsFilter" style="margin-bottom: 24px;">
+                <button class="filter-btn active" data-setupsfilter="active">Aktiv</button>
+                <button class="filter-btn" data-setupsfilter="entered">Eingestiegen</button>
+                <button class="filter-btn" data-setupsfilter="discarded">Verworfen</button>
+                <button class="filter-btn" data-setupsfilter="all">Alle</button>
+            </div>
+            <div id="setupsContainer" class="setups-grid"></div>
         </div>
 
         <!-- ===== PORTFOLIO TAB ===== -->
@@ -608,7 +723,7 @@
         <div id="roadmap" class="tab-content">
             <div style="margin-bottom: 40px;">
                 <h2 style="margin-bottom: 8px; font-size: 32px; font-weight: 700;">Product Roadmap</h2>
-                <p style="color: #94a3b8; font-size: 14px; margin: 0;">CapitalFlow Development Phases • 7/17 Features Complete</p>
+                <p style="color: #94a3b8; font-size: 14px; margin: 0;">CapitalFlow Development Phases • 9/17 Features Complete</p>
             </div>
 
 </html>            <!-- ===== PHASE 1 ===== -->
@@ -694,23 +809,25 @@
                         <p style="color: #94a3b8; font-size: 13px; margin: 0;">Cross-platform expansion & ecosystem</p>
                     </div>
                     <div style="text-align: right;">
-                        <div style="font-size: 36px; font-weight: 700; color: #f59e0b;">2/8</div>
+                        <div style="font-size: 36px; font-weight: 700; color: #f59e0b;">4/8</div>
                         <div style="font-size: 12px; color: #f59e0b; font-weight: 600;">🔄 IN PROGRESS</div>
                     </div>
                 </div>
                 
                 <div style="width: 100%; height: 8px; background: rgba(245, 158, 11, 0.1); border-radius: 4px; margin-bottom: 28px; overflow: hidden; border: 1px solid rgba(245, 158, 11, 0.2);">
-                    <div style="width: 25%; height: 100%; background: linear-gradient(90deg, #f59e0b 0%, #fbbf24 100%); border-radius: 4px; box-shadow: 0 0 20px rgba(245, 158, 11, 0.5);" transition="all 0.5s ease;"></div>
+                    <div style="width: 50%; height: 100%; background: linear-gradient(90deg, #f59e0b 0%, #fbbf24 100%); border-radius: 4px; box-shadow: 0 0 20px rgba(245, 158, 11, 0.5);" transition="all 0.5s ease;"></div>
                 </div>
                 
                 <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 16px;">
-                    <div class="roadmap-card-premium in-progress-card">
+                    <div class="roadmap-card-premium completed-card">
                         <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 14px;">
                             <div style="font-size: 32px;">👁️</div>
-                            <div style="background: rgba(245, 158, 11, 0.25); color: #f59e0b; padding: 3px 6px; border-radius: 3px; font-size: 10px; font-weight: 700;">SOON</div>
+                            <svg style="width: 20px; height: 20px; color: #10b981; stroke-width: 3;" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                <polyline points="20 6 9 17 4 12"></polyline>
+                            </svg>
                         </div>
-                        <h4 style="font-size: 13px; font-weight: 700; color: #e2e8f0; margin: 0 0 6px 0; text-transform: uppercase; letter-spacing: 0.5px;">Watchlist</h4>
-                        <p style="font-size: 11px; color: #94a3b8; margin: 0; line-height: 1.5;">Alerts & Tracking</p>
+                        <h4 style="font-size: 13px; font-weight: 700; color: #e2e8f0; margin: 0 0 6px 0; text-transform: uppercase; letter-spacing: 0.5px;">Setups</h4>
+                        <p style="font-size: 11px; color: #94a3b8; margin: 0; line-height: 1.5;">Setups & Planung</p>
                     </div>
                     
                     <div class="roadmap-card-premium completed-card">
@@ -724,13 +841,15 @@
                         <p style="font-size: 11px; color: #94a3b8; margin: 0; line-height: 1.5;">Open & Closed Pos</p>
                     </div>
                     
-                    <div class="roadmap-card-premium in-progress-card">
+                    <div class="roadmap-card-premium completed-card">
                         <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 14px;">
                             <div style="font-size: 32px;">💳</div>
-                            <div style="background: rgba(245, 158, 11, 0.25); color: #f59e0b; padding: 3px 6px; border-radius: 3px; font-size: 10px; font-weight: 700;">SOON</div>
+                            <svg style="width: 20px; height: 20px; color: #10b981; stroke-width: 3;" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                <polyline points="20 6 9 17 4 12"></polyline>
+                            </svg>
                         </div>
                         <h4 style="font-size: 13px; font-weight: 700; color: #e2e8f0; margin: 0 0 6px 0; text-transform: uppercase; letter-spacing: 0.5px;">Transactions</h4>
-                        <p style="font-size: 11px; color: #94a3b8; margin: 0; line-height: 1.5;">History & Export</p>
+                        <p style="font-size: 11px; color: #94a3b8; margin: 0; line-height: 1.5;">Ein- & Auszahlungen</p>
                     </div>
                     
                     <div class="roadmap-card-premium in-progress-card">
@@ -904,6 +1023,7 @@
     </div>
 
     <!-- Zugangsschluessel zuerst laden - app.js braucht die Liste -->
+    <script src="js/pwa.js"></script>
     <script src="js/keys.js"></script>
     <script src="js/app.js"></script>
 </body>

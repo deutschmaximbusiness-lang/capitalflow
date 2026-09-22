@@ -1,3 +1,4 @@
+
 /* ===== ANIMATIONS ===== */
 @keyframes fadeInUp {
     from {
@@ -588,6 +589,12 @@
 }
 
 /* ===== TYPOGRAFIE SYSTEM - INTER ===== */
+/* Ohne eigenen Hintergrund auf html laeuft die Seite weiss aus,
+   sobald der Inhalt laenger ist als der Bildschirm */
+html {
+    background: #0a0a15;
+}
+
 body {
     font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
     background: linear-gradient(135deg, 
@@ -2029,6 +2036,272 @@ h3 {
     }
 }
 
+/* ===== SETUPS ===== */
+.setups-crv-preview {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 18px;
+    margin: 4px 0 20px 0;
+    padding: 14px 18px;
+    border-radius: 10px;
+    background: rgba(59, 130, 246, 0.06);
+    border: 1px solid rgba(59, 130, 246, 0.2);
+    font-size: 13px;
+    font-weight: 600;
+    color: #94a3b8;
+}
+
+.setups-crv-preview strong {
+    font-size: 18px;
+    font-weight: 800;
+}
+
+.setups-crv-preview.setups-crv-warn {
+    background: rgba(248, 113, 113, 0.08);
+    border-color: rgba(248, 113, 113, 0.35);
+    color: #f87171;
+}
+
+.setups-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 18px;
+}
+
+.setups-card {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    padding: 22px;
+    border-radius: 14px;
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.03) 0%, rgba(255, 255, 255, 0.01) 100%);
+    border: 1px solid rgba(168, 85, 247, 0.15);
+    border-top: 3px solid var(--st);
+    transition: transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease;
+}
+
+.setups-card:hover {
+    transform: translateY(-3px);
+    border-color: rgba(168, 85, 247, 0.35);
+    border-top-color: var(--st);
+    box-shadow: 0 12px 34px rgba(0, 0, 0, 0.35);
+}
+
+/* Erledigte Setups treten zurueck, bleiben aber lesbar */
+.setups-card.setups-entered,
+.setups-card.setups-discarded {
+    opacity: 0.72;
+}
+
+.setups-card.setups-entered:hover,
+.setups-card.setups-discarded:hover {
+    opacity: 1;
+}
+
+.setups-card-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 10px;
+}
+
+.setups-card-ticker {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 19px;
+    font-weight: 800;
+    color: var(--primary-light, #d8b4fe);
+}
+
+.setups-status-pill {
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing: 0.6px;
+    text-transform: uppercase;
+    padding: 4px 10px;
+    border-radius: 999px;
+    color: var(--st);
+    border: 1px solid var(--st);
+    background: rgba(255, 255, 255, 0.03);
+    white-space: nowrap;
+}
+
+.setups-levels {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+}
+
+/* Die Einstiegszone ist die wichtigste Angabe und oft ein Bereich -
+   deshalb volle Breite, sonst wird sie abgeschnitten */
+.setups-levels div:first-child {
+    grid-column: 1 / -1;
+}
+
+.setups-levels div {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding: 10px 12px;
+    border-radius: 9px;
+    background: rgba(0, 0, 0, 0.22);
+}
+
+.setups-levels span {
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.6px;
+    text-transform: uppercase;
+    color: #64748b;
+}
+
+.setups-levels strong {
+    font-size: 14px;
+    font-weight: 700;
+    color: #e2e8f0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.setups-crv {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 14px;
+    border-radius: 9px;
+    background: rgba(59, 130, 246, 0.06);
+    border: 1px solid rgba(59, 130, 246, 0.18);
+    font-size: 12px;
+    font-weight: 600;
+    color: #94a3b8;
+}
+
+.setups-crv strong {
+    font-size: 16px;
+    font-weight: 800;
+}
+
+.setups-risk-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 0 4px;
+    margin-top: -6px;
+    font-size: 12px;
+    font-weight: 700;
+}
+
+.setups-thesis {
+    font-size: 13px;
+    line-height: 1.6;
+    color: #cbd5e1;
+    padding-left: 12px;
+    border-left: 2px solid rgba(168, 85, 247, 0.35);
+}
+
+.setups-status-row {
+    display: flex;
+    gap: 6px;
+}
+
+.setups-status-btn {
+    flex: 1;
+    padding: 8px 6px;
+    border-radius: 7px;
+    border: 1px solid rgba(168, 85, 247, 0.18);
+    background: transparent;
+    color: #64748b;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    font-size: 11px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.setups-status-btn:hover {
+    color: var(--st);
+    border-color: var(--st);
+}
+
+.setups-status-btn.active {
+    color: var(--st);
+    border-color: var(--st);
+    background: rgba(255, 255, 255, 0.04);
+}
+
+.setups-actions {
+    display: flex;
+    gap: 8px;
+    margin-top: auto;
+}
+
+.setups-btn-primary {
+    flex: 1;
+    position: relative;
+    overflow: hidden;
+    padding: 11px 14px;
+    border: none;
+    border-radius: 9px;
+    background: linear-gradient(135deg, #a855f7 0%, #8b5cf6 100%);
+    color: #fff;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    font-size: 12px;
+    font-weight: 700;
+    cursor: pointer;
+    box-shadow: 0 0 14px rgba(168, 85, 247, 0.25);
+    transition: all 0.25s ease;
+}
+
+.setups-btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 0 24px rgba(168, 85, 247, 0.5);
+}
+
+.setups-btn-ghost {
+    flex: 1;
+    padding: 11px 14px;
+    border-radius: 9px;
+    border: 1px solid rgba(168, 85, 247, 0.3);
+    background: transparent;
+    color: #cbd5e1;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    font-size: 12px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.setups-btn-ghost:hover {
+    border-color: rgba(168, 85, 247, 0.6);
+    color: #d8b4fe;
+}
+
+.setups-btn-delete {
+    width: 38px;
+    flex-shrink: 0;
+    border-radius: 9px;
+    border: 1px solid rgba(248, 113, 113, 0.25);
+    background: transparent;
+    color: #f87171;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.setups-btn-delete:hover {
+    background: rgba(248, 113, 113, 0.14);
+    border-color: rgba(248, 113, 113, 0.5);
+}
+
+@media (max-width: 640px) {
+    .setups-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
 /* ===== LONG / SHORT KARTEN IN ANALYTICS ===== */
 .dir-card {
     position: relative;
@@ -2133,14 +2406,14 @@ h3 {
     color: #cbd5e1;
 }
 
-#dirLongBtn.active {
+.direction-btn[data-direction="long"].active {
     background: rgba(16, 185, 129, 0.16);
     border-color: rgba(16, 185, 129, 0.5);
     color: #10b981;
     box-shadow: 0 0 16px rgba(16, 185, 129, 0.18);
 }
 
-#dirShortBtn.active {
+.direction-btn[data-direction="short"].active {
     background: rgba(251, 146, 60, 0.16);
     border-color: rgba(251, 146, 60, 0.5);
     color: #fb923c;
@@ -3826,4 +4099,68 @@ h3 {
 
 .premium-stat-card:hover::before {
     opacity: 1;
+}
+/* ============================================================
+   INSTALLATION ALS DESKTOP-APP
+   Knopf erscheint nur, wenn der Browser die App wirklich
+   installieren kann (Chrome/Edge). js/pwa.js steuert das.
+   ============================================================ */
+.pwa-install-btn {
+    display: none;                 /* pwa.js blendet ein */
+    align-items: center;
+    gap: 7px;
+    flex-shrink: 0;
+    padding: 7px 14px;
+    border-radius: 999px;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.3px;
+    white-space: nowrap;
+    cursor: pointer;
+    color: #e9d5ff;
+    background: linear-gradient(135deg, rgba(168, 85, 247, 0.18) 0%, rgba(236, 72, 153, 0.14) 100%);
+    border: 1px solid rgba(168, 85, 247, 0.35);
+    -webkit-font-smoothing: antialiased;
+    transition: transform 0.25s ease, box-shadow 0.3s ease,
+                border-color 0.3s ease, background 0.3s ease;
+}
+
+.pwa-install-btn svg { opacity: 0.85; transition: opacity 0.25s ease; }
+
+.pwa-install-btn:hover {
+    transform: translateY(-1px);
+    color: #fff;
+    border-color: rgba(192, 132, 252, 0.6);
+    background: linear-gradient(135deg, rgba(168, 85, 247, 0.3) 0%, rgba(236, 72, 153, 0.24) 100%);
+    box-shadow: 0 6px 22px rgba(168, 85, 247, 0.3);
+}
+
+.pwa-install-btn:hover svg { opacity: 1; }
+.pwa-install-btn:active { transform: translateY(0); }
+
+/* In der installierten App ist der Knopf sinnlos und die obere Leiste
+   darf etwas kompakter sein - es gibt keine Browserleiste mehr darueber */
+body.pwa-installed .pwa-install-btn { display: none !important; }
+
+@media (max-width: 900px) {
+    /* auf schmalen Fenstern nur das Symbol, der Text faellt weg */
+    .pwa-install-btn span { display: none; }
+    .pwa-install-btn { padding: 7px 10px; }
+}
+
+/* Variante auf dem Login-Screen: volle Breite unter dem Formular */
+.pwa-install-login {
+    width: 100%;
+    justify-content: center;
+    margin-top: 18px;
+    padding: 11px 16px;
+    font-size: 12px;
+    border-radius: 12px;
+}
+
+@media (max-width: 900px) {
+    /* auf dem Login-Screen bleibt der Text stehen, dort ist Platz */
+    .pwa-install-login span { display: inline; }
+    .pwa-install-login { padding: 11px 16px; }
 }
