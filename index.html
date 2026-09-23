@@ -69,11 +69,35 @@
 
             <!-- Login Form -->
             <div class="login-form" id="normalLoginForm">
-                <div class="login-form-group">
-                    <input type="password" id="loginKeyInput" class="login-input" placeholder="Enter your access key" autocomplete="off" style="background: rgba(15, 15, 30, 0.9); border: 1px solid rgba(168, 85, 247, 0.15); backdrop-filter: blur(10px); color: #cbd5e1; font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-size: 13px;">
+
+                <!-- ===== 1. Nicht angemeldet ===== -->
+                <div id="authPanelLogin">
+                    <button class="discord-btn" id="discordLoginBtn">
+                        <svg viewBox="0 0 127 96" width="20" height="16" aria-hidden="true"><path fill="currentColor" d="M107.7 8.07A105.15 105.15 0 0 0 81.47 0a72.06 72.06 0 0 0-3.36 6.83 97.68 97.68 0 0 0-29.11 0A72.37 72.37 0 0 0 45.64 0a105.89 105.89 0 0 0-26.25 8.09C2.79 32.65-1.71 56.6.54 80.21a105.73 105.73 0 0 0 32.17 16.15 77.7 77.7 0 0 0 6.89-11.11 68.42 68.42 0 0 1-10.85-5.18c.91-.66 1.8-1.34 2.66-2a75.57 75.57 0 0 0 64.32 0c.87.71 1.76 1.39 2.66 2a68.68 68.68 0 0 1-10.87 5.19 77 77 0 0 0 6.89 11.1 105.25 105.25 0 0 0 32.19-16.14c2.64-27.38-4.51-51.11-18.9-72.15ZM42.45 65.69C36.18 65.69 31 60 31 53s5-12.74 11.43-12.74S54 46 53.89 53s-5.05 12.69-11.44 12.69Zm42.24 0C78.41 65.69 73.25 60 73.25 53s5-12.74 11.44-12.74S96.23 46 96.12 53s-5.04 12.69-11.43 12.69Z"/></svg>
+                        <span>Mit Discord anmelden</span>
+                    </button>
+                    <p style="margin: 16px 0 0 0; color: #64748b; font-size: 11px; text-align: center; line-height: 1.6;">Early Access — du brauchst zusätzlich einen Access Key</p>
+                    <button class="auth-link" id="showAdminBtn">Admin</button>
                 </div>
-                
-                <button class="login-btn" id="loginBtn">Access CapitalFlow</button>
+
+                <!-- ===== 2. Angemeldet, noch nicht freigeschaltet ===== -->
+                <div id="authPanelKey" style="display: none;">
+                    <p style="margin: 0 0 18px 0; color: #94a3b8; font-size: 12px; text-align: center;">Angemeldet als <span id="authDiscordName" style="color: #e9d5ff; font-weight: 700;"></span></p>
+                    <div class="login-form-group">
+                        <input type="password" id="inviteKeyInput" class="login-input" placeholder="Access Key eingeben" autocomplete="off" style="background: rgba(15, 15, 30, 0.9); border: 1px solid rgba(168, 85, 247, 0.15); backdrop-filter: blur(10px); color: #cbd5e1; font-family: 'Inter', sans-serif; font-size: 13px;">
+                    </div>
+                    <button class="login-btn" id="redeemBtn">Freischalten</button>
+                    <button class="auth-link" id="keyLogoutBtn">Mit anderem Konto anmelden</button>
+                </div>
+
+                <!-- ===== 3. Admin ===== -->
+                <div id="authPanelAdmin" style="display: none;">
+                    <div class="login-form-group">
+                        <input type="password" id="loginKeyInput" class="login-input" placeholder="Admin Key" autocomplete="off" style="background: rgba(15, 15, 30, 0.9); border: 1px solid rgba(168, 85, 247, 0.15); backdrop-filter: blur(10px); color: #cbd5e1; font-family: 'Inter', sans-serif; font-size: 13px;">
+                    </div>
+                    <button class="login-btn" id="loginBtn">Weiter</button>
+                    <button class="auth-link" id="backFromAdminBtn">Zurück</button>
+                </div>
             </div>
             
             <button class="pwa-install-btn pwa-install-login" id="pwaInstallBtnLogin" style="display: none;"
@@ -1050,6 +1074,7 @@
     <!-- Datenbank: die Bibliothek zuerst, dann unsere Konfiguration -->
     <script src="js/vendor/supabase.js"></script>
     <script src="js/supabase.js"></script>
+    <script src="js/auth.js"></script>
     <script src="js/app.js"></script>
 </body>
 </html>

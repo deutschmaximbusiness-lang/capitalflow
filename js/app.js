@@ -202,9 +202,18 @@ function initLoginSystem() {
 
     const isLoggedIn = localStorage.getItem('capitalflow_logged_in') === 'true';
     const isAdminLoggedIn = sessionStorage.getItem('capitalflow_admin_logged_in') === 'true';
-    
+
+    // Wer angemeldet ist, entscheidet seit dem Discord-Login js/auth.js -
+    // und zwar asynchron, weil die Sitzung erst beim Server erfragt wird.
+    // Deshalb hier nichts anzeigen, sonst blitzt kurz der falsche Zustand
+    // auf. Die Ereignisbehandlung weiter unten wird trotzdem verdrahtet,
+    // weil der Admin-Pfad sie braucht.
+    const authUebernimmt = Boolean(window.cfDb) && !isAdminLoggedIn;
+
     // Show/hide based on auth state
-    if (isLoggedIn) {
+    if (authUebernimmt) {
+        // auth.js entscheidet
+    } else if (isLoggedIn) {
         // User logged in - show app
         loginScreen.classList.add('hidden');
         adminPanel.classList.add('hidden');
@@ -257,9 +266,17 @@ function initLoginSystem() {
             return;
         }
 
-        // Gegen die Hash-Liste aus js/keys.js pruefen. Dadurch gilt ein Key
-        // in JEDEM Browser, der die Datei laedt - nicht nur in dem, in dem
-        // er erzeugt wurde.
+        // Seit dem Discord-Login ist dieses Feld nur noch fuer den Admin.
+        // Normale Access Keys werden nach der Discord-Anmeldung
+        // eingeloest, gegen die Einladungstabelle in der Datenbank -
+        // eine Pruefung hier im Browser waere ohnehin umgehbar.
+        if (window.cfDb) {
+            showToast('Bitte über Discord anmelden', 'error');
+            loginKeyInput.value = '';
+            return;
+        }
+
+        // Notpfad ohne Datenbankverbindung: alte Hash-Liste aus keys.js
         const matched = (typeof AUTHORIZED_KEYS !== 'undefined'
             ? AUTHORIZED_KEYS : []).find(k => k.hash === enteredHash);
         const keyExists = Boolean(matched);

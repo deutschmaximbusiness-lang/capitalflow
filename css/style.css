@@ -4206,3 +4206,55 @@ body.pwa-installed .pwa-install-btn { display: none !important; }
     .daten-btn span { display: none; }
     .daten-btn { padding: 7px 10px; }
 }
+
+/* ============================================================
+   ANMELDUNG ÜBER DISCORD
+   ============================================================ */
+.discord-btn {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 11px;
+    padding: 15px 20px;
+    border: none;
+    border-radius: 12px;
+    cursor: pointer;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    font-size: 14px;
+    font-weight: 700;
+    letter-spacing: 0.2px;
+    color: #fff;
+    /* Discord-Blurple, aber mit unserem Verlauf, damit es zum Rest passt */
+    background: linear-gradient(135deg, #5865f2 0%, #7c5cf0 100%);
+    box-shadow: 0 4px 18px rgba(88, 101, 242, 0.32);
+    -webkit-font-smoothing: antialiased;
+    transition: transform 0.22s ease, box-shadow 0.3s ease, filter 0.25s ease;
+}
+
+.discord-btn:hover {
+    transform: translateY(-2px);
+    filter: brightness(1.08);
+    box-shadow: 0 10px 30px rgba(88, 101, 242, 0.45);
+}
+
+.discord-btn:active { transform: translateY(0); }
+.discord-btn:disabled { cursor: default; transform: none; filter: none; }
+
+/* Unauffälliger Textlink unter den Knöpfen */
+.auth-link {
+    display: block;
+    width: 100%;
+    margin-top: 16px;
+    padding: 6px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-family: 'Inter', sans-serif;
+    font-size: 11px;
+    font-weight: 600;
+    color: #475569;
+    transition: color 0.25s ease;
+}
+
+.auth-link:hover { color: #a855f7; }
