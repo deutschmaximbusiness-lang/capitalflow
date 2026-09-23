@@ -10,7 +10,7 @@
  * Bei jedem Release CACHE_VERSION hochzaehlen.
  */
 
-const CACHE_VERSION = 'cf-v2';
+const CACHE_VERSION = 'cf-v3';
 const CACHE_APP = CACHE_VERSION + '-app';
 const CACHE_ASSETS = CACHE_VERSION + '-assets';
 
@@ -100,9 +100,13 @@ self.addEventListener('fetch', (event) => {
         return;
     }
 
-    // --- App-Dateien: Netz zuerst
+    // --- App-Dateien: Netz zuerst.
+    // cache: 'no-cache' ist hier entscheidend: ohne das darf der Browser
+    // aus seinem eigenen HTTP-Cache antworten (GitHub Pages erlaubt zehn
+    // Minuten), und der Worker legt die veraltete Antwort dann auch noch
+    // ab. "Netz zuerst" waere damit nur ein Versprechen.
     event.respondWith(
-        fetch(req)
+        fetch(req, { cache: 'no-cache' })
             .then((res) => {
                 if (res.ok) {
                     const kopie = res.clone();
