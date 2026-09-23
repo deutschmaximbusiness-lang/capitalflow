@@ -79,58 +79,68 @@
     // Discord-Login lautet die Kennung aber die Nutzer-ID - ohne diesen
     // Schritt waere das Journal ploetzlich leer, und das sieht aus wie
     // Datenverlust.
-    function alteDatenUebernehmen(neueKennung) {
-        const BEREICHE = ['trades', 'positions', 'closedPositions',
-                          'transactions', 'setups'];
-        const roh = window.cfRawStorage;
-        if (!roh) return 0;
+    // Merkt sich, welcher Ablageort zu diesem Konto gehoert.
+    const ABLAGE = 'capitalflow_ablage::';
 
-        // Vorhandene Daten nicht ueberschreiben
+    function ablageFuer(uid) {
+        const gemerkt = window.cfRawStorage.get(ABLAGE + uid);
+        return gemerkt || uid;
+    }
+
+    /**
+     * Liefert den Ablageort fuer diesen Nutzer.
+     *
+     * Frueher wurden die Daten vom alten Access Key auf die Nutzer-ID
+     * KOPIERT. Das war falsch: Screenshots liegen als Base64 im Speicher,
+     * das Kopieren verdoppelt alles, und der Browser bricht mit
+     * QuotaExceededError ab - stillschweigend, weil der Fehler nirgends
+     * abgefangen wurde. Ergebnis: leeres Journal, und beim naechsten Laden
+     * dieselbe Frage von vorn.
+     *
+     * Kopiert wird jetzt gar nichts mehr. Die Daten bleiben liegen, wo sie
+     * sind, und die App merkt sich nur, welcher Ort zu diesem Konto
+     * gehoert. Kostet null Speicher und kann nicht fehlschlagen.
+     */
+    function ablageWaehlen(uid) {
+        const roh = window.cfRawStorage;
+        if (!roh) return uid;
+
+        // Schon einmal entschieden
+        const gemerkt = roh.get(ABLAGE + uid);
+        if (gemerkt) return gemerkt;
+
+        // Unter der Nutzer-ID liegt bereits etwas
         try {
-            const schon = JSON.parse(roh.get('trades::' + neueKennung) || '[]');
-            if (Array.isArray(schon) && schon.length > 0) return 0;
+            const schon = JSON.parse(roh.get('trades::' + uid) || '[]');
+            if (Array.isArray(schon) && schon.length > 0) return uid;
         } catch (e) { /* weiter */ }
 
-        const fremdeKennungen = new Set();
+        const orte = [];
         for (let i = 0; i < localStorage.length; i++) {
             const k = localStorage.key(i);
             const m = k && k.match(/^trades::(.+)$/);
-            if (m && m[1] !== neueKennung) fremdeKennungen.add(m[1]);
+            if (!m || m[1] === uid) continue;
+            let n = 0;
+            try { n = (JSON.parse(roh.get(k) || '[]') || []).length; }
+            catch (e) { n = 0; }
+            if (n > 0) orte.push({ ort: m[1], anzahl: n });
         }
 
-        if (fremdeKennungen.size === 0) return 0;
+        if (orte.length === 0) return uid;
 
-        // Bei genau einer alten Kennung stillschweigend uebernehmen.
-        if (fremdeKennungen.size === 1) {
-            return kopiere(Array.from(fremdeKennungen)[0], neueKennung);
+        if (orte.length === 1) {
+            roh.set(ABLAGE + uid, orte[0].ort);
+            return orte[0].ort;
         }
 
-        // Bei mehreren darf nicht geraten werden - fremde Trades im
-        // eigenen Journal waeren schlimmer als ein leeres Journal. Aber
-        // kommentarlos nichts zu tun ist genauso falsch: dann steht man
-        // vor einer leeren App und haelt seine Daten fuer verloren.
-        frageWelcheDaten(Array.from(fremdeKennungen), neueKennung);
-        return 0;
+        // Mehrere: nicht raten, sondern fragen. Bis dahin das leere,
+        // eigene Fach benutzen - nie ein fremdes.
+        orte.sort(function (a, b) { return b.anzahl - a.anzahl; });
+        frageWelcheDaten(orte, uid);
+        return uid;
     }
 
-    function kopiere(alt, neu) {
-        const BEREICHE = ['trades', 'positions', 'closedPositions',
-                          'transactions', 'setups'];
-        const roh = window.cfRawStorage;
-        let anzahl = 0;
-        BEREICHE.forEach(function (b) {
-            const wert = roh.get(b + '::' + alt);
-            if (!wert) return;
-            roh.set(b + '::' + neu, wert);
-            try {
-                const liste = JSON.parse(wert);
-                if (Array.isArray(liste)) anzahl += liste.length;
-            } catch (e) { /* egal */ }
-        });
-        return anzahl;
-    }
-
-    function frageWelcheDaten(kennungen, neueKennung) {
+    function frageWelcheDaten(orte, uid) {
         if (datenGefragt) return;
         // "Später entscheiden" gilt bis zum Schliessen des Fensters -
         // bei jedem Neuladen erneut zu fragen waere Belaestigung, es
@@ -142,23 +152,20 @@
         const modal = el('altdatenModal');
         if (!box || !modal) return;
 
-        const zeilen = kennungen.map(function (k) {
-            let n = 0;
-            try { n = (JSON.parse(window.cfRawStorage.get('trades::' + k) || '[]')).length; }
-            catch (e) { /* egal */ }
-            const kurz = k.length > 14 ? k.slice(0, 6) + '…' + k.slice(-4) : k;
-            return '<button class="altdaten-wahl" data-kennung="' + k + '">'
+        box.innerHTML = orte.map(function (o) {
+            const kurz = o.ort.length > 14
+                ? o.ort.slice(0, 6) + '…' + o.ort.slice(-4) : o.ort;
+            return '<button class="altdaten-wahl" data-ort="' + o.ort + '">'
                  + '<span class="altdaten-kennung">' + kurz + '</span>'
-                 + '<span class="altdaten-anzahl">' + n + ' Trades</span></button>';
-        });
+                 + '<span class="altdaten-anzahl">' + o.anzahl + ' Trades</span></button>';
+        }).join('');
 
-        box.innerHTML = zeilen.join('');
         box.querySelectorAll('.altdaten-wahl').forEach(function (b) {
             b.addEventListener('click', function () {
-                const n = kopiere(b.dataset.kennung, neueKennung);
+                // Nur den Zeiger setzen - die Daten bleiben, wo sie sind
+                window.cfRawStorage.set(ABLAGE + uid, b.dataset.ort);
                 modal.style.display = 'none';
-                meldung('✅ ' + n + ' Einträge übernommen', 'success');
-                setTimeout(function () { location.reload(); }, 800);
+                setTimeout(function () { location.reload(); }, 400);
             });
         });
 
@@ -228,7 +235,11 @@
         if (appLaeuft) { badgeSetzen(); return; }
         appLaeuft = true;
 
-        const kennung = nutzer.id;
+        // Der Ablageort ist nicht zwingend die Nutzer-ID: wer vorher mit
+        // einem Access Key gearbeitet hat, dessen Daten liegen weiter
+        // unter dessen Kennung. Verschoben wird nichts.
+        const kennung = ablageWaehlen(nutzer.id);
+
         // Discord-Name hat Vorrang vor dem Namen aus der Einladung: so
         // heisst man ueberall gleich wie im Server, aus dem man kommt.
         const meta = (nutzer && nutzer.user_metadata) || {};
@@ -238,8 +249,6 @@
         window.cfRawStorage.set('capitalflow_current_key', kennung);
         window.cfRawStorage.set('capitalflow_current_name', name);
         localStorage.setItem('capitalflow_logged_in', 'true');
-
-        const gerettet = alteDatenUebernehmen(kennung);
 
         appAn();
         [window.loadTrades, window.loadPositions, window.loadTransactions,
@@ -258,10 +267,11 @@
         }
         badgeSetzen();
 
-        if (gerettet > 0) {
+        // Hinweis nur, wenn die Daten aus einem frueheren Zugang stammen
+        if (kennung !== nutzer.id && bestand.length > 0) {
             setTimeout(function () {
-                meldung('✅ ' + gerettet + ' Einträge aus deinem bisherigen '
-                        + 'Zugang übernommen', 'success');
+                meldung('✅ ' + bestand.length + ' Trades aus deinem '
+                        + 'bisherigen Zugang', 'success');
             }, 1400);
         }
     }
