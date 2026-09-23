@@ -82,9 +82,22 @@
 
                 <!-- ===== 2. Angemeldet, noch nicht freigeschaltet ===== -->
                 <div id="authPanelKey" style="display: none;">
-                    <p style="margin: 0 0 18px 0; color: #94a3b8; font-size: 12px; text-align: center;">Angemeldet als <span id="authDiscordName" style="color: #e9d5ff; font-weight: 700;"></span></p>
+                    <div class="auth-konto">
+                        <img class="auth-konto-bild" id="authDiscordAvatar" alt="" style="display: none;">
+                        <div class="auth-konto-text">
+                            <div class="auth-konto-label">Angemeldet über Discord</div>
+                            <div class="auth-konto-name" id="authDiscordName"></div>
+                        </div>
+                        <span class="auth-konto-punkt"></span>
+                    </div>
+
+                    <div class="auth-hinweis">
+                        <span class="auth-hinweis-titel">Noch ein Schritt</span>
+                        Gib deinen Access Key ein, um CapitalFlow freizuschalten.
+                    </div>
+
                     <div class="login-form-group">
-                        <input type="password" id="inviteKeyInput" class="login-input" placeholder="Access Key eingeben" autocomplete="off" style="background: rgba(15, 15, 30, 0.9); border: 1px solid rgba(168, 85, 247, 0.15); backdrop-filter: blur(10px); color: #cbd5e1; font-family: 'Inter', sans-serif; font-size: 13px;">
+                        <input type="password" id="inviteKeyInput" class="login-input" placeholder="Access Key" autocomplete="off" spellcheck="false" style="background: rgba(15, 15, 30, 0.9); border: 1px solid rgba(168, 85, 247, 0.15); backdrop-filter: blur(10px); color: #cbd5e1; font-family: 'Inter', sans-serif; font-size: 13px; text-align: center; letter-spacing: 1.5px;">
                     </div>
                     <button class="login-btn" id="redeemBtn">Freischalten</button>
                     <button class="auth-link" id="keyLogoutBtn">Mit anderem Konto anmelden</button>
@@ -161,9 +174,10 @@
             </div>
             <div class="navbar-right">
                 <div class="session-badge" id="sessionBadge" style="display: none;">
-                    <span class="session-dot"></span>
+                    <img class="session-avatar" id="sessionAvatar" alt="" style="display: none;">
+                    <span class="session-dot" id="sessionDot"></span>
                     <span class="session-name" id="sessionName"></span>
-                    <span class="session-sep">·</span>
+                    <span class="session-sep" id="sessionSep">·</span>
                     <span class="session-key" id="sessionKey"></span>
                 </div>
                 <button class="daten-btn" id="datenBtn" onclick="cfDatenModalAuf()"
@@ -980,6 +994,18 @@
 
 
     <!-- ===== DELETE MODAL ===== -->
+    <!-- ===== ALTE DATEN UEBERNEHMEN ===== -->
+    <div class="modal" id="altdatenModal">
+        <div class="modal-content" style="max-width: 440px; background: linear-gradient(135deg, rgba(15, 15, 32, 0.95) 0%, rgba(20, 20, 45, 0.95) 100%); border: 1px solid rgba(168, 85, 247, 0.2); border-radius: 20px; backdrop-filter: blur(20px); padding: 40px; box-shadow: 0 25px 50px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.1);">
+            <div style="margin-bottom: 22px;">
+                <h2 style="margin: 0 0 8px 0; font-size: 26px; font-weight: 700; background: linear-gradient(135deg, #c084fc 0%, #f472b6 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;">Frühere Daten gefunden</h2>
+                <p style="margin: 0; color: #94a3b8; font-size: 13px; line-height: 1.6;">In diesem Browser liegen Trades aus mehreren früheren Zugängen. Welche gehören dir?</p>
+            </div>
+            <div id="altdatenListe"></div>
+            <button onclick="cfAltdatenSpaeter()" class="auth-link" style="margin-top: 18px;">Später entscheiden</button>
+        </div>
+    </div>
+
     <!-- ===== DATEN SICHERN / EINSPIELEN ===== -->
     <div class="modal" id="datenModal">
         <div class="modal-content" style="max-width: 460px; background: linear-gradient(135deg, rgba(15, 15, 32, 0.95) 0%, rgba(20, 20, 45, 0.95) 100%); border: 1px solid rgba(168, 85, 247, 0.2); border-radius: 20px; backdrop-filter: blur(20px); padding: 40px; box-shadow: 0 25px 50px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.1);">

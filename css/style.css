@@ -4258,3 +4258,143 @@ body.pwa-installed .pwa-install-btn { display: none !important; }
 }
 
 .auth-link:hover { color: #a855f7; }
+
+/* ============================================================
+   FREISCHALTUNG NACH DEM DISCORD-LOGIN
+   ============================================================ */
+.auth-konto {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 14px;
+    margin-bottom: 18px;
+    border-radius: 14px;
+    background: linear-gradient(135deg, rgba(88, 101, 242, 0.12) 0%, rgba(168, 85, 247, 0.08) 100%);
+    border: 1px solid rgba(88, 101, 242, 0.28);
+}
+
+.auth-konto-bild {
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    flex-shrink: 0;
+    object-fit: cover;
+    border: 1px solid rgba(168, 85, 247, 0.35);
+}
+
+.auth-konto-text { flex: 1; min-width: 0; text-align: left; }
+
+.auth-konto-label {
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    color: #6b7bd6;
+    margin-bottom: 2px;
+}
+
+.auth-konto-name {
+    font-size: 14px;
+    font-weight: 700;
+    color: #e9d5ff;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    -webkit-font-smoothing: antialiased;
+}
+
+.auth-konto-punkt {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    flex-shrink: 0;
+    background: #10b981;
+    box-shadow: 0 0 10px rgba(16, 185, 129, 0.8);
+}
+
+.auth-hinweis {
+    margin-bottom: 18px;
+    padding: 13px 15px;
+    border-radius: 12px;
+    background: rgba(168, 85, 247, 0.06);
+    border: 1px solid rgba(168, 85, 247, 0.18);
+    font-size: 12px;
+    line-height: 1.6;
+    color: #94a3b8;
+    text-align: left;
+}
+
+.auth-hinweis-titel {
+    display: block;
+    margin-bottom: 3px;
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing: 1.1px;
+    text-transform: uppercase;
+    background: linear-gradient(135deg, #c084fc 0%, #f472b6 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+/* Profilbild im Kennzeichen oben rechts */
+.session-avatar {
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    object-fit: cover;
+    flex-shrink: 0;
+    border: 1px solid rgba(16, 185, 129, 0.45);
+}
+
+/* Die drei Anmelde-Bereiche uebernehmen das Verhalten der alten
+   .login-form: untereinander, Kinder auf volle Breite gestreckt.
+   Ohne das schrumpfen Knoepfe auf ihre Textbreite. */
+#authPanelLogin,
+#authPanelKey,
+#authPanelAdmin {
+    flex-direction: column;
+    align-items: stretch;
+}
+
+#authPanelLogin > .login-btn,
+#authPanelKey > .login-btn,
+#authPanelAdmin > .login-btn {
+    width: 100%;
+    display: block;
+}
+
+/* Auswahl, wenn mehrere frühere Zugänge im Browser liegen */
+.altdaten-wahl {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    margin-bottom: 10px;
+    padding: 14px 16px;
+    border-radius: 12px;
+    cursor: pointer;
+    font-family: 'Inter', sans-serif;
+    background: rgba(168, 85, 247, 0.07);
+    border: 1px solid rgba(168, 85, 247, 0.2);
+    transition: transform 0.2s ease, border-color 0.25s ease, background 0.25s ease;
+}
+
+.altdaten-wahl:hover {
+    transform: translateY(-1px);
+    background: rgba(168, 85, 247, 0.16);
+    border-color: rgba(192, 132, 252, 0.5);
+}
+
+.altdaten-kennung {
+    font-size: 12px;
+    font-weight: 600;
+    color: #94a3b8;
+    font-family: 'SF Mono', Consolas, monospace;
+}
+
+.altdaten-anzahl {
+    font-size: 13px;
+    font-weight: 800;
+    color: #e9d5ff;
+}

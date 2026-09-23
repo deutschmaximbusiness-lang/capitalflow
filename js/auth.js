@@ -32,15 +32,22 @@
     function zeige(panel) {
         ['authPanelLogin', 'authPanelKey', 'authPanelAdmin'].forEach(function (id) {
             const e = el(id);
-            if (e) e.style.display = (id === panel) ? 'block' : 'none';
+            if (e) e.style.display = (id === panel) ? 'flex' : 'none';
         });
+    }
+
+    // Verstecken und Anzeigen muessen exakt dieselben Elemente treffen.
+    // Die Seite hat ZWEI Elemente mit der Klasse .container - eines um
+    // die SVG-Symbole, eines um die Tabs. Wer alle versteckt, aber nur
+    // das erste zurueckholt, hat eine App mit leeren Tabs.
+    function alleBereiche() {
+        return document.querySelectorAll('.navbar, .sidebar, .container');
     }
 
     function loginScreenAn() {
         const s = el('loginScreen');
         if (s) { s.classList.remove('hidden'); s.style.opacity = '1'; }
-        document.querySelectorAll('.navbar, .sidebar, .container')
-            .forEach(function (e) { e.style.display = 'none'; });
+        alleBereiche().forEach(function (e) { e.style.display = 'none'; });
         const a = el('adminPanel');
         if (a) a.classList.add('hidden');
     }
@@ -48,12 +55,13 @@
     function appAn() {
         const s = el('loginScreen');
         if (s) s.classList.add('hidden');
-        const nav = document.querySelector('.navbar');
-        const side = document.querySelector('.sidebar');
-        const cont = document.querySelector('.container');
-        if (nav) nav.style.display = 'flex';
-        if (side) side.style.display = 'block';
-        if (cont) cont.style.display = 'block';
+        alleBereiche().forEach(function (e) {
+            // Die Navbar ist ein Flex-Container, der Rest normale Bloecke.
+            // Inline-Stil entfernen statt setzen waere sauberer, aber
+            // app.js setzt an anderer Stelle ebenfalls inline - dann
+            // gewaenne dort der alte Wert.
+            e.style.display = e.classList.contains('navbar') ? 'flex' : 'block';
+        });
     }
 
     // ------------------------------------------------- Alte Daten retten
@@ -82,31 +90,129 @@
             if (m && m[1] !== neueKennung) fremdeKennungen.add(m[1]);
         }
 
-        // Nur bei genau einer alten Kennung uebernehmen. Bei mehreren
-        // haben verschiedene Leute denselben Browser benutzt - dann waere
-        // jede Wahl geraten, und fremde Trades im eigenen Journal sind
-        // schlimmer als ein leeres Journal.
-        if (fremdeKennungen.size !== 1) return 0;
-        const alt = Array.from(fremdeKennungen)[0];
+        if (fremdeKennungen.size === 0) return 0;
 
-        let uebernommen = 0;
+        // Bei genau einer alten Kennung stillschweigend uebernehmen.
+        if (fremdeKennungen.size === 1) {
+            return kopiere(Array.from(fremdeKennungen)[0], neueKennung);
+        }
+
+        // Bei mehreren darf nicht geraten werden - fremde Trades im
+        // eigenen Journal waeren schlimmer als ein leeres Journal. Aber
+        // kommentarlos nichts zu tun ist genauso falsch: dann steht man
+        // vor einer leeren App und haelt seine Daten fuer verloren.
+        frageWelcheDaten(Array.from(fremdeKennungen), neueKennung);
+        return 0;
+    }
+
+    function kopiere(alt, neu) {
+        const BEREICHE = ['trades', 'positions', 'closedPositions',
+                          'transactions', 'setups'];
+        const roh = window.cfRawStorage;
+        let anzahl = 0;
         BEREICHE.forEach(function (b) {
             const wert = roh.get(b + '::' + alt);
             if (!wert) return;
-            roh.set(b + '::' + neueKennung, wert);
+            roh.set(b + '::' + neu, wert);
             try {
                 const liste = JSON.parse(wert);
-                if (Array.isArray(liste)) uebernommen += liste.length;
+                if (Array.isArray(liste)) anzahl += liste.length;
             } catch (e) { /* egal */ }
         });
-        return uebernommen;
+        return anzahl;
+    }
+
+    function frageWelcheDaten(kennungen, neueKennung) {
+        const box = el('altdatenListe');
+        const modal = el('altdatenModal');
+        if (!box || !modal) return;
+
+        const zeilen = kennungen.map(function (k) {
+            let n = 0;
+            try { n = (JSON.parse(window.cfRawStorage.get('trades::' + k) || '[]')).length; }
+            catch (e) { /* egal */ }
+            const kurz = k.length > 14 ? k.slice(0, 6) + '…' + k.slice(-4) : k;
+            return '<button class="altdaten-wahl" data-kennung="' + k + '">'
+                 + '<span class="altdaten-kennung">' + kurz + '</span>'
+                 + '<span class="altdaten-anzahl">' + n + ' Trades</span></button>';
+        });
+
+        box.innerHTML = zeilen.join('');
+        box.querySelectorAll('.altdaten-wahl').forEach(function (b) {
+            b.addEventListener('click', function () {
+                const n = kopiere(b.dataset.kennung, neueKennung);
+                modal.style.display = 'none';
+                meldung('✅ ' + n + ' Einträge übernommen', 'success');
+                setTimeout(function () { location.reload(); }, 800);
+            });
+        });
+
+        // Erst zeigen, wenn die App steht - sonst liegt das Fenster
+        // ueber einem halb aufgebauten Bildschirm
+        setTimeout(function () { modal.style.display = 'flex'; }, 700);
+    }
+
+    window.cfAltdatenSpaeter = function () {
+        const m = el('altdatenModal');
+        if (m) m.style.display = 'none';
+    };
+
+    // ------------------------------------------------ Kennzeichen oben rechts
+    //
+    // Zeigt Discord-Name und Profilbild statt des Key-Namens. Der Key
+    // selbst taucht nirgends mehr auf - er ist nach der Freischaltung
+    // ohnehin verbraucht, und in Screenshots hat er nichts zu suchen.
+    function badgeSetzen() {
+        const badge = el('sessionBadge');
+        if (!badge) return;
+
+        const meta = (nutzer && nutzer.user_metadata) || {};
+        const name = (profil && profil.name)
+            || meta.full_name || meta.name || meta.user_name
+            || (nutzer && nutzer.email) || 'Verbunden';
+        const bild = (profil && profil.avatar_url) || meta.avatar_url || '';
+
+        const n = el('sessionName');
+        if (n) n.textContent = name;
+
+        const img = el('sessionAvatar');
+        const punkt = el('sessionDot');
+        if (img) {
+            if (bild) {
+                img.src = bild;
+                img.style.display = 'block';
+                // Faellt das Bild aus (geloeschter Avatar, kein Netz),
+                // auf den gruenen Punkt zurueck statt auf ein Platzhalterbild
+                img.onerror = function () {
+                    img.style.display = 'none';
+                    if (punkt) punkt.style.display = 'block';
+                };
+                if (punkt) punkt.style.display = 'none';
+            } else {
+                img.style.display = 'none';
+                if (punkt) punkt.style.display = 'block';
+            }
+        }
+
+        // Der abgeschnittene Key war die Notloesung, solange es keine
+        // Konten gab. Jetzt gibt es welche.
+        const sep = el('sessionSep');
+        const key = el('sessionKey');
+        if (sep) sep.style.display = 'none';
+        if (key) key.style.display = 'none';
+
+        badge.style.display = 'flex';
     }
 
     // ------------------------------------------------------ App starten
 
     function appStarten() {
         const kennung = nutzer.id;
-        const name = (profil && (profil.invite_name || profil.name)) || 'Verbunden';
+        // Discord-Name hat Vorrang vor dem Namen aus der Einladung: so
+        // heisst man ueberall gleich wie im Server, aus dem man kommt.
+        const meta = (nutzer && nutzer.user_metadata) || {};
+        const name = (profil && profil.name) || meta.full_name || meta.name
+            || meta.user_name || (profil && profil.invite_name) || 'Verbunden';
 
         window.cfRawStorage.set('capitalflow_current_key', kennung);
         window.cfRawStorage.set('capitalflow_current_name', name);
@@ -129,7 +235,7 @@
         if (typeof showWelcome === 'function') {
             showWelcome(name, bestand.length > 0);
         }
-        if (typeof renderSessionBadge === 'function') renderSessionBadge();
+        badgeSetzen();
 
         if (gerettet > 0) {
             setTimeout(function () {
@@ -181,11 +287,27 @@
         }
 
         loginScreenAn();
+
+        const meta = nutzer.user_metadata || {};
         const n = el('authDiscordName');
-        if (n) n.textContent = (profil && profil.name)
-            || (nutzer.user_metadata && nutzer.user_metadata.full_name)
-            || nutzer.email || 'Discord-Konto';
+        if (n) n.textContent = (profil && profil.name) || meta.full_name
+            || meta.name || meta.user_name || nutzer.email || 'Discord-Konto';
+
+        const bild = (profil && profil.avatar_url) || meta.avatar_url || '';
+        const img = el('authDiscordAvatar');
+        if (img) {
+            if (bild) {
+                img.src = bild;
+                img.style.display = 'block';
+                img.onerror = function () { img.style.display = 'none'; };
+            } else {
+                img.style.display = 'none';
+            }
+        }
+
         zeige('authPanelKey');
+        const feld = el('inviteKeyInput');
+        if (feld) setTimeout(function () { feld.focus(); }, 120);
     }
 
     // ---------------------------------------------------------- Aktionen
