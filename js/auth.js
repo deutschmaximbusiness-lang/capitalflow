@@ -17,6 +17,14 @@
     let nutzer = null;      // Supabase-Nutzer
     let profil = null;      // Zeile aus profiles
 
+    // onAuthStateChange feuert mehrfach (INITIAL_SESSION, SIGNED_IN,
+    // TOKEN_REFRESHED) und zustandPruefen laeuft zusaetzlich beim Start.
+    // Ohne diese Sperren wuerde die App mehrfach hochgefahren - und das
+    // Fenster fuer alte Daten kaeme nach jedem Schliessen erneut.
+    let appLaeuft = false;
+    let pruefungLaeuft = false;
+    let datenGefragt = false;
+
     function el(id) {
         if (!(id in ELEMENTE)) ELEMENTE[id] = document.getElementById(id);
         return ELEMENTE[id];
@@ -123,6 +131,13 @@
     }
 
     function frageWelcheDaten(kennungen, neueKennung) {
+        if (datenGefragt) return;
+        // "Später entscheiden" gilt bis zum Schliessen des Fensters -
+        // bei jedem Neuladen erneut zu fragen waere Belaestigung, es
+        // ganz zu vergessen waere Datenverlust
+        if (sessionStorage.getItem('capitalflow_altdaten_spaeter') === '1') return;
+        datenGefragt = true;
+
         const box = el('altdatenListe');
         const modal = el('altdatenModal');
         if (!box || !modal) return;
@@ -155,6 +170,9 @@
     window.cfAltdatenSpaeter = function () {
         const m = el('altdatenModal');
         if (m) m.style.display = 'none';
+        try { sessionStorage.setItem('capitalflow_altdaten_spaeter', '1'); }
+        catch (e) { /* egal */ }
+        meldung('Du kannst die Daten später über "Daten" einspielen', 'info');
     };
 
     // ------------------------------------------------ Kennzeichen oben rechts
@@ -207,6 +225,9 @@
     // ------------------------------------------------------ App starten
 
     function appStarten() {
+        if (appLaeuft) { badgeSetzen(); return; }
+        appLaeuft = true;
+
         const kennung = nutzer.id;
         // Discord-Name hat Vorrang vor dem Namen aus der Einladung: so
         // heisst man ueberall gleich wie im Server, aus dem man kommt.
@@ -261,6 +282,16 @@
     }
 
     async function zustandPruefen() {
+        if (pruefungLaeuft) return;
+        pruefungLaeuft = true;
+        try {
+            await pruefen();
+        } finally {
+            pruefungLaeuft = false;
+        }
+    }
+
+    async function pruefen() {
         const { data } = await window.cfDb.auth.getSession();
         nutzer = data && data.session ? data.session.user : null;
 
@@ -363,10 +394,21 @@
     }
 
     window.cfAbmelden = async function () {
-        try { await window.cfDb.auth.signOut(); } catch (e) { /* egal */ }
+        try { await window.cfDb.auth.signOut(); } catch (e) { /* weiter */ }
+
+        // Sicherheitsnetz: scheitert signOut (kein Netz, abgelaufenes
+        // Token), bliebe die Sitzung im Speicher liegen und man waere
+        // nach dem Neuladen sofort wieder angemeldet.
+        try {
+            Object.keys(localStorage)
+                .filter(function (k) { return k.indexOf('capitalflow_auth') === 0; })
+                .forEach(function (k) { window.cfRawStorage.remove(k); });
+        } catch (e) { /* weiter */ }
+
         window.cfRawStorage.remove('capitalflow_current_key');
         window.cfRawStorage.remove('capitalflow_current_name');
         localStorage.removeItem('capitalflow_logged_in');
+        sessionStorage.removeItem('capitalflow_altdaten_spaeter');
         window.location.reload();
     };
 

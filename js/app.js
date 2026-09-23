@@ -454,6 +454,14 @@ function cancelLogout() {
 }
 
 function confirmLogout() {
+    // Mit Discord-Anmeldung reicht es nicht, die lokalen Eintraege zu
+    // loeschen - die Supabase-Sitzung lebt weiter, und nach dem Neuladen
+    // waere man sofort wieder angemeldet. cfAbmelden() raeumt beides ab.
+    if (window.cfDb && typeof window.cfAbmelden === 'function') {
+        window.cfAbmelden();
+        return;
+    }
+
     localStorage.removeItem('capitalflow_logged_in');
     // Aktiven Key freigeben, sonst sieht der naechste Nutzer fremde Daten
     window.cfRawStorage.remove('capitalflow_current_key');
