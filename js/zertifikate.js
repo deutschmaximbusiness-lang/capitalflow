@@ -52,13 +52,19 @@
     function lesen(p) {
         p = p || {};
         const art = ARTEN.indexOf(p.art) !== -1 ? p.art : 'aktie';
+        // Bei den klassischen Knock-Outs von Trade Republic sind
+        // Basispreis und KO-Schwelle dieselbe Zahl. Deshalb reicht eine
+        // von beiden - die andere wird daraus gefuellt. Wer ein Produkt
+        // mit Stop-Loss-Puffer hat, traegt beide ein.
+        const strike = zahl(p.strike);
+        const ko = zahl(p.ko);
         return {
             art: art,
             richtung: p.richtung === 'short' ? 'short' : 'long',
             kurs: zahl(p.kurs),
             kursAus: zahl(p.kursAus),
-            strike: zahl(p.strike),
-            ko: zahl(p.ko) !== null ? zahl(p.ko) : zahl(p.strike),
+            strike: strike !== null ? strike : ko,
+            ko: ko !== null ? ko : strike,
             preis: zahl(p.preis),
             preisAus: zahl(p.preisAus),
             faktor: zahl(p.faktor),

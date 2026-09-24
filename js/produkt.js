@@ -75,13 +75,49 @@
         if (ko) ko.style.display = a === 'knockout' ? '' : 'none';
         if (fa) fa.style.display = a === 'faktor' ? '' : 'none';
 
-        // Aufgeld und Wechselkurs ergeben nur beim Knock-Out Sinn
-        const rg = el('zRatioGruppe'); if (rg) rg.style.display = a === 'faktor' ? 'none' : '';
-        const fg = el('zFxGruppe'); if (fg) fg.style.display = a === 'faktor' ? 'none' : '';
+        // Aufgeld, Wechselkurs und Basispreis ergeben nur beim
+        // Knock-Out Sinn - ein Faktor-Zertifikat hat keinen Basispreis.
+        ['zRatioGruppe', 'zFxGruppe', 'zStrikeGruppe'].forEach(function (id) {
+            const g = el(id);
+            if (g) g.style.display = a === 'faktor' ? 'none' : '';
+        });
 
         const ti = el('zertTitel');
         if (ti) ti.textContent = a === 'faktor'
             ? 'Angaben zum Faktor-Zertifikat' : 'Angaben zum Knock-Out';
+
+        tickerEinsetzen();
+    }
+
+    /**
+     * Setzt den eingetippten Ticker in die Beschriftungen.
+     *
+     * "Wo stand NVDA, als du gekauft hast?" ist eine Frage, die man ohne
+     * Nachdenken beantwortet. "Kurs Basiswert beim Einstieg" muss man
+     * erst uebersetzen - und genau dort werden Euro und Dollar
+     * vertauscht.
+     */
+    function tickerEinsetzen() {
+        const roh = wert('ticker').trim().toUpperCase();
+        const name = roh || 'der Basiswert';
+        const hat = Boolean(roh);
+
+        const gt = el('zertGruppeTitel');
+        if (gt) gt.textContent = hat ? 'Wo stand ' + name + '?'
+                                     : 'Wo stand der Basiswert?';
+
+        const paare = [
+            ['lblBasisEin', hat ? '… als du ' + name + ' gekauft hast'
+                                : '… als du gekauft hast'],
+            ['lblBasisAus', hat ? '… als du ' + name + ' verkauft hast'
+                                : '… als du verkauft hast'],
+            ['lblBasisEinF', hat ? name + ' beim Kauf' : 'Basiswert beim Kauf'],
+            ['lblBasisAusF', hat ? name + ' beim Verkauf' : 'Basiswert beim Verkauf'],
+        ];
+        paare.forEach(function (pr) {
+            const e = el(pr[0]);
+            if (e) e.textContent = pr[1];
+        });
     }
 
     // ---------------------------------------------------------- Eingaben
@@ -110,12 +146,20 @@
             };
         }
         if (a === 'knockout') {
+            // Basispreis und KO-Schwelle sind bei den ueblichen
+            // Trade-Republic-Produkten dieselbe Zahl. Die Ergaenzung
+            // passiert hier und nicht erst im Rechenkern, damit auch
+            // Pruefung und Speicherung dieselbe Sicht haben - sonst
+            // meldet die Pruefung ein fehlendes Feld, das die Rechnung
+            // laengst gefuellt hat.
+            const strikeRoh = zahl(wert('zStrike'));
+            const koRoh = zahl(wert('zKo'));
             return {
                 art: a, richtung: richtung(),
                 kurs: zahl(wert('zBasisEin')),
                 kursAus: zahl(wert('zBasisAus')),
-                strike: zahl(wert('zStrike')),
-                ko: zahl(wert('zKo')),
+                strike: strikeRoh !== null ? strikeRoh : koRoh,
+                ko: koRoh !== null ? koRoh : strikeRoh,
                 preis: zahl(wert('entryPrice')),
                 preisAus: zahl(wert('exitPrice')),
                 stop: zahl(wert('zStop')),
@@ -309,8 +353,14 @@
         const p = eingaben();
         const m = [];
         if (p.art === 'knockout') {
-            if (p.kurs === null) m.push('Kurs des Basiswerts beim Einstieg fehlt.');
-            if (p.strike === null) m.push('Basispreis fehlt.');
+            if (p.kurs === null) {
+                m.push('Es fehlt, wo der Basiswert beim Kauf stand.');
+            }
+            // strike und ko fuellen sich in eingaben() gegenseitig auf -
+            // eine der beiden Zahlen genuegt.
+            if (p.strike === null && p.ko === null) {
+                m.push('Es fehlt die KO-Schwelle.');
+            }
         }
         if (p.art === 'faktor' && p.faktor === null) m.push('Faktor fehlt.');
         return m.concat(window.cfZert.pruefen(p));
@@ -341,7 +391,10 @@
         // Richtung und der Einsatz, die ausserhalb des Blocks stehen.
         const form = el('tradeForm');
         if (form) {
-            form.addEventListener('input', rechnenUndZeigen);
+            form.addEventListener('input', function (e) {
+                if (e.target && e.target.id === 'ticker') tickerEinsetzen();
+                rechnenUndZeigen();
+            });
             form.addEventListener('click', function (e) {
                 if (e.target.closest('.direction-btn')) {
                     // Der Klick setzt den Wert erst danach

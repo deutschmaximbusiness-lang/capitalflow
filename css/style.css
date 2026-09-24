@@ -4544,3 +4544,92 @@ body.pwa-installed .pwa-install-btn { display: none !important; }
     .zert-ergebnis { grid-template-columns: 1fr; }
     .produkt-btn { min-width: 0; font-size: 12px; padding: 10px 8px; }
 }
+
+/* --- M2: Gruppen im Zertifikatsblock -------------------------------
+   Die Felder stehen in zwei Bloecken: was Pflicht ist, und was nicht.
+   Das ist der Unterschied zwischen "vier Felder" und "acht Felder"
+   beim ersten Hinsehen. */
+
+.zert-hinweis {
+    margin: -4px 0 16px;
+    padding: 10px 13px;
+    border-radius: 8px;
+    background: rgba(56, 189, 248, 0.07);
+    border: 1px solid rgba(56, 189, 248, 0.2);
+    color: #a5b4c4;
+    font-size: 12px;
+    line-height: 1.6;
+}
+.zert-hinweis strong { color: #7dd3fc; font-weight: 700; }
+
+.zert-gruppe { margin-bottom: 14px; }
+
+.zert-gruppe-kopf {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    flex-wrap: wrap;
+    margin-bottom: 10px;
+    font-size: 12.5px;
+    font-weight: 700;
+    color: #cbd5e1;
+    letter-spacing: 0.2px;
+}
+.zert-nr {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 20px; height: 20px;
+    border-radius: 50%;
+    background: rgba(168, 85, 247, 0.9);
+    color: #fff;
+    font-size: 11px;
+    font-weight: 800;
+    flex: none;
+}
+.zert-nr.grau { background: rgba(100, 116, 139, 0.75); }
+
+/* Waehrung gehoert an die Gruppe, nicht an jedes einzelne Feld -
+   sonst steht fuenfmal dasselbe da und niemand liest es mehr. */
+.zert-waehrung {
+    margin-left: auto;
+    padding: 2px 9px;
+    border-radius: 5px;
+    background: rgba(148, 163, 184, 0.12);
+    color: #94a3b8;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.3px;
+}
+
+.zert-optional > summary {
+    cursor: pointer;
+    list-style: none;
+    user-select: none;
+    padding: 8px 0;
+    border-top: 1px solid rgba(148, 163, 184, 0.12);
+}
+.zert-optional > summary::-webkit-details-marker { display: none; }
+.zert-optional > summary::after {
+    content: '▾';
+    color: #64748b;
+    font-size: 13px;
+    margin-left: 6px;
+}
+.zert-optional[open] > summary::after { content: '▴'; }
+.zert-optional > summary:hover { color: #e2e8f0; }
+
+/* Die Beschriftungen im Zertifikatsblock sind Fragen, keine Kuerzel.
+   In Grossbuchstaben liest sie niemand - "… ALS DU NVDA GEKAUFT HAST"
+   braucht doppelt so lange wie derselbe Satz in normaler Schrift. */
+.zert-block .form-group label {
+    text-transform: none;
+    letter-spacing: 0.1px;
+    font-size: 13px;
+    font-weight: 600;
+}
+.zert-block .feld-zusatz {
+    text-transform: none;
+    letter-spacing: 0;
+    font-size: 11.5px;
+}
