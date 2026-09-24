@@ -47,13 +47,30 @@
         } catch (e) { return []; }
     }
 
-    // Journal-Trades haben nur ein Datum im Format JJJJ-MM-TT.
-    // Positionen haben vollständige Zeitstempel.
+    /**
+     * Datum aus der App in einen Zeitstempel.
+     *
+     * addTrade() speichert mit toLocaleDateString('de-DE'), also
+     * "24.09.2026". new Date() versteht das nicht und liefert Invalid
+     * Date - stillschweigend, weshalb ohne diese Funktion alle Trades
+     * auf dem heutigen Datum gelandet waeren.
+     */
     function zeitpunkt(v, ersatz) {
-        if (!v) return ersatz || null;
-        const d = new Date(v);
-        return isNaN(d.getTime()) ? (ersatz || null) : d.toISOString();
+        const fallback = ersatz || new Date().toISOString();
+        if (!v) return fallback;
+        const s = String(v).trim();
+
+        // deutsches Format: TT.MM.JJJJ
+        const de = s.match(/^(\d{1,2})\.(\d{1,2})\.(\d{4})$/);
+        if (de) {
+            const d = new Date(Date.UTC(+de[3], +de[2] - 1, +de[1], 12, 0, 0));
+            return isNaN(d.getTime()) ? fallback : d.toISOString();
+        }
+
+        const d = new Date(s);
+        return isNaN(d.getTime()) ? fallback : d.toISOString();
     }
+
 
     function richtung(v) {
         const s = String(v || '').toLowerCase();

@@ -912,6 +912,7 @@ function addTrade(e) {
         const trades = JSON.parse(localStorage.getItem('trades')) || [];
         trades.push(trade);
         localStorage.setItem('trades', JSON.stringify(trades));
+        if (window.cfDbTradeNeu) window.cfDbTradeNeu(trade);
         
         // UI Update
         showToast(`Trade hinzugefügt: ${ticker} (P&L: €${trade.pnl.toFixed(2)})`);
@@ -1140,8 +1141,10 @@ function cancelDelete() {
 
 function confirmDeleteTrade() {
     const trades = JSON.parse(localStorage.getItem('trades')) || [];
+    const geloeschteId = tradeToDelete;
     const filtered = trades.filter(t => t.id !== tradeToDelete);
     localStorage.setItem('trades', JSON.stringify(filtered));
+    if (window.cfDbLoeschen && geloeschteId) window.cfDbLoeschen('trades', geloeschteId);
     
     // Modal schließen
     const modal = document.getElementById('deleteModal');
@@ -2566,6 +2569,7 @@ function addPosition(event) {
         const positions = JSON.parse(localStorage.getItem('positions')) || [];
         positions.push(position);
         localStorage.setItem('positions', JSON.stringify(positions));
+        if (window.cfDbPositionNeu) window.cfDbPositionNeu(position);
         
         // Form zurücksetzen
         document.getElementById('positionsForm').reset();
@@ -2602,8 +2606,10 @@ function confirmDeletePosition() {
     if (positionToDelete !== null) {
         const positions = JSON.parse(localStorage.getItem('positions')) || [];
         const removedTicker = positions[positionToDelete].ticker;
+        const geloeschteId = positions[positionToDelete].id;
         positions.splice(positionToDelete, 1);
         localStorage.setItem('positions', JSON.stringify(positions));
+        if (window.cfDbLoeschen && geloeschteId) window.cfDbLoeschen('trades', geloeschteId);
         
         document.getElementById('deleteModal').style.display = 'none';
         loadPositions();
@@ -2677,6 +2683,13 @@ function confirmClosePositionModal() {
         // Speichere geschlossene Position
         closedPositions.push(closedPosition);
         localStorage.setItem('closedPositions', JSON.stringify(closedPositions));
+        // In der Datenbank wird nicht kopiert, sondern der Status
+        // umgestellt - es ist dieselbe Zeile, nur nicht mehr offen
+        if (window.cfDbPositionSchliessen && position.id) {
+            window.cfDbPositionSchliessen(
+                position.id, exitPrice, exitReason,
+                closedPosition.pnl, closedPosition.pnlPercent);
+        }
         
         
         // Lösche offene Position
@@ -2804,8 +2817,10 @@ function confirmDeleteClosedPosition() {
     if (closedPositionToDelete !== null) {
         const closedPositions = JSON.parse(localStorage.getItem('closedPositions')) || [];
         const removedTicker = closedPositions[closedPositionToDelete].ticker;
+        const geloeschteId = closedPositions[closedPositionToDelete].id;
         closedPositions.splice(closedPositionToDelete, 1);
         localStorage.setItem('closedPositions', JSON.stringify(closedPositions));
+        if (window.cfDbLoeschen && geloeschteId) window.cfDbLoeschen('trades', geloeschteId);
         
         document.getElementById('deleteModal').style.display = 'none';
         displayClosedPositions();
@@ -3411,8 +3426,10 @@ function addTransaction(e) {
         }
 
         const list = getTransactions();
-        list.push({ id: Date.now(), type, amount, date, note });
+        const buchung = { id: Date.now(), type, amount, date, note };
+        list.push(buchung);
         localStorage.setItem('transactions', JSON.stringify(list));
+        if (window.cfDbTransaktionNeu) window.cfDbTransaktionNeu(buchung);
 
         document.getElementById('transactionForm').reset();
         setTransactionDateToday();
@@ -3444,8 +3461,10 @@ function deleteTransaction(id) {
 
 function confirmDeleteTransaction() {
     if (transactionToDelete === null) return;
+    const geloeschteId = transactionToDelete;
     const list = getTransactions().filter(t => t.id !== transactionToDelete);
     localStorage.setItem('transactions', JSON.stringify(list));
+    if (window.cfDbLoeschen && geloeschteId) window.cfDbLoeschen('transactions', geloeschteId);
 
     document.getElementById('deleteModal').style.display = 'none';
     transactionToDelete = null;
@@ -3562,7 +3581,15 @@ function getSetups() {
 }
 
 function saveSetups(list) {
+    // Vorher merken, damit die Datenbankschicht erkennt, was sich
+    // geaendert hat - angelegt, geloescht oder anderer Status
+    let vorher = [];
+    try { vorher = JSON.parse(localStorage.getItem('setups')) || []; }
+    catch (e) { /* egal */ }
+
     localStorage.setItem('setups', JSON.stringify(list));
+
+    if (window.cfDbSetupsAbgleichen) window.cfDbSetupsAbgleichen(vorher, list);
 }
 
 // Einstieg ist die Mitte der Zone. Ist nur ein Wert gesetzt, zaehlt der.

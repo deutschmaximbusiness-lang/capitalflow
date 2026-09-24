@@ -296,6 +296,9 @@
         }
     }
 
+    // Wird auch von js/speichern.js gebraucht, nach jeder Aenderung
+    window.cfAnsichtenAufbauen = ansichtenAufbauen;
+
     function ansichtenAufbauen() {
         [window.loadTrades, window.loadPositions, window.loadTransactions,
          window.loadSetups, window.loadDashboard, window.loadAnalytics,
