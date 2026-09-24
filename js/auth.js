@@ -251,12 +251,7 @@
         localStorage.setItem('capitalflow_logged_in', 'true');
 
         appAn();
-        [window.loadTrades, window.loadPositions, window.loadTransactions,
-         window.loadSetups, window.loadDashboard, window.loadAnalytics,
-         window.loadCalendar].forEach(function (fn) {
-            try { if (typeof fn === 'function') fn(); }
-            catch (err) { console.error('Ansicht fehlgeschlagen:', err); }
-        });
+        ansichtenAufbauen();
 
         let bestand = [];
         try { bestand = JSON.parse(localStorage.getItem('trades')) || []; }
@@ -274,6 +269,40 @@
                         + 'bisherigen Zugang', 'success');
             }, 1400);
         }
+
+        // Datenbank nachholen und die Ansichten ein zweites Mal aufbauen.
+        // Erst zeigen, dann aktualisieren: die App steht sofort da, statt
+        // den Nutzer auf eine Netzantwort warten zu lassen. Der erste
+        // Aufbau zeigt den Zwischenspeicher, der zweite die Wahrheit.
+        if (typeof window.cfDatenLaden === 'function') {
+            window.cfDatenLaden().then(function (r) {
+                if (!r.ok) {
+                    if (r.grund === 'ungesicherte') {
+                        // Im Browser liegt mehr als in der Datenbank -
+                        // bis die Schreibwege umgestellt sind, hat der
+                        // lokale Stand Vorrang
+                        meldung('⚠️ ' + r.lokal + ' Einträge sind noch nicht '
+                                + 'in der Datenbank – bitte über Daten → '
+                                + 'Sicherung herunterladen', 'error');
+                        return;
+                    }
+                    console.warn('Daten konnten nicht geladen werden:', r.grund);
+                    meldung('⚠️ Zeige den letzten Stand – Datenbank nicht erreichbar',
+                            'error');
+                    return;
+                }
+                ansichtenAufbauen();
+            });
+        }
+    }
+
+    function ansichtenAufbauen() {
+        [window.loadTrades, window.loadPositions, window.loadTransactions,
+         window.loadSetups, window.loadDashboard, window.loadAnalytics,
+         window.loadCalendar].forEach(function (fn) {
+            try { if (typeof fn === 'function') fn(); }
+            catch (err) { console.error('Ansicht fehlgeschlagen:', err); }
+        });
     }
 
     // ------------------------------------------------------ Zustand pruefen
