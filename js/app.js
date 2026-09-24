@@ -1095,7 +1095,7 @@ function loadTrades() {
             </div>
             ${trade.notes ? `<div class="trade-detail"><span class="trade-detail-label">Notes</span><span class="trade-detail-value">${escapeHtml(trade.notes)}</span></div>` : ''}
             ${trade.screenshot && trade.screenshot.trim() ? `<div class="trade-screenshot"><img src="${trade.screenshot}" alt="Trade Setup" onclick="openScreenshotModal('${trade.screenshot}')" style="cursor: pointer;"></div>` : ''}
-            <button class="trade-delete" onclick="confirmDelete(${trade.id})">🗑️ Löschen</button>
+            <button class="trade-delete" onclick="confirmDelete('${trade.id}')">🗑️ Löschen</button>
         </div>
     `;
 
@@ -1108,8 +1108,8 @@ function loadTrades() {
                    '<div class="trade-ticker">' + escapeHtml(trade.ticker || '—') +
                    '</div></div><p style="color:#f87171;font-size:13px;">' +
                    'Dieser Eintrag ist beschädigt und kann nicht angezeigt werden.' +
-                   '</p><button class="trade-delete" onclick="confirmDelete(' +
-                   (trade.id || 0) + ')">🗑️ Löschen</button></div>';
+                   '</p><button class="trade-delete" onclick="confirmDelete(\'' +
+                   (trade.id || 0) + '\')">🗑️ Löschen</button></div>';
         }
     }).join('');
 }
@@ -1142,7 +1142,7 @@ function cancelDelete() {
 function confirmDeleteTrade() {
     const trades = JSON.parse(localStorage.getItem('trades')) || [];
     const geloeschteId = tradeToDelete;
-    const filtered = trades.filter(t => t.id !== tradeToDelete);
+    const filtered = trades.filter(t => String(t.id) !== String(tradeToDelete));
     localStorage.setItem('trades', JSON.stringify(filtered));
     if (window.cfDbLoeschen && geloeschteId) window.cfDbLoeschen('trades', geloeschteId);
     
@@ -3462,7 +3462,8 @@ function deleteTransaction(id) {
 function confirmDeleteTransaction() {
     if (transactionToDelete === null) return;
     const geloeschteId = transactionToDelete;
-    const list = getTransactions().filter(t => t.id !== transactionToDelete);
+    const list = getTransactions().filter(
+        t => String(t.id) !== String(transactionToDelete));
     localStorage.setItem('transactions', JSON.stringify(list));
     if (window.cfDbLoeschen && geloeschteId) window.cfDbLoeschen('transactions', geloeschteId);
 
@@ -3539,7 +3540,7 @@ function loadTransactions() {
                 <div class="tx-amount" style="color:${farbe};">
                     ${ein ? '+' : '−'}${fmt(t.amount)}
                 </div>
-                <button class="tx-delete" onclick="deleteTransaction(${t.id})"
+                <button class="tx-delete" onclick="deleteTransaction('${t.id}')"
                         title="Buchung löschen">✕</button>
             </div>`;
     }).join('');
