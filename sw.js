@@ -10,7 +10,7 @@
  * Bei jedem Release CACHE_VERSION hochzaehlen.
  */
 
-const CACHE_VERSION = 'cf-v5';
+const CACHE_VERSION = 'cf-v6';
 const CACHE_APP = CACHE_VERSION + '-app';
 const CACHE_ASSETS = CACHE_VERSION + '-assets';
 
@@ -28,6 +28,7 @@ const PRECACHE = [
     './js/supabase.js',
     './js/daten.js',
     './js/db.js',
+    './js/migration.js',
     './js/auth.js',
     './manifest.json',
     './img/capitalflow-icon.png',

@@ -223,6 +223,19 @@
         document.getElementById('datenImportInfo').style.display = 'none';
         document.getElementById('datenImportAktionen').style.display = 'none';
         document.getElementById('datenModal').style.display = 'flex';
+
+        // Uebertragung nur zeigen, wenn es lokal etwas gibt UND eine
+        // Datenbankverbindung besteht - sonst ist der Knopf eine Sackgasse
+        const block = document.getElementById('migrationBlock');
+        if (!block) return;
+        const etwasDa = BEREICHE.some(function (b) { return lesen(b.key).length > 0; });
+        if (window.cfDb && etwasDa && typeof window.cfMigrationBericht === 'function') {
+            block.style.display = 'block';
+            document.getElementById('migrationStatus').textContent = '';
+            window.cfMigrationBericht();
+        } else {
+            block.style.display = 'none';
+        }
     };
 
     window.cfDatenModalZu = function () {

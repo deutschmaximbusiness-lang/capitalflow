@@ -1023,6 +1023,14 @@
             <button onclick="cfImportWaehlen()" style="width: 100%; background: rgba(100, 116, 139, 0.15); border: 1px solid rgba(100, 116, 139, 0.3); color: #cbd5e1; padding: 14px 20px; border-radius: 12px; cursor: pointer; font-weight: 600; font-size: 14px; font-family: 'Inter', sans-serif; transition: all 0.2s ease;" onmouseover="this.style.background='rgba(100, 116, 139, 0.25)'; this.style.borderColor='rgba(100, 116, 139, 0.5)'" onmouseout="this.style.background='rgba(100, 116, 139, 0.15)'; this.style.borderColor='rgba(100, 116, 139, 0.3)'">Sicherung einspielen…</button>
             <input type="file" id="datenImportInput" accept="application/json,.json" style="display: none;" onchange="cfImportGelesen(this)">
 
+            <div id="migrationBlock" style="display: none; margin-top: 26px; padding-top: 22px; border-top: 1px solid rgba(168, 85, 247, 0.15);">
+                <h3 style="margin: 0 0 6px 0; font-size: 15px; font-weight: 700; color: #e9d5ff;">In die Datenbank übertragen</h3>
+                <p style="margin: 0 0 14px 0; color: #94a3b8; font-size: 12px; line-height: 1.6;">Danach liegen deine Daten auf dem Server statt nur in diesem Browser – auf jedem Gerät verfügbar und gegen einen geleerten Cache geschützt.</p>
+                <div id="migrationBericht" style="display: none; background: rgba(168, 85, 247, 0.05); border: 1px solid rgba(168, 85, 247, 0.2); border-radius: 12px; padding: 14px 16px; margin-bottom: 14px;"></div>
+                <button id="migrationBtn" onclick="cfMigrationStarten()" style="display: none; width: 100%; background: linear-gradient(135deg, #a855f7 0%, #ec4899 100%); border: none; color: white; padding: 13px 20px; border-radius: 12px; cursor: pointer; font-weight: 700; font-size: 14px; font-family: 'Inter', sans-serif;">Daten übertragen</button>
+                <p id="migrationStatus" style="margin: 10px 0 0 0; color: #64748b; font-size: 11px; text-align: center; min-height: 14px;"></p>
+            </div>
+
             <div id="datenImportInfo" style="display: none; margin-top: 24px; background: rgba(168, 85, 247, 0.05); border: 1px solid rgba(168, 85, 247, 0.2); border-radius: 12px; padding: 16px 18px;"></div>
 
             <div id="datenImportAktionen" style="display: none; gap: 12px; margin-top: 16px;">
@@ -1101,6 +1109,7 @@
     <script src="js/vendor/supabase.js"></script>
     <script src="js/supabase.js"></script>
     <script src="js/db.js"></script>
+    <script src="js/migration.js"></script>
     <script src="js/auth.js"></script>
     <script src="js/app.js"></script>
 </body>
