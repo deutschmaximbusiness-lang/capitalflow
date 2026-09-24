@@ -75,6 +75,80 @@
         return neu.id;
     }
 
+    // -------------------------------------------------------- Produkte
+
+    /**
+     * Sucht das Zertifikat oder legt es an.
+     *
+     * products ist eine gemeinsame Tabelle: handeln zwei Nutzer denselben
+     * Knock-Out, soll das auch dieselbe Zeile sein. Ueber die WKN geht
+     * das eindeutig. Ohne WKN - und die tippt kaum jemand ab - dient die
+     * Kombination aus Basiswert, Richtung, Basispreis und Schwelle als
+     * Kennzeichen; dafuer liegt ein eindeutiger Index in 03_zertifikate.sql.
+     */
+    async function produktId(instrument, p) {
+        if (!p || !p.art || p.art === 'aktie') return null;
+        if (!instrument) return null;
+
+        const db = window.cfDb;
+
+        if (p.wkn) {
+            const { data, error } = await db.from('products')
+                .select('id').eq('wkn', p.wkn).maybeSingle();
+            if (error) throw new Error('Produkt suchen: ' + error.message);
+            if (data) return data.id;
+        } else {
+            let frage = db.from('products').select('id')
+                .eq('instrument_id', instrument)
+                .eq('kind', p.art)
+                .eq('direction', p.richtung)
+                .is('wkn', null);
+            frage = p.art === 'faktor'
+                ? frage.eq('factor', p.faktor)
+                : frage.eq('strike', p.strike)
+                       .eq('ko_barrier', p.ko !== null ? p.ko : p.strike);
+            const { data, error } = await frage.maybeSingle();
+            if (error) throw new Error('Produkt suchen: ' + error.message);
+            if (data) return data.id;
+        }
+
+        const zeile = {
+            instrument_id: instrument,
+            kind: p.art,
+            direction: p.richtung,
+            wkn: p.wkn || null,
+            issuer: p.emittent || null,
+            created_by: await uid(),
+        };
+        if (p.art === 'faktor') {
+            zeile.factor = p.faktor;
+            // Das Schema verlangt bei Zertifikaten Basispreis und
+            // Bezugsverhaeltnis. Ein Faktor-Zertifikat hat beides nicht -
+            // deshalb hier neutrale Werte statt einer Ausnahme im Check.
+            zeile.strike = 0;
+            zeile.ratio = 1;
+        } else {
+            zeile.strike = p.strike;
+            zeile.ratio = p.ratio !== null && p.ratio !== undefined ? p.ratio : 1;
+            zeile.ko_barrier = p.ko !== null && p.ko !== undefined ? p.ko : p.strike;
+        }
+
+        const { data: neu, error: f2 } = await db.from('products')
+            .insert(zeile).select('id').single();
+        // Zwei Geraete koennen dasselbe Produkt gleichzeitig anlegen. Der
+        // eindeutige Index faengt das ab; dann gewinnt die andere Zeile.
+        if (f2) {
+            if (String(f2.code) === '23505') {
+                const { data: da } = await db.from('products').select('id')
+                    .eq('instrument_id', instrument).eq('kind', p.art)
+                    .eq('direction', p.richtung).limit(1).maybeSingle();
+                if (da) return da.id;
+            }
+            throw new Error('Produkt anlegen: ' + f2.message);
+        }
+        return neu.id;
+    }
+
     // ------------------------------------------------------ Screenshot
 
     function alsBlob(dataUrl) {
@@ -140,9 +214,17 @@
 
     window.cfDbTradeNeu = function (t) {
         return schreiben(async function () {
+            const basis = await instrumentId(t.ticker);
+            const p = t.produkt || null;
             const zeile = {
                 user_id: await uid(),
-                instrument_id: await instrumentId(t.ticker),
+                instrument_id: basis,
+                product_id: await produktId(basis, p),
+                underlying_entry: p ? p.basisEin : null,
+                underlying_exit: p ? p.basisAus : null,
+                underlying_stop: p ? p.basisStop : null,
+                leverage_effective: p ? p.hebelEffektiv : null,
+                ko_distance_percent: p ? p.koAbstandProzent : null,
                 status: 'geschlossen',
                 direction: t.direction === 'short' ? 'short' : 'long',
                 entry_price: t.entryPrice,

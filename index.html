@@ -270,9 +270,25 @@
         <div id="journal" class="tab-content">
             <!-- ===== FORM ===== -->
             <form class="form" id="tradeForm" novalidate>
+                <!-- Produktart. Entscheidet, welche Felder gebraucht werden
+                     und wie die P&L gerechnet wird: bei einem Zertifikat
+                     steckt der Hebel bereits im Preis und darf nicht noch
+                     einmal multipliziert werden. -->
+                <div class="form-row">
+                    <div class="form-group" style="grid-column: 1 / -1;">
+                        <label>Was hast du gehandelt?</label>
+                        <div class="produkt-toggle" data-target="produktArt">
+                            <button type="button" class="produkt-btn active" data-art="aktie">Aktie / ETF</button>
+                            <button type="button" class="produkt-btn" data-art="knockout">Knock-Out</button>
+                            <button type="button" class="produkt-btn" data-art="faktor">Faktor-Zertifikat</button>
+                        </div>
+                        <input type="hidden" id="produktArt" value="aktie">
+                    </div>
+                </div>
+
                 <div class="form-row">
                     <div class="form-group">
-                        <label>Ticker</label>
+                        <label>Ticker <span class="feld-zusatz" id="tickerZusatz"></span></label>
                         <input type="text" id="ticker" placeholder="z.B. AAPL" required>
                     </div>
                     <div class="form-group">
@@ -284,25 +300,102 @@
                         <input type="hidden" id="direction" value="long">
                     </div>
                     <div class="form-group">
-                        <label>Entry Preis ($)</label>
+                        <label id="entryPriceLabel">Entry Preis ($)</label>
                         <input type="number" id="entryPrice" placeholder="0.00" step="0.01" required>
                     </div>
                     <div class="form-group">
-                        <label>Exit Preis ($)</label>
+                        <label id="exitPriceLabel">Exit Preis ($)</label>
                         <input type="number" id="exitPrice" placeholder="0.00" step="0.01" required>
                     </div>
-                    <div class="form-group">
+                    <div class="form-group" id="stopLossGruppe">
                         <label>Stop Loss ($) <span style="color: #64748b; font-size: 11px;">(Optional)</span></label>
                         <input type="number" id="stopLoss" placeholder="0.00" step="0.01">
                     </div>
                 </div>
 
+                <!-- ===== Zertifikats-Angaben. Nur sichtbar, wenn oben ein
+                     Hebelprodukt gewaehlt ist. Drei Zahlen reichen fuer
+                     alles: Kurs des Basiswerts, Basispreis, KO-Schwelle. ===== -->
+                <div id="zertBlock" class="zert-block" style="display: none;">
+                    <div class="zert-kopf">
+                        <span id="zertTitel">Angaben zum Zertifikat</span>
+                        <span class="zert-quelle">stehen in der Trade-Republic-App unter „Produktdetails“</span>
+                    </div>
+
+                    <div class="form-row" id="zertFelderKo">
+                        <div class="form-group">
+                            <label>Kurs Basiswert beim Einstieg</label>
+                            <input type="number" id="zBasisEin" placeholder="z.B. 180.00" step="any">
+                        </div>
+                        <div class="form-group">
+                            <label>Kurs Basiswert beim Ausstieg</label>
+                            <input type="number" id="zBasisAus" placeholder="z.B. 187.00" step="any">
+                        </div>
+                        <div class="form-group">
+                            <label>Basispreis</label>
+                            <input type="number" id="zStrike" placeholder="z.B. 165.00" step="any">
+                        </div>
+                        <div class="form-group">
+                            <label>KO-Schwelle <span class="feld-zusatz">leer = wie Basispreis</span></label>
+                            <input type="number" id="zKo" placeholder="z.B. 166.00" step="any">
+                        </div>
+                        <div class="form-group">
+                            <label>Dein Stop auf dem Basiswert</label>
+                            <input type="number" id="zStop" placeholder="z.B. 172.00" step="any">
+                        </div>
+                    </div>
+
+                    <div class="form-row" id="zertFelderFaktor" style="display: none;">
+                        <div class="form-group">
+                            <label>Faktor</label>
+                            <input type="number" id="zFaktor" placeholder="z.B. 5" step="any" min="1">
+                        </div>
+                        <div class="form-group">
+                            <label>Kurs Basiswert beim Einstieg</label>
+                            <input type="number" id="zBasisEinF" placeholder="z.B. 180.00" step="any">
+                        </div>
+                        <div class="form-group">
+                            <label>Kurs Basiswert beim Ausstieg</label>
+                            <input type="number" id="zBasisAusF" placeholder="z.B. 187.00" step="any">
+                        </div>
+                        <div class="form-group">
+                            <label>Dein Stop auf dem Basiswert</label>
+                            <input type="number" id="zStopF" placeholder="z.B. 172.00" step="any">
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>WKN <span class="feld-zusatz">optional</span></label>
+                            <input type="text" id="zWkn" placeholder="z.B. HS1ABC" maxlength="12">
+                        </div>
+                        <div class="form-group">
+                            <label>Emittent <span class="feld-zusatz">optional</span></label>
+                            <input type="text" id="zEmittent" placeholder="z.B. HSBC" maxlength="40">
+                        </div>
+                        <div class="form-group" id="zRatioGruppe">
+                            <label>Bezugsverhältnis <span class="feld-zusatz">optional, für das Aufgeld</span></label>
+                            <input type="number" id="zRatio" placeholder="z.B. 0.1" step="any">
+                        </div>
+                        <div class="form-group" id="zFxGruppe">
+                            <label>EUR/USD <span class="feld-zusatz">optional</span></label>
+                            <input type="number" id="zFx" placeholder="z.B. 1.10" step="any">
+                        </div>
+                    </div>
+
+                    <!-- Ergebnis. Wird bei jeder Eingabe neu gerechnet.
+                         Was sich nicht rechnen laesst, bleibt leer statt
+                         geraten zu werden. -->
+                    <div class="zert-ergebnis" id="zertErgebnis"></div>
+                    <div class="zert-warnung" id="zertWarnung" style="display: none;"></div>
+                </div>
+
                 <div class="form-row">
                     <div class="form-group">
-                        <label>Position (€)</label>
+                        <label id="positionSizeLabel">Position (€)</label>
                         <input type="number" id="positionSize" placeholder="z.B. 1000" step="0.01" required>
                     </div>
-                    <div class="form-group">
+                    <div class="form-group" id="leverageGruppe">
                         <label>Hebel <span style="color: #94a3b8; font-size: 11px;">(Leer = Normal)</span></label>
                         <input type="number" id="leverage" placeholder="z.B. 10 oder 3.2" step="0.01" min="1">
                     </div>
@@ -1113,6 +1206,10 @@
     <script src="js/laden.js"></script>
     <script src="js/speichern.js"></script>
     <script src="js/auth.js"></script>
+    <!-- Rechenkern vor app.js: addTrade() greift beim Speichern darauf zu -->
+    <script src="js/zertifikate.js"></script>
     <script src="js/app.js"></script>
+    <!-- Formular-Verdrahtung nach app.js, damit getAccountBalance steht -->
+    <script src="js/produkt.js"></script>
 </body>
 </html>

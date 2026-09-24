@@ -866,25 +866,62 @@ function addTrade(e) {
         const direction = document.getElementById('direction').value === 'short'
             ? 'short' : 'long';
 
-        // P&L Berechnung. Bei Short dreht sich das Vorzeichen: dort
-        // verdienst du, wenn der Kurs faellt. Ohne diese Unterscheidung
-        // steht jeder gewonnene Short als Verlust in den Zahlen.
-        const richtung = direction === 'short' ? -1 : 1;
+        // Produktart entscheidet ueber die gesamte Rechnung darunter.
+        const produkt = window.cfProduktDaten ? window.cfProduktDaten() : null;
+        const istZert = Boolean(produkt);
+
+        // Halb ausgefuellte Zertifikatstrades gar nicht erst annehmen -
+        // ohne Basispreis laesst sich der Trade spaeter nicht auswerten,
+        // und nachtragen wird ihn niemand.
+        if (istZert && window.cfProduktPruefen) {
+            const fehlt = window.cfProduktPruefen();
+            if (fehlt.length) {
+                showToast('❌ ' + fehlt[0], 'error');
+                return;
+            }
+        }
+
         const shares = positionSize / entryPrice;
-        const kursDiff = (exitPrice - entryPrice) * richtung;
+        let pnl, pnlPercent, risk;
 
-        const pnl = kursDiff * shares * leverage;
-        const pnlPercent = (kursDiff / entryPrice) * 100 * leverage;
+        if (istZert) {
+            // Bei einem Zertifikat sind entryPrice und exitPrice die
+            // Preise des SCHEINS in Euro. Der Hebel steckt bereits in
+            // dieser Bewegung - ihn noch einmal zu multiplizieren, wuerde
+            // die P&L um genau diesen Faktor aufblasen.
+            //
+            // Auch das Vorzeichen wird NICHT gedreht: ein Short-Knockout
+            // steigt im Preis, wenn der Basiswert faellt. Der Gewinn
+            // steht also schon richtig in der Preisdifferenz.
+            const diff = exitPrice - entryPrice;
+            pnl = diff * shares;
+            pnlPercent = (diff / entryPrice) * 100;
 
-        // Der Stop liegt bei Short ueber dem Einstieg, deshalb hier
-        // ebenfalls gedreht - sonst waere das Risiko negativ
-        const risk = stopLoss
-            ? Math.abs(entryPrice - stopLoss) * shares * leverage : 0;
+            // Das Risiko kommt aus dem Stop auf dem BASISWERT und wird
+            // ueber den inneren Wert in Euro umgerechnet. Liegt der Stop
+            // jenseits der Schwelle, ist es der volle Einsatz - nicht
+            // mehr, wie die alte Formel Hebel-mal-Kursabstand behauptet
+            // haette.
+            const r = (window.cfZert && produkt.basisStop)
+                ? window.cfZert.risiko(window.cfProduktEingaben(), produkt.basisStop)
+                : null;
+            risk = (r && r.ok) ? r.wert.euro : 0;
+        } else {
+            // Aktie: Bei Short dreht sich das Vorzeichen, dort verdienst
+            // du, wenn der Kurs faellt.
+            const richtung = direction === 'short' ? -1 : 1;
+            const kursDiff = (exitPrice - entryPrice) * richtung;
+            pnl = kursDiff * shares * leverage;
+            pnlPercent = (kursDiff / entryPrice) * 100 * leverage;
+            risk = stopLoss
+                ? Math.abs(entryPrice - stopLoss) * shares * leverage : 0;
+        }
+
         const reward = pnl;
         const riskReward = risk !== 0 ? reward / risk : 0;
-        
+
         const date = new Date().toLocaleDateString('de-DE', { year: 'numeric', month: '2-digit', day: '2-digit' });
-        
+
         // Trade Object erstellen
         const trade = {
             id: Date.now(),
@@ -892,9 +929,12 @@ function addTrade(e) {
             direction,
             entryPrice,
             exitPrice,
-            stopLoss: stopLoss || 0,
+            stopLoss: istZert ? (produkt.basisStop || 0) : (stopLoss || 0),
             positionSize,
-            leverage,
+            // Der ausgewiesene Hebel: bei Zertifikaten der gerechnete,
+            // bei Aktien der getippte. Die P&L oben nutzt ihn bei
+            // Zertifikaten bewusst NICHT.
+            leverage: istZert ? (produkt.hebelEffektiv || 1) : leverage,
             pnl: Math.round(pnl * 100) / 100,
             pnlPercent: Math.round(pnlPercent * 100) / 100,
             risk: Math.round(risk * 100) / 100,
@@ -905,7 +945,8 @@ function addTrade(e) {
             errorType,
             notes,
             screenshot: screenshotData || null,
-            date
+            date,
+            produkt: produkt || null
         };
         
         // In localStorage speichern
@@ -952,6 +993,27 @@ function formatLeverage(value) {
     return (Number.isInteger(n) ? String(n) : String(n).replace('.', ',')) + 'x';
 }
 
+/**
+ * Abzeichen mit dem Abstand zur KO-Schwelle.
+ *
+ * Die Zahl gehoert in die Liste und nicht nur ins Formular: erst im
+ * Rueckblick sieht man, ob die Gewinner immer die knappen Abstaende
+ * waren - und dann steht irgendwann ein Totalverlust dazwischen, der
+ * alles davor auffrisst. Rot ab 5 Prozent, gelb ab 10.
+ */
+function koBadge(trade) {
+    const p = trade && trade.produkt;
+    if (!p || typeof p.koAbstandProzent !== 'number') return '';
+    const pz = p.koAbstandProzent;
+    const eng = pz < 5 ? ' eng' : '';
+    const titel = pz < 5
+        ? 'Nur ' + pz.toFixed(1) + ' % bis zum Totalverlust'
+        : 'Abstand zur KO-Schwelle beim Einstieg';
+    return '<span class="trade-ko-badge' + eng + '" title="'
+        + escapeHtml(titel) + '">KO ' + pz.toFixed(1).replace('.', ',')
+        + ' %</span>';
+}
+
 function normalizeTrade(trade, index) {
     const num = (v, fallback) => {
         const n = parseFloat(v);
@@ -963,17 +1025,24 @@ function normalizeTrade(trade, index) {
     const size = num(trade.positionSize, 0);
     const lev = num(trade.leverage, 1) || 1;
 
+    // Bei einem Zertifikat sind entry/exit die Preise des Scheins - der
+    // Hebel steckt schon in der Bewegung und darf nicht noch einmal
+    // multipliziert werden.
+    const zertifikat = Boolean(trade.produkt && trade.produkt.art
+        && trade.produkt.art !== 'aktie');
+    const rechenHebel = zertifikat ? 1 : lev;
+
     // Fehlendes Ergebnis aus den Preisen nachrechnen, statt den
     // Datensatz zu verlieren
     let pnl = num(trade.pnl, null);
     if (pnl === null) {
-        pnl = entry > 0 ? (exit - entry) * (size / entry) * lev : 0;
+        pnl = entry > 0 ? (exit - entry) * (size / entry) * rechenHebel : 0;
         pnl = Math.round(pnl * 100) / 100;
     }
     let pnlPercent = num(trade.pnlPercent, null);
     if (pnlPercent === null) {
         pnlPercent = entry > 0
-            ? Math.round(((exit - entry) / entry) * 100 * lev * 100) / 100
+            ? Math.round(((exit - entry) / entry) * 100 * rechenHebel * 100) / 100
             : 0;
     }
 
@@ -1060,6 +1129,7 @@ function loadTrades() {
                     ${escapeHtml(trade.ticker)}
                     <span class="dir-badge dir-${trade.direction === 'short' ? 'short' : 'long'}">${trade.direction === 'short' ? 'SHORT' : 'LONG'}</span>
                     ${trade.leverage > 1 ? `<span class="trade-leverage-badge">${formatLeverage(trade.leverage)}</span>` : ''}
+                    ${koBadge(trade)}
                 </div>
                 <div class="trade-pnl ${trade.pnl > 0 ? 'profit' : 'loss'}">
                     <div>€${trade.pnl > 0 ? '+' : ''}${trade.pnl.toFixed(2)}</div>

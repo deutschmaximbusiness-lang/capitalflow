@@ -53,6 +53,36 @@
 
     // ------------------------------------------------- Rückübersetzung
 
+    function komma(v) {
+        const n = parseFloat(v);
+        return Number.isFinite(n) ? n : null;
+    }
+
+    /**
+     * Baut aus Trade- und Produktzeile wieder das Objekt, das die
+     * Oberflaeche kennt. Ohne product_id bleibt produkt null - dann ist
+     * es eine normale Aktie und alles rechnet wie bisher.
+     */
+    function alsProdukt(z) {
+        const p = z.products;
+        if (!p) return null;
+        return {
+            art: p.kind || 'knockout',
+            richtung: p.direction || z.direction || 'long',
+            wkn: p.wkn || null,
+            emittent: p.issuer || null,
+            strike: komma(p.strike),
+            ko: komma(p.ko_barrier),
+            ratio: komma(p.ratio),
+            faktor: komma(p.factor),
+            basisEin: komma(z.underlying_entry),
+            basisAus: komma(z.underlying_exit),
+            basisStop: komma(z.underlying_stop),
+            hebelEffektiv: komma(z.leverage_effective),
+            koAbstandProzent: komma(z.ko_distance_percent),
+        };
+    }
+
     function alsTrade(z, symbol, bild) {
         const einstieg = parseFloat(z.entry_price) || 0;
         const groesse = parseFloat(z.position_size) || 0;
@@ -74,6 +104,7 @@
             notes: z.notes || '',
             screenshot: bild,
             date: datumNur(z.closed_at || z.opened_at),
+            produkt: alsProdukt(z),
         };
     }
 
@@ -107,7 +138,11 @@
         try {
             const [t, tx, su] = await Promise.all([
                 window.cfDb.from('trades')
-                    .select('*, instruments(symbol)')
+                    // products mitladen: ohne Basispreis und Schwelle
+                    // laesst sich der Hebel nach einem Neuladen nicht
+                    // mehr zeigen, und das Abzeichen in der Liste waere
+                    // nach jedem Reload weg.
+                    .select('*, instruments(symbol), products(*)')
                     .order('opened_at', { ascending: true }),
                 window.cfDb.from('transactions')
                     .select('*').order('booked_at', { ascending: true }),

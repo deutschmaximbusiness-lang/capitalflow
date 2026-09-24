@@ -4398,3 +4398,149 @@ body.pwa-installed .pwa-install-btn { display: none !important; }
     font-weight: 800;
     color: #e9d5ff;
 }
+
+/* ===================================================================
+   M2 - Zertifikate-Ebene
+   =================================================================== */
+
+.produkt-toggle {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+.produkt-btn {
+    flex: 1;
+    min-width: 120px;
+    padding: 11px 14px;
+    border-radius: 8px;
+    border: 1px solid rgba(168, 85, 247, 0.2);
+    background: rgba(168, 85, 247, 0.06);
+    color: #94a3b8;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 0.3px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+.produkt-btn:hover {
+    border-color: rgba(168, 85, 247, 0.45);
+    color: #e2e8f0;
+}
+.produkt-btn.active {
+    background: linear-gradient(135deg, rgba(168, 85, 247, 0.28), rgba(139, 92, 246, 0.18));
+    border-color: rgba(168, 85, 247, 0.65);
+    color: #f1f5f9;
+    box-shadow: 0 0 0 1px rgba(168, 85, 247, 0.25) inset;
+}
+
+.feld-zusatz {
+    color: #64748b;
+    font-size: 11px;
+    font-weight: 500;
+}
+
+.zert-block {
+    margin: 4px 0 20px;
+    padding: 18px 20px 14px;
+    border-radius: 12px;
+    border: 1px solid rgba(168, 85, 247, 0.22);
+    background: rgba(168, 85, 247, 0.045);
+}
+.zert-kopf {
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-bottom: 14px;
+    font-size: 13px;
+    font-weight: 700;
+    color: #e2e8f0;
+    letter-spacing: 0.2px;
+}
+.zert-quelle {
+    font-size: 11px;
+    font-weight: 500;
+    color: #64748b;
+}
+
+/* Ergebniszeile: eine Kachel je Kennzahl. Raster statt Flexbox, damit
+   die letzte Kachel nicht ueber die ganze Breite zieht, wenn die Zeile
+   nicht aufgeht. */
+.zert-ergebnis {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+    gap: 10px;
+    margin-top: 6px;
+}
+.zert-kachel {
+    padding: 10px 14px;
+    border-radius: 9px;
+    background: rgba(15, 23, 42, 0.55);
+    border: 1px solid rgba(148, 163, 184, 0.14);
+}
+.zert-kachel-label {
+    font-size: 10.5px;
+    font-weight: 700;
+    letter-spacing: 0.6px;
+    text-transform: uppercase;
+    color: #64748b;
+    margin-bottom: 4px;
+}
+.zert-kachel-wert {
+    font-size: 19px;
+    font-weight: 700;
+    color: #f1f5f9;
+    line-height: 1.2;
+}
+.zert-kachel-zusatz {
+    font-size: 11px;
+    color: #94a3b8;
+    margin-top: 2px;
+}
+/* Fehlende Eingabe: die Kachel bleibt stehen und sagt, was fehlt -
+   eine verschwindende Kachel wuerde niemand vermissen und der Nutzer
+   wuesste nie, dass es die Zahl ueberhaupt gibt. */
+.zert-kachel.leer .zert-kachel-wert { color: #475569; }
+.zert-kachel.gut   { border-color: rgba(34, 197, 94, 0.35); }
+.zert-kachel.gut   .zert-kachel-wert { color: #4ade80; }
+.zert-kachel.warn  { border-color: rgba(251, 191, 36, 0.4); }
+.zert-kachel.warn  .zert-kachel-wert { color: #fbbf24; }
+.zert-kachel.rot   { border-color: rgba(248, 113, 113, 0.45); }
+.zert-kachel.rot   .zert-kachel-wert { color: #f87171; }
+
+.zert-warnung {
+    margin-top: 12px;
+    padding: 11px 14px;
+    border-radius: 9px;
+    border: 1px solid rgba(248, 113, 113, 0.35);
+    background: rgba(248, 113, 113, 0.08);
+    color: #fca5a5;
+    font-size: 12.5px;
+    line-height: 1.55;
+}
+.zert-warnung ul { margin: 4px 0 0; padding-left: 18px; }
+
+/* Abzeichen in der Trade-Liste */
+.trade-ko-badge {
+    display: inline-block;
+    padding: 3px 8px;
+    border-radius: 6px;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.3px;
+    background: rgba(251, 191, 36, 0.14);
+    border: 1px solid rgba(251, 191, 36, 0.32);
+    color: #fbbf24;
+}
+.trade-ko-badge.eng {
+    background: rgba(248, 113, 113, 0.14);
+    border-color: rgba(248, 113, 113, 0.36);
+    color: #f87171;
+}
+
+@media (max-width: 640px) {
+    .zert-block { padding: 14px 14px 12px; }
+    .zert-ergebnis { grid-template-columns: 1fr; }
+    .produkt-btn { min-width: 0; font-size: 12px; padding: 10px 8px; }
+}
