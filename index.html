@@ -327,13 +327,13 @@
                 <div id="zertBlock" class="zert-block" style="display: none;">
                     <div class="zert-kopf">
                         <span id="zertTitel">Angaben zum Zertifikat</span>
-                        <span class="zert-quelle">stehen in der Trade-Republic-App unter „Produktdetails“</span>
+                        <span class="zert-quelle">Hebel und Knockout-Preis stehen beim Schein in der TR-App</span>
                     </div>
 
                     <div class="zert-hinweis">
                         <strong>Oben die Euro-Beträge</strong> — was du für den Schein bezahlt und bekommen hast.
-                        <strong>Hier unten die Dollar-Zahlen</strong> des Basiswerts.
-                        Wo der Basiswert beim Kauf stand, rechnet die App aus dem Scheinpreis aus —
+                        <strong>Hier unten zwei Zahlen vom Schein</strong> und dein Stop.
+                        Wo der Basiswert stand, rechnet die App daraus aus —
                         Trade Republic zeigt dir das im Nachhinein nicht mehr.
                     </div>
 
@@ -341,21 +341,17 @@
                         <div class="zert-gruppe">
                             <div class="zert-gruppe-kopf">
                                 <span class="zert-nr">1</span>
-                                <span>Das Produkt</span>
-                                <span class="zert-waehrung">steht dauerhaft in den Produktdetails</span>
+                                <span>Vom Schein abgelesen</span>
+                                <span class="zert-waehrung">beim Kauf, direkt aus der TR-App</span>
                             </div>
                             <div class="form-row">
                                 <div class="form-group">
-                                    <label>KO-Schwelle ($) <span class="feld-zusatz">„Knock-out-Barriere“</span></label>
+                                    <label>Knockout-Preis ($) <span class="feld-zusatz">die Schwelle</span></label>
                                     <input type="number" id="zKo" placeholder="z.B. 165.00" step="any">
                                 </div>
-                                <div class="form-group" id="zRatioGruppe">
-                                    <label>Bezugsverhältnis <span class="feld-zusatz">z.B. 0,1 oder 1</span></label>
-                                    <input type="number" id="zRatio" placeholder="z.B. 0.1" step="any">
-                                </div>
-                                <div class="form-group" id="zFxGruppe">
-                                    <label>EUR/USD <span class="feld-zusatz">bei Euro-Werten: 1</span></label>
-                                    <input type="number" id="zFx" placeholder="z.B. 1.10" step="any">
+                                <div class="form-group">
+                                    <label>Hebel <span class="feld-zusatz">wie TR ihn beim Kauf anzeigt</span></label>
+                                    <input type="number" id="zHebelTr" placeholder="z.B. 12" step="any" min="0">
                                 </div>
                             </div>
                         </div>
@@ -376,8 +372,8 @@
                                     <input type="number" id="zBasisEin" placeholder="wird gerechnet" step="any">
                                 </div>
                                 <div class="form-group">
-                                    <label id="lblBasisAus">Basiswert beim Verkauf <span class="feld-zusatz">leer = wird gerechnet</span></label>
-                                    <input type="number" id="zBasisAus" placeholder="wird gerechnet" step="any">
+                                    <label id="lblBasisAus">Basiswert beim Verkauf <span class="feld-zusatz">optional</span></label>
+                                    <input type="number" id="zBasisAus" placeholder="optional" step="any">
                                 </div>
                             </div>
                         </div>
@@ -426,8 +422,16 @@
                         </summary>
                         <div class="form-row">
                             <div class="form-group" id="zStrikeGruppe">
-                                <label>Basispreis ($) <span class="feld-zusatz">leer = wie KO-Schwelle</span></label>
-                                <input type="number" id="zStrike" placeholder="wie KO-Schwelle" step="any">
+                                <label>Basispreis ($) <span class="feld-zusatz">leer = wie Knockout-Preis</span></label>
+                                <input type="number" id="zStrike" placeholder="wie Knockout-Preis" step="any">
+                            </div>
+                            <div class="form-group" id="zRatioGruppe">
+                                <label>Bezugsverhältnis <span class="feld-zusatz">falls der Emittent es ausweist</span></label>
+                                <input type="number" id="zRatio" placeholder="z.B. 0.1" step="any">
+                            </div>
+                            <div class="form-group" id="zFxGruppe">
+                                <label>EUR/USD <span class="feld-zusatz">nur mit Bezugsverhältnis nötig</span></label>
+                                <input type="number" id="zFx" placeholder="z.B. 1.10" step="any">
                             </div>
                             <div class="form-group">
                                 <label>WKN</label>

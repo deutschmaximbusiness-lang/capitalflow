@@ -214,6 +214,43 @@
     }
 
     /**
+     * Kurs des Basiswerts aus dem angezeigten Hebel zurueckrechnen.
+     *
+     * Der bequemste Weg, weil Trade Republic beim Schein genau zwei
+     * Zahlen zeigt, die hier gebraucht werden: Hebel und Knockout-Preis.
+     * Ein Bezugsverhaeltnis weist TR bei Knock-Outs nicht aus.
+     *
+     *     Long:   Hebel = Kurs / (Kurs - Basispreis)
+     *             -> Kurs = Hebel x Basispreis / (Hebel - 1)
+     *     Short:  Hebel = Kurs / (Basispreis - Kurs)
+     *             -> Kurs = Hebel x Basispreis / (Hebel + 1)
+     *
+     * Wechselkurs und Bezugsverhaeltnis kuerzen sich heraus - es braucht
+     * also weder das eine noch das andere.
+     *
+     * Grenze: der Hebel, den TR anzeigt, gilt fuer den Moment des
+     * Hinsehens. Wer einen Trade von vorletzter Woche nachtraegt, kann
+     * ihn nicht mehr nachschlagen. Fuers Mitschreiben beim Einstieg ist
+     * er dagegen die eine Zahl, die man ohnehin vor Augen hat.
+     */
+    function basiswertAusHebel(roh) {
+        const p = lesen(roh);
+        const L = zahl(roh && roh.hebelAngezeigt);
+        if (L === null) return nein('Kein Hebel angegeben.');
+        if (p.strike === null) return nein('KO-Schwelle fehlt.');
+        if (p.richtung === 'long' && L <= 1) {
+            return nein('Ein Long-Knock-Out hat immer Hebel groesser als 1.');
+        }
+        if (L <= 0) return nein('Der Hebel muss groesser als 0 sein.');
+
+        const kurs = p.richtung === 'long'
+            ? (L * p.strike) / (L - 1)
+            : (L * p.strike) / (L + 1);
+        if (!(kurs > 0)) return nein('Ergibt keinen sinnvollen Kurs.');
+        return ok(kurs);
+    }
+
+    /**
      * Kurs des Basiswerts aus dem Zertifikatspreis zurueckrechnen.
      *
      * Der eigentliche Punkt dieser Datei. Trade Republic zeigt in der
@@ -432,6 +469,7 @@
         hebel: hebel,
         aufgeld: aufgeld,
         ratioSchaetzen: ratioSchaetzen,
+        basiswertAusHebel: basiswertAusHebel,
         basiswertAusPreis: basiswertAusPreis,
         koAbstand: koAbstand,
         risiko: risiko,

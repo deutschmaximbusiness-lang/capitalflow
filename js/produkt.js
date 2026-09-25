@@ -169,23 +169,43 @@
                 stop: zahl(wert('zStop')),
                 ratio: zahl(wert('zRatio')),
                 fx: zahl(wert('zFx')),
+                hebelAngezeigt: zahl(wert('zHebelTr')),
                 einsatz: einsatz,
                 wkn: wert('zWkn').trim().toUpperCase() || null,
                 emittent: wert('zEmittent').trim() || null,
             };
 
-            // Trade Republic zeigt in der Abrechnung nur den Preis des
-            // Scheins. Wo der Basiswert in diesem Moment stand, laesst
-            // sich hinterher nirgends nachschlagen - aber aus Basispreis,
-            // Bezugsverhaeltnis und bezahltem Preis zurueckrechnen.
-            // Deshalb sind die beiden Kursfelder leer lassbar.
+            // Trade Republic zeigt beim Schein Hebel und Knockout-Preis,
+            // aber nicht, wo der Basiswert gerade steht - und im
+            // Nachhinein schon gar nicht. Aus diesen beiden Zahlen laesst
+            // er sich zurueckrechnen, ohne Wechselkurs und ohne
+            // Bezugsverhaeltnis. Deshalb darf das Kursfeld leer bleiben.
+            //
+            // Reihenfolge: was der Nutzer selbst eingetragen hat, gilt.
+            // Danach der Weg ueber den Hebel, zuletzt der ueber den
+            // Preis - der braucht ein Bezugsverhaeltnis, das TR bei
+            // Knock-Outs nicht ausweist.
             basis.kursGerechnet = false;
             basis.kursAusGerechnet = false;
+            basis.kursQuelle = 'eingetippt';
             if (window.cfZert) {
                 if (basis.kurs === null) {
-                    const r = window.cfZert.basiswertAusPreis(basis);
-                    if (r.ok) { basis.kurs = r.wert; basis.kursGerechnet = true; }
+                    const h = window.cfZert.basiswertAusHebel(basis);
+                    if (h.ok) {
+                        basis.kurs = h.wert;
+                        basis.kursGerechnet = true;
+                        basis.kursQuelle = 'hebel';
+                    } else {
+                        const r = window.cfZert.basiswertAusPreis(basis);
+                        if (r.ok) {
+                            basis.kurs = r.wert;
+                            basis.kursGerechnet = true;
+                            basis.kursQuelle = 'preis';
+                        }
+                    }
                 }
+                // Der angezeigte Hebel gilt nur fuer den Moment des
+                // Kaufs - fuer den Ausstieg hilft nur der Preisweg.
                 if (basis.kursAus === null) {
                     const r = window.cfZert.basiswertAusPreis(basis, 'aus');
                     if (r.ok) { basis.kursAus = r.wert; basis.kursAusGerechnet = true; }
@@ -248,7 +268,9 @@
             const t = el('ticker');
             const name = (t && t.value.trim().toUpperCase()) || 'Basiswert';
             teile.push(kachel(name + ' beim Kauf', nz(p.kurs, 2) + ' $',
-                'aus dem Scheinpreis gerechnet'));
+                p.kursQuelle === 'hebel'
+                    ? 'aus Hebel und Knockout-Preis gerechnet'
+                    : 'aus dem Scheinpreis gerechnet'));
         }
 
         const h = Z.hebel(p);
@@ -257,6 +279,7 @@
             let zusatz = 'im Moment des Einstiegs';
             if (p.art === 'faktor') zusatz = 'täglich neu angesetzt';
             else if (h.quelle === 'preis') zusatz = 'auf dein eingesetztes Geld';
+            else if (p.kursQuelle === 'hebel') zusatz = 'von Trade Republic übernommen';
             else zusatz = 'ohne Aufgeld — echter Hebel liegt etwas tiefer';
             teile.push(kachel('Echter Hebel', nz(h.wert, 1) + '×', zusatz,
                 eng ? 'warn' : ''));
@@ -285,15 +308,17 @@
             // 0,0 % heraus - eine Zahl, die nichts sagt, aber echt
             // aussieht.
             const a = p.kursGerechnet
-                ? { ok: false, grund: 'Dafür müsstest du eintragen, wo '
-                    + 'der Basiswert beim Kauf stand.' }
+                ? { ok: false, grund: 'Dafür bräuchte es Bezugsverhältnis '
+                    + 'und den echten Kurs des Basiswerts.' }
                 : Z.aufgeld(p);
+            // Ohne Bezugsverhaeltnis nicht rechenbar, und Trade Republic
+            // weist bei Knock-Outs keines aus. Eine Kachel, die praktisch
+            // immer leer bleibt, ist kein Hinweis mehr, sondern Moebel -
+            // deshalb faellt sie ganz weg statt einen Strich zu zeigen.
             if (a.ok) {
                 teile.push(kachel('Aufgeld', nz(a.wert.prozent, 1) + ' %',
                     'Finanzierung über dem inneren Wert',
                     a.wert.prozent > 5 ? 'warn' : ''));
-            } else {
-                teile.push(leer('Aufgeld', a.grund || 'Bezugsverhältnis fehlt'));
             }
         }
 
@@ -339,7 +364,8 @@
         // Ohne Wechselkurs rechnet die Ableitung mit 1. Bei einem
         // US-Wert liegt der Kurs dann rund zehn Prozent daneben - und
         // zwar ohne dass irgendetwas unplausibel aussieht.
-        if (p.art === 'knockout' && p.kursGerechnet && !p.fx) {
+        if (p.art === 'knockout' && p.kursGerechnet
+                && p.kursQuelle === 'preis' && !p.fx) {
             hinweise.push('Kein Wechselkurs angegeben — gerechnet wird mit 1. '
                 + 'Bei US-Werten trag EUR/USD ein, sonst stimmt der Kurs nicht.');
         }
@@ -405,10 +431,8 @@
         const m = [];
         if (p.art === 'knockout') {
             if (p.kurs === null) {
-                // Entweder direkt eingetippt oder ueber das
-                // Bezugsverhaeltnis errechenbar - eines von beidem.
-                m.push('Trag das Bezugsverhältnis ein oder sag, wo der '
-                     + 'Basiswert beim Kauf stand.');
+                m.push('Trag den Hebel ein, den TR beim Kauf angezeigt hat — '
+                     + 'oder direkt, wo der Basiswert stand.');
             }
             // strike und ko fuellen sich in eingaben() gegenseitig auf -
             // eine der beiden Zahlen genuegt.
