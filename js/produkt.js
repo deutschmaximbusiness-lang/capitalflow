@@ -106,17 +106,21 @@
         if (gt) gt.textContent = hat ? 'Wo stand ' + name + '?'
                                      : 'Wo stand der Basiswert?';
 
+        // Nur den Namen austauschen, den Zusatz stehen lassen - sonst
+        // verschwindet mit jeder Ticker-Eingabe der Hinweis, dass die
+        // Felder leer bleiben duerfen.
         const paare = [
-            ['lblBasisEin', hat ? '… als du ' + name + ' gekauft hast'
-                                : '… als du gekauft hast'],
-            ['lblBasisAus', hat ? '… als du ' + name + ' verkauft hast'
-                                : '… als du verkauft hast'],
-            ['lblBasisEinF', hat ? name + ' beim Kauf' : 'Basiswert beim Kauf'],
-            ['lblBasisAusF', hat ? name + ' beim Verkauf' : 'Basiswert beim Verkauf'],
+            ['lblBasisEin', (hat ? name : 'Basiswert') + ' beim Kauf'],
+            ['lblBasisAus', (hat ? name : 'Basiswert') + ' beim Verkauf'],
+            ['lblBasisEinF', (hat ? name : 'Basiswert') + ' beim Kauf'],
+            ['lblBasisAusF', (hat ? name : 'Basiswert') + ' beim Verkauf'],
         ];
         paare.forEach(function (pr) {
             const e = el(pr[0]);
-            if (e) e.textContent = pr[1];
+            if (!e) return;
+            const zusatz = e.querySelector('.feld-zusatz');
+            e.textContent = pr[1] + ' ';
+            if (zusatz) e.appendChild(zusatz);
         });
     }
 
@@ -154,7 +158,7 @@
             // laengst gefuellt hat.
             const strikeRoh = zahl(wert('zStrike'));
             const koRoh = zahl(wert('zKo'));
-            return {
+            const basis = {
                 art: a, richtung: richtung(),
                 kurs: zahl(wert('zBasisEin')),
                 kursAus: zahl(wert('zBasisAus')),
@@ -169,6 +173,25 @@
                 wkn: wert('zWkn').trim().toUpperCase() || null,
                 emittent: wert('zEmittent').trim() || null,
             };
+
+            // Trade Republic zeigt in der Abrechnung nur den Preis des
+            // Scheins. Wo der Basiswert in diesem Moment stand, laesst
+            // sich hinterher nirgends nachschlagen - aber aus Basispreis,
+            // Bezugsverhaeltnis und bezahltem Preis zurueckrechnen.
+            // Deshalb sind die beiden Kursfelder leer lassbar.
+            basis.kursGerechnet = false;
+            basis.kursAusGerechnet = false;
+            if (window.cfZert) {
+                if (basis.kurs === null) {
+                    const r = window.cfZert.basiswertAusPreis(basis);
+                    if (r.ok) { basis.kurs = r.wert; basis.kursGerechnet = true; }
+                }
+                if (basis.kursAus === null) {
+                    const r = window.cfZert.basiswertAusPreis(basis, 'aus');
+                    if (r.ok) { basis.kursAus = r.wert; basis.kursAusGerechnet = true; }
+                }
+            }
+            return basis;
         }
         return {
             art: AKTIE, richtung: richtung(),
@@ -218,12 +241,24 @@
         const teile = [];
 
         // --- Hebel
+        // Wo stand der Basiswert? Bei errechnetem Kurs gehoert die Zahl
+        // sichtbar hin - der Nutzer soll gegenpruefen koennen, ob sie
+        // zum Chart passt, statt ihr blind zu vertrauen.
+        if (p.art === 'knockout' && p.kurs !== null && p.kursGerechnet) {
+            const t = el('ticker');
+            const name = (t && t.value.trim().toUpperCase()) || 'Basiswert';
+            teile.push(kachel(name + ' beim Kauf', nz(p.kurs, 2) + ' $',
+                'aus dem Scheinpreis gerechnet'));
+        }
+
         const h = Z.hebel(p);
         if (h.ok) {
             const eng = h.wert >= 25;
-            teile.push(kachel('Echter Hebel', nz(h.wert, 1) + '×',
-                p.art === 'faktor' ? 'täglich neu angesetzt'
-                                   : 'im Moment des Einstiegs',
+            let zusatz = 'im Moment des Einstiegs';
+            if (p.art === 'faktor') zusatz = 'täglich neu angesetzt';
+            else if (h.quelle === 'preis') zusatz = 'auf dein eingesetztes Geld';
+            else zusatz = 'ohne Aufgeld — echter Hebel liegt etwas tiefer';
+            teile.push(kachel('Echter Hebel', nz(h.wert, 1) + '×', zusatz,
                 eng ? 'warn' : ''));
         } else {
             teile.push(leer('Echter Hebel', h.grund));
@@ -243,13 +278,22 @@
             }
 
             // --- Aufgeld
-            const a = Z.aufgeld(p);
+            //
+            // Nur sinnvoll, wenn der Kurs des Basiswerts wirklich bekannt
+            // ist. Wurde er aus dem Preis zurueckgerechnet, steckt das
+            // Aufgeld im gerechneten Kurs und kaeme zwangslaeufig als
+            // 0,0 % heraus - eine Zahl, die nichts sagt, aber echt
+            // aussieht.
+            const a = p.kursGerechnet
+                ? { ok: false, grund: 'Dafür müsstest du eintragen, wo '
+                    + 'der Basiswert beim Kauf stand.' }
+                : Z.aufgeld(p);
             if (a.ok) {
                 teile.push(kachel('Aufgeld', nz(a.wert.prozent, 1) + ' %',
                     'Finanzierung über dem inneren Wert',
                     a.wert.prozent > 5 ? 'warn' : ''));
             } else {
-                teile.push(leer('Aufgeld', 'Bezugsverhältnis fehlt'));
+                teile.push(leer('Aufgeld', a.grund || 'Bezugsverhältnis fehlt'));
             }
         }
 
@@ -292,6 +336,13 @@
 
         // --- Warnungen: vertauschte Zahlen, Stop jenseits der Schwelle
         const hinweise = Z.pruefen(p).slice();
+        // Ohne Wechselkurs rechnet die Ableitung mit 1. Bei einem
+        // US-Wert liegt der Kurs dann rund zehn Prozent daneben - und
+        // zwar ohne dass irgendetwas unplausibel aussieht.
+        if (p.art === 'knockout' && p.kursGerechnet && !p.fx) {
+            hinweise.push('Kein Wechselkurs angegeben — gerechnet wird mit 1. '
+                + 'Bei US-Werten trag EUR/USD ein, sonst stimmt der Kurs nicht.');
+        }
         if (r.ok && r.wert.hinweis) hinweise.push(r.wert.hinweis);
         if (r.ok && r.wert.naeherung) {
             hinweise.push('Beim Faktor-Zertifikat ist das Risiko eine '
@@ -354,7 +405,10 @@
         const m = [];
         if (p.art === 'knockout') {
             if (p.kurs === null) {
-                m.push('Es fehlt, wo der Basiswert beim Kauf stand.');
+                // Entweder direkt eingetippt oder ueber das
+                // Bezugsverhaeltnis errechenbar - eines von beidem.
+                m.push('Trag das Bezugsverhältnis ein oder sag, wo der '
+                     + 'Basiswert beim Kauf stand.');
             }
             // strike und ko fuellen sich in eingaben() gegenseitig auf -
             // eine der beiden Zahlen genuegt.

@@ -163,7 +163,26 @@
         const iw = innererWert(p);
         if (iw === null) return nein('Kurs oder Basispreis fehlt.');
         if (iw <= 0) return nein('Das Zertifikat hat keinen inneren Wert mehr.');
-        return ok(p.kurs / iw);
+
+        // Wenn Bezugsverhaeltnis und bezahlter Preis vorliegen, ist der
+        // Hebel auf das eingesetzte GELD rechenbar:
+        //
+        //     Hebel = (Kurs x Bezugsverhaeltnis) / (Preis x Wechselkurs)
+        //
+        // Der Unterschied ist das Aufgeld. Wer 1,50 fuer einen Schein
+        // zahlt, dessen innerer Wert 1,36 betraegt, hat nicht Hebel 12
+        // sondern 11 - die Differenz ist Finanzierung, die mitlaeuft und
+        // nicht mithebelt. Diese Zahl ist die ehrlichere, deshalb hat
+        // sie Vorrang.
+        const ratio = zahl(roh && roh.ratio);
+        const fx = zahl(roh && roh.fx) || 1;
+        if (ratio !== null && ratio > 0 && p.preis !== null && p.preis > 0) {
+            const aufGeld = (p.kurs * ratio) / (p.preis * fx);
+            if (aufGeld > 0) {
+                return { ok: true, wert: aufGeld, quelle: 'preis' };
+            }
+        }
+        return { ok: true, wert: p.kurs / iw, quelle: 'basispreis' };
     }
 
     /**
@@ -192,6 +211,39 @@
         const bezahlt = (p.preis * fx) / ratio;   // je Basiswert-Einheit
         const auf = bezahlt - iw;
         return ok({ absolut: auf, prozent: (auf / iw) * 100 });
+    }
+
+    /**
+     * Kurs des Basiswerts aus dem Zertifikatspreis zurueckrechnen.
+     *
+     * Der eigentliche Punkt dieser Datei. Trade Republic zeigt in der
+     * Abrechnung nur, was der Schein gekostet hat - wo NVDA in diesem
+     * Moment stand, steht nirgends und laesst sich hinterher nicht mehr
+     * nachschlagen. Basispreis und Bezugsverhaeltnis aendern sich dagegen
+     * nie und stehen jederzeit in den Produktdetails.
+     *
+     *     Long:   Kurs = Basispreis + (Preis x Wechselkurs) / Bezugsverh.
+     *     Short:  Kurs = Basispreis - (Preis x Wechselkurs) / Bezugsverh.
+     *
+     * Ungenauigkeit: im Preis steckt das Aufgeld, der errechnete Kurs
+     * faellt deshalb minimal zu hoch aus. Bei ueblichen Laufzeiten sind
+     * das Bruchteile eines Prozents - deutlich weniger als der Fehler,
+     * den ein geschaetzter Kurs machen wuerde.
+     */
+    function basiswertAusPreis(roh, welcher) {
+        const p = lesen(roh);
+        const ratio = zahl(roh && roh.ratio);
+        const fx = zahl(roh && roh.fx) || 1;
+        const preis = welcher === 'aus' ? p.preisAus : p.preis;
+
+        if (p.strike === null) return nein('Basispreis oder KO-Schwelle fehlt.');
+        if (ratio === null || ratio <= 0) return nein('Bezugsverhaeltnis fehlt.');
+        if (preis === null || preis <= 0) return nein('Preis des Zertifikats fehlt.');
+
+        const je = (preis * fx) / ratio;
+        const kurs = p.richtung === 'long' ? p.strike + je : p.strike - je;
+        if (!(kurs > 0)) return nein('Ergibt keinen sinnvollen Kurs.');
+        return ok(kurs);
     }
 
     /**
@@ -380,6 +432,7 @@
         hebel: hebel,
         aufgeld: aufgeld,
         ratioSchaetzen: ratioSchaetzen,
+        basiswertAusPreis: basiswertAusPreis,
         koAbstand: koAbstand,
         risiko: risiko,
         pfadeffekt: pfadeffekt,

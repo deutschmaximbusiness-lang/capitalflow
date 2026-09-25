@@ -332,33 +332,52 @@
 
                     <div class="zert-hinweis">
                         <strong>Oben die Euro-Beträge</strong> — was du für den Schein bezahlt und bekommen hast.
-                        <strong>Hier unten die Dollar-Kurse</strong> des Basiswerts, so wie sie bei Trade Republic
-                        beim Produkt stehen. Nicht mischen.
+                        <strong>Hier unten die Dollar-Zahlen</strong> des Basiswerts.
+                        Wo der Basiswert beim Kauf stand, rechnet die App aus dem Scheinpreis aus —
+                        Trade Republic zeigt dir das im Nachhinein nicht mehr.
                     </div>
 
                     <div id="zertFelderKo">
                         <div class="zert-gruppe">
                             <div class="zert-gruppe-kopf">
                                 <span class="zert-nr">1</span>
-                                <span id="zertGruppeTitel">Wo stand der Basiswert?</span>
+                                <span>Das Produkt</span>
+                                <span class="zert-waehrung">steht dauerhaft in den Produktdetails</span>
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label>KO-Schwelle ($) <span class="feld-zusatz">„Knock-out-Barriere“</span></label>
+                                    <input type="number" id="zKo" placeholder="z.B. 165.00" step="any">
+                                </div>
+                                <div class="form-group" id="zRatioGruppe">
+                                    <label>Bezugsverhältnis <span class="feld-zusatz">z.B. 0,1 oder 1</span></label>
+                                    <input type="number" id="zRatio" placeholder="z.B. 0.1" step="any">
+                                </div>
+                                <div class="form-group" id="zFxGruppe">
+                                    <label>EUR/USD <span class="feld-zusatz">bei Euro-Werten: 1</span></label>
+                                    <input type="number" id="zFx" placeholder="z.B. 1.10" step="any">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="zert-gruppe">
+                            <div class="zert-gruppe-kopf">
+                                <span class="zert-nr">2</span>
+                                <span>Dein Trade</span>
                                 <span class="zert-waehrung">alles in $</span>
                             </div>
                             <div class="form-row">
                                 <div class="form-group">
-                                    <label id="lblBasisEin">… als du gekauft hast</label>
-                                    <input type="number" id="zBasisEin" placeholder="z.B. 180.00" step="any">
-                                </div>
-                                <div class="form-group">
-                                    <label id="lblBasisAus">… als du verkauft hast</label>
-                                    <input type="number" id="zBasisAus" placeholder="z.B. 187.00" step="any">
-                                </div>
-                                <div class="form-group">
-                                    <label>Wo lag die KO-Schwelle? <span class="feld-zusatz">„Knock-out-Barriere“</span></label>
-                                    <input type="number" id="zKo" placeholder="z.B. 166.00" step="any">
-                                </div>
-                                <div class="form-group">
                                     <label>Wo lag dein Stop? <span class="feld-zusatz">auf dem Chart, nicht am Schein</span></label>
                                     <input type="number" id="zStop" placeholder="z.B. 172.00" step="any">
+                                </div>
+                                <div class="form-group">
+                                    <label id="lblBasisEin">Basiswert beim Kauf <span class="feld-zusatz">leer = wird gerechnet</span></label>
+                                    <input type="number" id="zBasisEin" placeholder="wird gerechnet" step="any">
+                                </div>
+                                <div class="form-group">
+                                    <label id="lblBasisAus">Basiswert beim Verkauf <span class="feld-zusatz">leer = wird gerechnet</span></label>
+                                    <input type="number" id="zBasisAus" placeholder="wird gerechnet" step="any">
                                 </div>
                             </div>
                         </div>
@@ -371,13 +390,17 @@
                                 <span>Faktor und Kurse des Basiswerts</span>
                                 <span class="zert-waehrung">Kurse in $</span>
                             </div>
+                            <!-- Beim Faktor-Zertifikat gibt es keinen Basispreis,
+                                 aus dem sich der Kurs zurueckrechnen liesse. Die
+                                 beiden Kurse muessen von Hand kommen - sonst
+                                 laesst sich der Pfadeffekt nicht bestimmen. -->
                             <div class="form-row">
                                 <div class="form-group">
                                     <label>Welcher Faktor? <span class="feld-zusatz">steht im Produktnamen</span></label>
                                     <input type="number" id="zFaktor" placeholder="z.B. 5" step="any" min="1">
                                 </div>
                                 <div class="form-group">
-                                    <label id="lblBasisEinF">Basiswert beim Kauf</label>
+                                    <label id="lblBasisEinF">Basiswert beim Kauf <span class="feld-zusatz">vom Chart ablesen</span></label>
                                     <input type="number" id="zBasisEinF" placeholder="z.B. 180.00" step="any">
                                 </div>
                                 <div class="form-group">
@@ -393,17 +416,17 @@
                     </div>
 
                     <!-- Alles hier ist verzichtbar. Zusammengeklappt, damit
-                         das Formular auf den ersten Blick vier Felder hat
-                         und nicht acht. -->
+                         das Formular auf den ersten Blick nicht doppelt so
+                         voll aussieht, wie es ist. -->
                     <details class="zert-gruppe zert-optional">
                         <summary class="zert-gruppe-kopf">
-                            <span class="zert-nr grau">2</span>
+                            <span class="zert-nr grau">3</span>
                             <span>Feinheiten — kannst du weglassen</span>
-                            <span class="zert-waehrung" id="zertOptionalHinweis">für Aufgeld und späteren Import</span>
+                            <span class="zert-waehrung">für Sonderfälle und den späteren Import</span>
                         </summary>
                         <div class="form-row">
                             <div class="form-group" id="zStrikeGruppe">
-                                <label>Basispreis <span class="feld-zusatz">leer = wie KO-Schwelle</span></label>
+                                <label>Basispreis ($) <span class="feld-zusatz">leer = wie KO-Schwelle</span></label>
                                 <input type="number" id="zStrike" placeholder="wie KO-Schwelle" step="any">
                             </div>
                             <div class="form-group">
@@ -413,14 +436,6 @@
                             <div class="form-group">
                                 <label>Emittent</label>
                                 <input type="text" id="zEmittent" placeholder="z.B. HSBC" maxlength="40">
-                            </div>
-                            <div class="form-group" id="zRatioGruppe">
-                                <label>Bezugsverhältnis <span class="feld-zusatz">zeigt dir das Aufgeld</span></label>
-                                <input type="number" id="zRatio" placeholder="z.B. 0.1" step="any">
-                            </div>
-                            <div class="form-group" id="zFxGruppe">
-                                <label>EUR/USD</label>
-                                <input type="number" id="zFx" placeholder="z.B. 1.10" step="any">
                             </div>
                         </div>
                     </details>
