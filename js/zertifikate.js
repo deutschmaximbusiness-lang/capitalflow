@@ -82,19 +82,32 @@
      * Ziffer vertauscht - und wuerde ohne diese Pruefung einen
      * negativen Hebel angezeigt bekommen.
      */
-    function pruefen(roh) {
+    /**
+     * @param nurWidersprueche  Wenn true, werden fehlende Angaben nicht
+     *   gemeldet - nur Zahlen, die sich gegenseitig ausschliessen.
+     *
+     *   Der Unterschied ist wichtig: eine Luecke ist ein Hinweis, ein
+     *   Widerspruch ist ein Fehler. Wer beides gleich behandelt, sperrt
+     *   Nutzer aus, die einfach nur nichts eintragen wollten.
+     */
+    function pruefen(roh, nurWidersprueche) {
         const p = lesen(roh);
         const m = [];
         if (p.art === 'aktie') return m;
 
         if (p.art === 'faktor') {
-            if (p.faktor === null) m.push('Faktor fehlt.');
-            else if (p.faktor <= 0) m.push('Der Faktor muss groesser als 0 sein.');
+            if (p.faktor === null) {
+                if (!nurWidersprueche) m.push('Faktor fehlt.');
+            } else if (p.faktor <= 0) {
+                m.push('Der Faktor muss groesser als 0 sein.');
+            }
             return m;
         }
 
-        if (p.kurs === null) m.push('Kurs des Basiswerts fehlt.');
-        if (p.strike === null) m.push('Basispreis fehlt.');
+        if (!nurWidersprueche) {
+            if (p.kurs === null) m.push('Kurs des Basiswerts fehlt.');
+            if (p.strike === null) m.push('Basispreis fehlt.');
+        }
         if (p.kurs === null || p.strike === null) return m;
 
         if (p.richtung === 'long') {

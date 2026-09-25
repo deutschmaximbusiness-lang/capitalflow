@@ -357,10 +357,24 @@
             teile.push(leer('Risiko bei deinem Stop', r.grund));
         }
 
+        // Was noch fehlt, steht als Hinweis unter den Kacheln - nicht als
+        // rote Sperre. Der Unterschied entscheidet, ob jemand das Feld
+        // nachtraegt oder das Journal zumacht.
+        const fehlt = window.cfProduktUnvollstaendig
+            ? window.cfProduktUnvollstaendig() : [];
+        if (fehlt.length && teile.length) {
+            teile.push('<div class="zert-kachel leer" style="grid-column: 1 / -1;">'
+                + '<div class="zert-kachel-label">Noch offen</div>'
+                + '<div class="zert-kachel-zusatz" style="margin-top:2px;">Mit '
+                + fehlt.join(' und ')
+                + ' rechnet die App dir KO-Abstand und Euro-Risiko aus. '
+                + 'Ohne geht der Trade trotzdem ins Journal.</div></div>');
+        }
+
         ziel.innerHTML = teile.join('');
 
         // --- Warnungen: vertauschte Zahlen, Stop jenseits der Schwelle
-        const hinweise = Z.pruefen(p).slice();
+        const hinweise = Z.pruefen(p, true).slice();
         // Ohne Wechselkurs rechnet die Ableitung mit 1. Bei einem
         // US-Wert liegt der Kurs dann rund zehn Prozent daneben - und
         // zwar ohne dass irgendetwas unplausibel aussieht.
@@ -428,20 +442,32 @@
     window.cfProduktPruefen = function () {
         if (!istZertifikat() || !window.cfZert) return [];
         const p = eingaben();
+
+        // Fehlende Angaben halten den Trade NICHT auf.
+        //
+        // Ein Journal, das sich weigert zu speichern, wird nach drei
+        // Wochen nicht mehr gefuehrt - und ein Trade ohne Hebelzahlen ist
+        // immer noch besser als kein Trade. Wer die zwei Zahlen eintraegt,
+        // bekommt Hebel, KO-Abstand und Euro-Risiko dazu; wer nicht,
+        // bekommt ein normales Journal wie vorher.
+        //
+        // Blockiert wird nur, was sich WIDERSPRICHT: ein Basispreis ueber
+        // dem Kurs zum Beispiel ist keine Luecke, sondern eine vertauschte
+        // Ziffer, und die wuerde falsche Zahlen ins Archiv schreiben.
+        return window.cfZert.pruefen(p, true);
+    };
+
+    /** Was fehlt, um die Kennzahlen zu rechnen - als Hinweis, nicht als Sperre. */
+    window.cfProduktUnvollstaendig = function () {
+        if (!istZertifikat() || !window.cfZert) return [];
+        const p = eingaben();
         const m = [];
         if (p.art === 'knockout') {
-            if (p.kurs === null) {
-                m.push('Trag den Hebel ein, den TR beim Kauf angezeigt hat — '
-                     + 'oder direkt, wo der Basiswert stand.');
-            }
-            // strike und ko fuellen sich in eingaben() gegenseitig auf -
-            // eine der beiden Zahlen genuegt.
-            if (p.strike === null && p.ko === null) {
-                m.push('Es fehlt die KO-Schwelle.');
-            }
+            if (p.strike === null) m.push('Knockout-Preis');
+            if (p.kurs === null) m.push('Hebel');
         }
-        if (p.art === 'faktor' && p.faktor === null) m.push('Faktor fehlt.');
-        return m.concat(window.cfZert.pruefen(p));
+        if (p.art === 'faktor' && p.faktor === null) m.push('Faktor');
+        return m;
     };
 
     // ------------------------------------------------------------ Aufbau

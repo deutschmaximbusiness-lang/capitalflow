@@ -89,6 +89,10 @@
     async function produktId(instrument, p) {
         if (!p || !p.art || p.art === 'aktie') return null;
         if (!instrument) return null;
+        // Die Zertifikatsfelder sind freiwillig. Ohne Basispreis bzw.
+        // Faktor liesse sich keine gueltige Produktzeile anlegen - der
+        // Trade wird trotzdem gespeichert, nur eben ohne Produktbezug.
+        if (p.art === 'faktor' ? !p.faktor : !p.strike) return null;
 
         const db = window.cfDb;
 
