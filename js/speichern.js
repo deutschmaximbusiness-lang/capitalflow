@@ -318,6 +318,7 @@
                 direction: s.direction === 'short' ? 'short' : 'long',
                 entry_from: s.entryFrom, entry_to: s.entryTo,
                 stop_loss: s.stop, target: s.target,
+                ko_barrier: s.ko || null,
                 thesis: s.thesis || null,
                 status: ({ watching: 'beobachten', ready: 'bereit',
                            entered: 'eingestiegen', discarded: 'verworfen'
@@ -364,6 +365,7 @@
                     direction: s.direction === 'short' ? 'short' : 'long',
                     entry_from: s.entryFrom, entry_to: s.entryTo,
                     stop_loss: s.stop, target: s.target,
+                    ko_barrier: s.ko || null,
                     thesis: s.thesis || null,
                     status: STATUS[s.status] || 'beobachten',
                 });

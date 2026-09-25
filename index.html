@@ -714,7 +714,11 @@
                             <input type="hidden" id="setupsDirection" value="long">
                         </div>
                         <div class="form-group">
-                            <label for="setupsLeverage">Hebel (optional)</label>
+                            <label for="setupsKo">Knockout-Preis <span class="feld-zusatz">optional, rechnet den Hebel aus</span></label>
+                            <input type="number" id="setupsKo" step="any" placeholder="z.B. 165.00">
+                        </div>
+                        <div class="form-group">
+                            <label for="setupsLeverage">Hebel <span class="feld-zusatz">nur ohne Knockout-Preis</span></label>
                             <input type="number" id="setupsLeverage" step="0.01" min="1" placeholder="z.B. 3 oder 3.2">
                         </div>
                     </div>

@@ -230,7 +230,16 @@
                     entryTo: parseFloat(z.entry_to) || 0,
                     stop: parseFloat(z.stop_loss) || 0,
                     target: parseFloat(z.target) || 0,
-                    leverage: 1,
+                    ko: komma(z.ko_barrier),
+                    // Mit Knockout-Preis ergibt sich der Hebel aus
+                    // Einstieg und Schwelle - getippt wird er nicht mehr.
+                    leverage: (function () {
+                        const ein = (parseFloat(z.entry_from) + parseFloat(z.entry_to)) / 2;
+                        const ko = parseFloat(z.ko_barrier);
+                        if (!(ein > 0) || !(ko > 0)) return 1;
+                        const abstand = z.direction === 'short' ? ko - ein : ein - ko;
+                        return abstand > 0 ? Math.round((ein / abstand) * 100) / 100 : 1;
+                    })(),
                     thesis: z.thesis || '',
                     screenshot: null,
                     status: ({ beobachten: 'watching', bereit: 'ready',

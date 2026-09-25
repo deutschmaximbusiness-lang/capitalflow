@@ -3642,6 +3642,11 @@ function getSetups() {
             entryTo: parseFloat(w.entryTo) || 0,
             stop: parseFloat(w.stop) || 0,
             target: parseFloat(w.target) || 0,
+            // Diese Funktion baut das Objekt Feld fuer Feld neu und wirft
+            // dabei alles weg, was sie nicht kennt. Wer hier ein neues
+            // Feld vergisst, speichert es und bekommt es nie zurueck -
+            // ohne Fehlermeldung.
+            ko: parseFloat(w.ko) > 0 ? parseFloat(w.ko) : null,
             leverage: parseFloat(w.leverage) > 0 ? parseFloat(w.leverage) : 1,
             thesis: w.thesis || '',
             screenshot: w.screenshot || null,
@@ -3672,6 +3677,41 @@ function setupsEntryPrice(from, to) {
 // Liefert CRV oder einen Hinweis, warum es sich nicht berechnen laesst.
 // Die Richtungspruefung faengt vertauschte Stops und Ziele ab - ein
 // haeufiger Tippfehler, der sonst ein voellig falsches CRV ergibt.
+/**
+ * Knock-Out-Pruefung fuer ein geplantes Setup.
+ *
+ * Hier ist die Warnung etwas wert: vor dem Einstieg. Im Journal waere
+ * dieselbe Zahl nur noch die Erklaerung, warum das Geld weg ist.
+ *
+ * Zwei Faelle:
+ *   1. Der geplante Stop liegt jenseits der Schwelle. Dann loest er nie
+ *      aus - der Schein verfaellt vorher wertlos. Aus "ich riskiere
+ *      60 %" wird unbemerkt "ich riskiere alles".
+ *   2. Der Abstand zur Schwelle ist knapp. Kein Fehler, aber die Zahl,
+ *      die man vor dem Klick sehen will.
+ */
+function setupsKoPruefen(direction, entry, stop, ko) {
+    if (!(entry > 0) || !(ko > 0)) return null;
+    const isLong = direction !== 'short';
+    const abstand = isLong ? entry - ko : ko - entry;
+    if (!(abstand > 0)) {
+        return {
+            hebel: null, abstandPct: null, totalverlust: false,
+            fehler: isLong
+                ? 'Der Knockout-Preis liegt über deinem Einstieg — bei Long muss er darunter liegen.'
+                : 'Der Knockout-Preis liegt unter deinem Einstieg — bei Short muss er darüber liegen.'
+        };
+    }
+    // Hebel = Einstieg / Abstand zur Schwelle. Dieselbe Rechnung wie im
+    // Journal, nur mit geplanten statt echten Zahlen.
+    const hebel = entry / abstand;
+    const abstandPct = (abstand / entry) * 100;
+    const totalverlust = (stop > 0)
+        && (isLong ? stop <= ko : stop >= ko);
+    return { hebel: hebel, abstandPct: abstandPct,
+             totalverlust: totalverlust, fehler: null };
+}
+
 function setupsCalcCrv(direction, entry, stop, target, leverage) {
     if (!(entry > 0) || !(stop > 0) || !(target > 0)) {
         return { ok: false, reason: 'unvollstaendig' };
@@ -3713,10 +3753,23 @@ function updateSetupsCrvPreview() {
         parseFloat(document.getElementById('setupsEntryTo').value) || 0);
     const stop = parseFloat(document.getElementById('setupsStop').value) || 0;
     const target = parseFloat(document.getElementById('setupsTarget').value) || 0;
-    const lev = parseFloat(document.getElementById('setupsLeverage').value) || 1;
+    const koFeld = document.getElementById('setupsKo');
+    const ko = koFeld ? (parseFloat(koFeld.value) || 0) : 0;
+    const koInfo = setupsKoPruefen(dir, entry, stop, ko);
+
+    // Mit Knockout-Preis wird der Hebel gerechnet statt getippt - das
+    // Feld daneben ist dann nur noch fuer Aktien da.
+    let lev = parseFloat(document.getElementById('setupsLeverage').value) || 1;
+    if (koInfo && koInfo.hebel) lev = koInfo.hebel;
 
     const r = setupsCalcCrv(dir, entry, stop, target, lev);
     box.classList.remove('setups-crv-warn');
+
+    if (koInfo && koInfo.fehler) {
+        box.classList.add('setups-crv-warn');
+        box.innerHTML = '⚠️ ' + escapeHtml(koInfo.fehler);
+        return;
+    }
 
     if (!r.ok && r.reason === 'unvollstaendig') {
         box.style.borderColor = '';
@@ -3729,14 +3782,46 @@ function updateSetupsCrvPreview() {
         return;
     }
     const c = setupsCrvColor(r.crv);
-    box.innerHTML =
+
+    // Jenseits der Schwelle gibt es kein "60 % Risiko" mehr. Die Zahl
+    // wird gedeckelt und der Grund danebengeschrieben - sonst plant
+    // jemand mit einem Stop, der nie zum Zug kommt.
+    const total = Boolean(koInfo && koInfo.totalverlust);
+    const risiko = total ? 100 : Math.min(r.riskPct, 100);
+
+    let zeile =
         '<span>Chance-Risiko</span>' +
         '<strong style="color:' + c + ';">1 : ' + r.crv.toFixed(2) + '</strong>' +
-        '<span style="color:#f87171;">Risiko −' + r.riskPct.toFixed(2) + '%</span>' +
+        '<span style="color:#f87171;">Risiko −' + risiko.toFixed(2) + '%</span>' +
         '<span style="color:#10b981;">Chance +' + r.rewardPct.toFixed(2) + '%</span>' +
         (r.leverage > 1
-            ? '<span style="color:#d8b4fe;">mit ' + formatLeverage(r.leverage) + ' Hebel</span>'
+            ? '<span style="color:#d8b4fe;">' + formatLeverage(r.leverage)
+              + (koInfo && koInfo.hebel ? ' (gerechnet)' : ' Hebel') + '</span>'
             : '');
+
+    if (koInfo && koInfo.abstandPct !== null) {
+        const eng = koInfo.abstandPct < 5;
+        zeile += '<span style="color:' + (eng ? '#f87171' : '#fbbf24') + ';">'
+              + 'KO-Abstand ' + koInfo.abstandPct.toFixed(1).replace('.', ',')
+              + ' %</span>';
+    }
+
+    box.innerHTML = zeile;
+
+    if (total) {
+        box.classList.add('setups-crv-warn');
+        box.innerHTML = '⚠️ <strong>Dein Stop liegt jenseits der Schwelle.</strong> '
+            + 'Der Schein verfällt vorher wertlos — der Stop löst nie aus. '
+            + 'Du riskierst nicht ' + r.riskPct.toFixed(0) + ' %, sondern alles. '
+            + 'Setz den Stop über ' + ko.toFixed(2).replace('.', ',')
+            + ' oder nimm einen Schein mit tieferer Schwelle.';
+    } else if (koInfo && koInfo.abstandPct !== null && koInfo.abstandPct < 5) {
+        box.classList.add('setups-crv-warn');
+        box.innerHTML = zeile
+            + '<span style="color:#f87171;">⚠️ Nur '
+            + koInfo.abstandPct.toFixed(1).replace('.', ',')
+            + ' % bis zum Totalverlust</span>';
+    }
 }
 
 function addSetupsItem(e) {
@@ -3750,7 +3835,14 @@ function addSetupsItem(e) {
         const target = parseFloat(document.getElementById('setupsTarget').value) || 0;
         const thesis = document.getElementById('setupsThesis').value.trim();
         const levRaw = parseFloat(document.getElementById('setupsLeverage').value);
-        const leverage = levRaw > 0 ? levRaw : 1;
+        const koFeld = document.getElementById('setupsKo');
+        const ko = koFeld ? (parseFloat(koFeld.value) || 0) : 0;
+        // Mit Knockout-Preis wird der Hebel gerechnet, nicht getippt
+        const koInfo = setupsKoPruefen(direction,
+            setupsEntryPrice(entryFrom, entryTo), stop, ko);
+        const leverage = (koInfo && koInfo.hebel)
+            ? Math.round(koInfo.hebel * 100) / 100
+            : (levRaw > 0 ? levRaw : 1);
 
         if (!ticker) {
             showToast('❌ Ticker fehlt!', 'error');
@@ -3762,6 +3854,10 @@ function addSetupsItem(e) {
         }
         if (levRaw && levRaw < 1) {
             showToast('❌ Hebel muss mindestens 1 sein!', 'error');
+            return;
+        }
+        if (koInfo && koInfo.fehler) {
+            showToast('❌ ' + koInfo.fehler, 'error');
             return;
         }
 
@@ -3779,6 +3875,7 @@ function addSetupsItem(e) {
             entryFrom: Math.min(entryFrom || entryTo, entryTo || entryFrom),
             entryTo: Math.max(entryFrom, entryTo),
             stop, target, leverage, thesis,
+            ko: ko || null,
             screenshot: setupsScreenshotData,
             status: 'watching', created: now, updated: now
         });
@@ -3844,10 +3941,24 @@ function setupsToJournal(id) {
             if (el && v !== undefined && v !== null && v !== 0) el.value = v;
         };
         set('ticker', w.ticker);
-        set('entryPrice', setupsEntryPrice(w.entryFrom, w.entryTo).toFixed(2));
-        set('stopLoss', w.stop || '');
-        set('leverage', w.leverage > 1 ? w.leverage : '');
         set('reason', w.thesis);
+
+        // Mit Knockout-Preis ist es ein Zertifikatstrade. Produktart
+        // umschalten und die Schwelle mitnehmen - dann muss niemand
+        // dieselbe Zahl zweimal eintippen.
+        if (w.ko) {
+            const btn = document.querySelector('.produkt-btn[data-art="knockout"]');
+            if (btn) btn.click();
+            set('zKo', w.ko);
+            set('zStop', w.stop || '');
+            // Der Einstiegskurs des Basiswerts ist geplant, nicht bezahlt -
+            // er gehoert ins Basiswertfeld, nicht in den Scheinpreis.
+            set('zBasisEin', setupsEntryPrice(w.entryFrom, w.entryTo).toFixed(2));
+        } else {
+            set('entryPrice', setupsEntryPrice(w.entryFrom, w.entryTo).toFixed(2));
+            set('stopLoss', w.stop || '');
+            set('leverage', w.leverage > 1 ? w.leverage : '');
+        }
 
         const dirField = document.getElementById('direction');
         if (dirField) dirField.value = w.direction;
@@ -4006,7 +4117,8 @@ function initSetups() {
 
     form.addEventListener('submit', addSetupsItem);
 
-    ['setupsEntryFrom', 'setupsEntryTo', 'setupsStop', 'setupsTarget', 'setupsLeverage'].forEach(id => {
+    ['setupsEntryFrom', 'setupsEntryTo', 'setupsStop', 'setupsTarget',
+     'setupsLeverage', 'setupsKo'].forEach(id => {
         const el = document.getElementById(id);
         if (el) el.addEventListener('input', updateSetupsCrvPreview);
     });

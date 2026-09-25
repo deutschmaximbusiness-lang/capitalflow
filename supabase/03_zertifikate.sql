@@ -87,6 +87,27 @@ create unique index if not exists products_faktor_key
     on public.products (instrument_id, direction, factor)
     where wkn is null and kind = 'faktor';
 
+-- ---------------------------------------------------------------- setups
+--
+-- Ein geplantes Setup braucht dieselbe Schwelle wie ein Trade - sonst
+-- laesst sich vor dem Einstieg nicht warnen, und genau dort ist die
+-- Warnung etwas wert. Im Journal ist sie nur noch Rueckblick.
+alter table public.setups
+    add column if not exists ko_barrier numeric;
+
+comment on column public.setups.ko_barrier is
+    'Knockout-Preis des geplanten Scheins, fuer Hebel und Schwellenwarnung';
+
+do $$
+begin
+    if not exists (select 1 from pg_constraint
+                   where conname = 'setups_ko_positiv') then
+        alter table public.setups add constraint setups_ko_positiv check (
+            ko_barrier is null or ko_barrier > 0
+        );
+    end if;
+end $$;
+
 -- ------------------------------------------------------------ Auswertung
 --
 -- Wofuer das Ganze da ist: die Frage, ob knappe Abstaende sich
@@ -134,4 +155,7 @@ select
         and indexname in ('products_kennzeichen_key','products_faktor_key'))
                                                                as neue_indizes,
     (select count(*) from pg_views where viewname = 'auswertung_ko_abstand')
-                                                               as auswertung;
+                                                               as auswertung,
+    (select count(*) from information_schema.columns
+      where table_name = 'setups' and column_name = 'ko_barrier')
+                                                               as setup_schwelle;
