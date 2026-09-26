@@ -447,6 +447,19 @@
             hinweise: hinweise,
             altbestand: r.altbestand.length,
             basiswerte: namen,
+            // Fuer Aktien und ETFs steht die ISIN des Basiswerts selbst
+            // in der Datei - der eindeutigste Schluessel, den es gibt.
+            // Bei Zertifikaten ist symbol die ISIN des SCHEINS, nicht
+            // die des Basiswerts; dort bleibt nur der Name.
+            isinFuer: (function () {
+                const o = {};
+                trades.concat(positionen).forEach(function (t) {
+                    if (t.art === 'aktie' && t.basiswert && t.isin) {
+                        o[t.basiswert] = t.isin;
+                    }
+                });
+                return o;
+            })(),
             zusammenfuehren: aehnlicheBasiswerte(namen),
         };
     };
@@ -478,6 +491,51 @@
                                           maximumFractionDigits: 2 }) + ' €';
     }
 
+    /* ------------------------------------------------------------------
+     * Startbestand an Kuerzeln
+     *
+     * Kein Lookup-Dienst: OpenFIGI und Konsorten kosten Schluessel,
+     * Wartezeit und eine Abhaengigkeit, die irgendwann wegbricht. Der
+     * eigentliche Speicher ist die gemeinsame instruments-Tabelle -
+     * was ein Nutzer einmal zuordnet, findet jeder Import danach
+     * automatisch, auch bei anderen Nutzern.
+     *
+     * Diese Liste ist nur der Anschub, damit der allererste Import
+     * nicht bei null anfaengt. Sie deckt, was im Discord gehandelt
+     * wird; alles andere fragt einmal nach und merkt es sich dann.
+     *
+     * Schluessel ist die normalisierte Form aus kennung(): Grossbuch-
+     * staben, ohne Rechtsformen, auf acht Zeichen gekuerzt. Dadurch
+     * treffen "AST SpaceMobile" und "AST SPACEMOBIL.A" denselben
+     * Eintrag.
+     * ---------------------------------------------------------------- */
+    const START = {
+        'AST SPAC': 'ASTS',  'HIMS HER': 'HIMS',  'META PLA': 'META',
+        'CLOUDFLA': 'NET',   'COREWEAV': 'CRWV',  'CIPHER M': 'CIFR',
+        'ORACLE':   'ORCL',  'BROADCOM': 'AVGO',  'BAIDU':    'BIDU',
+        'COINBASE': 'COIN',  'DRAFTKIN': 'DKNG',  'INTUIT':   'INTU',
+        'IREN':     'IREN',  'MP MATER': 'MP',    'NOVO NOR': 'NVO',
+        'ONDAS':    'ONDS',  'ROCKET L': 'RKLB',  'SERVICEN': 'NOW',
+        'SOFI':     'SOFI',  'NVIDIA':   'NVDA',  'TESLA':    'TSLA',
+        'APPLE':    'AAPL',  'AMAZON':   'AMZN',  'MICROSOF': 'MSFT',
+        'ALPHABET': 'GOOGL', 'PALANTIR': 'PLTR',  'ADVANCED': 'AMD',
+        'MICRON':   'MU',    'NETFLIX':  'NFLX',  'RHEINMET': 'RHM',
+        'SIEMENS':  'SIE',   'SAP':      'SAP',
+    };
+
+    /* Fonds heissen fast gleich und sind trotzdem verschieden:
+       "Core MSCI World" und "Core MSCI EM IMI" fallen ueber den Namen
+       auf denselben Schluessel und waeren damit derselbe Wert. Bei
+       ihnen entscheidet deshalb die ISIN, die in der Datei steht. */
+    const START_ISIN = {
+        'IE00B4L5Y983': 'IWDA',   // iShares Core MSCI World
+        'IE00BKM4GZ66': 'EIMI',   // iShares Core MSCI EM IMI
+        'IE00B4L5YC18': 'IEMA',   // iShares Core MSCI EM
+        'IE00B5BMR087': 'CSPX',   // iShares Core S&P 500
+        'IE00B4NCWG09': 'SSLN',   // iShares Physical Silver
+        'IE00B4ND3602': 'SGLN',   // iShares Physical Gold
+    };
+
     /**
      * Vorschlag fuer das Kuerzel eines Basiswerts.
      *
@@ -486,13 +544,58 @@
      * dass zwei Schreibweisen desselben Werts denselben Vorschlag
      * bekommen - dann fallen sie beim Import von allein zusammen.
      */
-    function vorschlag(name) {
-        const roh = String(name || '').toUpperCase()
+    function normal(name) {
+        return String(name || '').toUpperCase()
             .replace(/[^A-Z0-9 ]/g, ' ')
-            .replace(/\b(INC|CORP|CORPORATION|LTD|LIMITED|PLC|AG|SE|NV|SA|ADR|CL|CLASS|THE|HOLDINGS?|GROUP|CO|COMPANY)\b/g, ' ')
+            .replace(/\b(INC|CORP|CORPORATION|LTD|LIMITED|PLC|AG|SE|NV|SA|ADR|CL|CLASS|THE|HOLDINGS?|GROUP|CO|COMPANY|TECHNOLOGIES|TECHNOLOGY)\b/g, ' ')
             .replace(/\s+/g, ' ').trim();
-        const erstes = roh.split(' ')[0] || 'WERT';
-        return erstes.slice(0, 8);
+    }
+
+    function vorschlag(name, isin) {
+        const i = String(isin || '').toUpperCase();
+        if (START_ISIN[i]) return START_ISIN[i];
+        const n = normal(name);
+        // Erst der volle Schluessel, dann nur das erste Wort. Ohne den
+        // zweiten Versuch geht "BAIDU A ADR" leer aus: das "A" bleibt
+        // stehen und der Schluessel heisst "BAIDU A".
+        if (START[n.slice(0, 8)]) return START[n.slice(0, 8)];
+        const erstes = (n.split(' ')[0] || 'WERT').slice(0, 8);
+        if (START[erstes]) return START[erstes];
+        return erstes;
+    }
+
+    /**
+     * Fragt die gemeinsame Instrumententabelle nach bereits bekannten
+     * Zuordnungen - erst ueber die ISIN, dann ueber den Namen.
+     *
+     * Das ist der Teil, der mit der Zeit besser wird: jeder Nutzer, der
+     * einmal "CLOUDFLARE INC." auf NET setzt, erspart es allen
+     * folgenden. Faellt die Abfrage aus, bleibt der Startbestand -
+     * der Import laeuft weiter, nur mit gröberen Vorschlägen.
+     */
+    async function bekannteKuerzel(namen, isinFuer) {
+        const treffer = {};
+        if (!window.cfDb) return treffer;
+        try {
+            const { data, error } = await window.cfDb
+                .from('instruments').select('symbol, name, isin');
+            if (error || !data) return treffer;
+
+            const nachIsin = {}, nachName = {};
+            data.forEach(function (i) {
+                if (i.isin) nachIsin[String(i.isin).toUpperCase()] = i.symbol;
+                if (i.name) nachName[normal(i.name).slice(0, 8)] = i.symbol;
+                if (i.symbol) nachName[normal(i.symbol).slice(0, 8)] =
+                    nachName[normal(i.symbol).slice(0, 8)] || i.symbol;
+            });
+            namen.forEach(function (n) {
+                const isin = (isinFuer[n] || '').toUpperCase();
+                if (isin && nachIsin[isin]) { treffer[n] = nachIsin[isin]; return; }
+                const k = normal(n).slice(0, 8);
+                if (nachName[k]) treffer[n] = nachName[k];
+            });
+        } catch (e) { /* Vorschlaege sind nie kritisch */ }
+        return treffer;
     }
 
     window.cfTrImportWaehlen = function () {
@@ -556,7 +659,7 @@
               + '<div style="display:grid;gap:6px;max-height:210px;overflow-y:auto;'
               + 'padding-right:4px;">';
             a.basiswerte.forEach(function (n, i) {
-                tickerFeld[n] = vorschlag(n);
+                tickerFeld[n] = vorschlag(n, (a.isinFuer || {})[n]);
                 h += '<div style="display:flex;gap:8px;align-items:center;">'
                   + '<span style="flex:1;color:#94a3b8;font-size:11.5px;'
                   + 'overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">'
@@ -586,6 +689,22 @@
         if (btn) btn.style.display = (a.trades.length || a.positionen.length
             || a.buchungen.length) ? 'block' : 'none';
         status('Nichts wurde gespeichert. Erst „Übernehmen" schreibt.');
+
+        // Bekanntes nachtragen. Laeuft im Hintergrund, damit der Bericht
+        // sofort dasteht - die Felder fuellen sich einen Moment spaeter
+        // nach, und was schon zugeordnet war, muss niemand neu tippen.
+        bekannteKuerzel(a.basiswerte, a.isinFuer || {}).then(function (t) {
+            let n = 0;
+            Object.keys(t).forEach(function (name) {
+                tickerFeld[name] = t[name];
+                const f = document.querySelector(
+                    '#trImportBericht input[data-basiswert="' + name.replace(/"/g, '\\"') + '"]');
+                if (f) { f.value = t[name]; f.style.borderColor = 'rgba(34,197,94,0.45)'; }
+                n++;
+            });
+            if (n) status(n + ' Kürzel aus deinen vorhandenen Basiswerten '
+                + 'übernommen (grün umrandet). Nichts wurde gespeichert.');
+        });
     }
 
     function kachel(label, wert, zusatz, klasse) {
@@ -629,7 +748,8 @@
             const symbolFuer = {};
             const idFuer = {};
             for (const name of analyse.basiswerte) {
-                const sym = (tickerFeld[name] || vorschlag(name)).toUpperCase();
+                const sym = (tickerFeld[name]
+                    || vorschlag(name, (analyse.isinFuer || {})[name])).toUpperCase();
                 symbolFuer[name] = sym;
                 if (idFuer[sym]) continue;
                 const { data, error } = await db.from('instruments')
