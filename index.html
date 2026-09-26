@@ -1200,7 +1200,7 @@
 
     <!-- ===== DATEN SICHERN / EINSPIELEN ===== -->
     <div class="modal" id="datenModal">
-        <div class="modal-content" style="max-width: 460px; background: linear-gradient(135deg, rgba(15, 15, 32, 0.95) 0%, rgba(20, 20, 45, 0.95) 100%); border: 1px solid rgba(168, 85, 247, 0.2); border-radius: 20px; backdrop-filter: blur(20px); padding: 40px; box-shadow: 0 25px 50px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.1);">
+        <div class="modal-content" style="max-width: 620px; max-height: 88vh; overflow-y: auto; background: linear-gradient(135deg, rgba(15, 15, 32, 0.95) 0%, rgba(20, 20, 45, 0.95) 100%); border: 1px solid rgba(168, 85, 247, 0.2); border-radius: 20px; backdrop-filter: blur(20px); padding: 40px; box-shadow: 0 25px 50px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.1);">
             <div style="margin-bottom: 26px;">
                 <h2 style="margin: 0 0 8px 0; font-size: 28px; font-weight: 700; background: linear-gradient(135deg, #c084fc 0%, #f472b6 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;">Deine Daten</h2>
                 <p style="margin: 0; color: #94a3b8; font-size: 13px;">Sicherung erstellen oder eine vorhandene einspielen</p>
@@ -1221,6 +1221,20 @@
                 <div id="migrationBericht" style="display: none; background: rgba(168, 85, 247, 0.05); border: 1px solid rgba(168, 85, 247, 0.2); border-radius: 12px; padding: 14px 16px; margin-bottom: 14px;"></div>
                 <button id="migrationBtn" onclick="cfMigrationStarten()" style="display: none; width: 100%; background: linear-gradient(135deg, #a855f7 0%, #ec4899 100%); border: none; color: white; padding: 13px 20px; border-radius: 12px; cursor: pointer; font-weight: 700; font-size: 14px; font-family: 'Inter', sans-serif;">Daten übertragen</button>
                 <p id="migrationStatus" style="margin: 10px 0 0 0; color: #64748b; font-size: 11px; text-align: center; min-height: 14px;"></p>
+            </div>
+
+            <!-- ===== Trade-Republic-Import ===== -->
+            <div style="margin-top: 26px; padding-top: 22px; border-top: 1px solid rgba(168, 85, 247, 0.15);">
+                <h3 style="margin: 0 0 6px 0; font-size: 15px; font-weight: 700; color: #e9d5ff;">Trade Republic importieren</h3>
+                <p style="margin: 0 0 14px 0; color: #94a3b8; font-size: 12px; line-height: 1.6;">
+                    In der TR-App: Profil oben rechts → Kontoauszüge → Transaktionsexports → Zeitraum wählen → teilen.
+                    Käufe und Verkäufe werden zu Trades zusammengefasst, Gebühren abgezogen.
+                </p>
+                <button onclick="cfTrImportWaehlen()" style="width: 100%; background: rgba(100, 116, 139, 0.15); border: 1px solid rgba(100, 116, 139, 0.3); color: #cbd5e1; padding: 13px 20px; border-radius: 12px; cursor: pointer; font-weight: 600; font-size: 14px; font-family: 'Inter', sans-serif;">Transaktionsexport wählen…</button>
+                <input type="file" id="trImportInput" accept="text/csv,.csv" style="display: none;" onchange="cfTrImportGelesen(this)">
+                <div id="trImportBericht" style="display: none; margin-top: 16px;"></div>
+                <button id="trImportBtn" onclick="cfTrImportUebernehmen()" style="display: none; width: 100%; margin-top: 14px; background: linear-gradient(135deg, #a855f7 0%, #ec4899 100%); border: none; color: white; padding: 13px 20px; border-radius: 12px; cursor: pointer; font-weight: 700; font-size: 14px; font-family: 'Inter', sans-serif;">Übernehmen</button>
+                <p id="trImportStatus" style="margin: 10px 0 0 0; color: #64748b; font-size: 11px; text-align: center; min-height: 14px;"></p>
             </div>
 
             <div id="datenImportInfo" style="display: none; margin-top: 24px; background: rgba(168, 85, 247, 0.05); border: 1px solid rgba(168, 85, 247, 0.2); border-radius: 12px; padding: 16px 18px;"></div>
@@ -1304,6 +1318,7 @@
     <script src="js/migration.js"></script>
     <script src="js/laden.js"></script>
     <script src="js/speichern.js"></script>
+    <script src="js/import.js"></script>
     <script src="js/auth.js"></script>
     <!-- Rechenkern vor app.js: addTrade() greift beim Speichern darauf zu -->
     <script src="js/zertifikate.js"></script>
