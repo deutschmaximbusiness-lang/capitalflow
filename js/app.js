@@ -1140,7 +1140,15 @@ function loadTrades() {
     
     if (tradesPnLDisplay) {
         tradesPnLDisplay.textContent = `€ ${filteredPnL.toFixed(2)}`;
-        tradesPnLDisplay.style.color = filteredPnL >= 0 ? '' : '#f87171';
+        // Die Zahl steht als Farbverlauf mit background-clip: text.
+        // Dabei ist -webkit-text-fill-color auf transparent gesetzt, und
+        // das schlaegt jedes color. Ein Minusbetrag blieb deshalb gruen,
+        // egal was hier zugewiesen wurde - man muss den Verlauf selbst
+        // austauschen.
+        const rot = 'linear-gradient(135deg, #f87171, #ef4444)';
+        const gruen = 'linear-gradient(135deg, #22c55e, #10b981)';
+        tradesPnLDisplay.style.backgroundImage = filteredPnL >= 0 ? gruen : rot;
+        tradesPnLDisplay.style.webkitTextFillColor = 'transparent';
     }
     
     if (tradeCountDisplay) {

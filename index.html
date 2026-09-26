@@ -222,7 +222,7 @@
                 <svg class="nav-icon" viewBox="0 0 24 24" width="20" height="20"><path fill="currentColor" d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/></svg>
                 <span>Setups</span>
             </div>
-            <div class="nav-item" data-tab="transactions">
+            <div class="nav-item nav-gesperrt" data-tab="transactions" title="Wird gerade überarbeitet">
                 <svg class="nav-icon" viewBox="0 0 24 24" width="20" height="20"><path fill="currentColor" d="M4 6h16v2H4zm0 5h16v2H4zm0 5h16v2H4z"/></svg>
                 <span>Transaktionen</span>
             </div>
@@ -813,6 +813,20 @@
                 <p style="color: #94a3b8; font-size: 14px; margin: 0;">Ein- und Auszahlungen – Grundlage für Kontostand und Rendite</p>
             </div>
 
+            <!-- Vorübergehend gesperrt. Der Bereich wird umgebaut; solange
+                 ihn jemand benutzt, entstehen Daten, die danach nicht mehr
+                 passen. Zum Entsperren: die beiden Zeilen hier und in
+                 app.js (cfBereichGesperrt) entfernen. -->
+            <div class="bereich-sperre">
+                <div class="bereich-sperre-karte">
+                    <div class="bereich-sperre-titel">Wird gerade überarbeitet</div>
+                    <p>Hier ändert sich in den nächsten Tagen einiges. Bis dahin
+                    bitte nichts eintragen – was du jetzt anlegst, passt danach
+                    womöglich nicht mehr zusammen.</p>
+                </div>
+            </div>
+            <div class="bereich-verschwommen">
+
             <!-- ===== KENNZAHLEN ===== -->
             <div class="stat-grid-4">
                 <div class="dashboard-stat" style="background: linear-gradient(135deg, rgba(168, 85, 247, 0.1) 0%, rgba(168, 85, 247, 0.05) 100%); border: 1px solid rgba(168, 85, 247, 0.2); border-radius: 14px; padding: 20px; backdrop-filter: blur(10px);">
@@ -867,6 +881,7 @@
                 <h3 style="font-size: 20px; font-weight: 600; color: #f1f5f9; margin-bottom: 20px;">Verlauf</h3>
                 <div id="transactionsList"></div>
             </div>
+        </div>
         </div>
 
         <!-- ===== CALENDAR TAB ===== -->

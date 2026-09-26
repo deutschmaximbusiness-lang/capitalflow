@@ -413,9 +413,11 @@
         if (r.altbestand.length) {
             hinweise.push(r.altbestand.length + ' Verkauf/Verkäufe ('
                 + altStueck.toFixed(2).replace(/\.?0+$/, '') + ' Stück) haben keinen '
-                + 'Kauf im Exportzeitraum — die Stücke lagen vorher schon im Depot. '
-                + 'Sie werden übersprungen; für diese Trades bräuchte es einen '
-                + 'Export ab einem früheren Datum.');
+                + 'Kauf im Exportzeitraum. Passt einer davon zu einer Position, '
+                + 'die aus einem früheren Import noch offen ist, wird sie damit '
+                + 'geschlossen. Der Rest lag schon vorher im Depot und wird '
+                + 'übersprungen — dafür bräuchte es einen Export ab einem '
+                + 'früheren Datum.');
         }
         const gebSumme = trades.reduce(function (s, t) { return s + t.gebuehren; }, 0);
         if (gebSumme > 0) {
@@ -446,6 +448,22 @@
             buchungen: buchungen,
             hinweise: hinweise,
             altbestand: r.altbestand.length,
+            // Die ungedeckten Verkaeufe im Klartext.
+            //
+            // Wer im Oktober exportiert, hat den Kauf vom September
+            // nicht in der Datei - der Verkauf steht ohne Gegenstueck
+            // da. Fuer eine Position, die aus einem FRUEHEREN Import
+            // noch offen in der Datenbank liegt, ist genau das ihr
+            // Schlusskurs. Ohne diese Liste bliebe sie fuer immer offen.
+            altbestandZeilen: r.altbestand.map(function (x) {
+                return {
+                    isin: x.symbol || null,
+                    stueck: Math.abs(z0(x.shares)),
+                    betrag: Math.abs(z0(x.amount)),
+                    gebuehr: Math.abs(z0(x.fee)),
+                    zeitpunkt: x.datetime || x.date,
+                };
+            }),
             basiswerte: namen,
             // Fuer Aktien und ETFs steht die ISIN des Basiswerts selbst
             // in der Datei - der eindeutigste Schluessel, den es gibt.
@@ -851,6 +869,64 @@
                 });
             });
 
+            // --- Offene Positionen aus frueheren Importen schliessen
+            //
+            // Kauf im September, Verkauf im Oktober, zwei Exporte: der
+            // Verkauf hat in der Oktober-Datei keinen Kauf und wurde
+            // bisher als Altbestand verworfen. Die Position aus dem
+            // September-Import blieb offen - und zwar dauerhaft, ohne
+            // dass irgendwo stand, warum.
+            let geschlossen = 0;
+            if ((analyse.altbestandZeilen || []).length) {
+                status('Offene Positionen abgleichen…');
+                const { data: offene } = await db.from('trades')
+                    .select('id, quantity, entry_price, position_size, fees, '
+                          + 'products(isin)')
+                    .eq('status', 'offen').eq('source', 'import');
+
+                // Verkaeufe je Wertpapier zusammenfassen
+                const jeIsin = {};
+                analyse.altbestandZeilen.forEach(function (z) {
+                    if (!z.isin) return;
+                    const e = jeIsin[z.isin] = jeIsin[z.isin]
+                        || { stueck: 0, betrag: 0, gebuehr: 0, zeitpunkt: null };
+                    e.stueck += z.stueck;
+                    e.betrag += z.betrag;
+                    e.gebuehr += z.gebuehr;
+                    if (!e.zeitpunkt || String(z.zeitpunkt) > String(e.zeitpunkt)) {
+                        e.zeitpunkt = z.zeitpunkt;
+                    }
+                });
+
+                for (const t of (offene || [])) {
+                    const isin = t.products && t.products.isin;
+                    const v = isin ? jeIsin[isin] : null;
+                    if (!v || !(v.stueck > 0)) continue;
+                    // Nur schliessen, wenn die Verkaeufe die Position auch
+                    // decken. Ein Teilverkauf laesst sie offen - sonst
+                    // stuende dort ein Ergebnis fuer Stuecke, die noch
+                    // im Depot liegen.
+                    if (v.stueck + 1e-6 < Number(t.quantity)) continue;
+
+                    const preis = v.betrag / v.stueck;
+                    const einsatz = Number(t.position_size) || 0;
+                    const erloes = preis * Number(t.quantity);
+                    const geb = (Number(t.fees) || 0) + v.gebuehr;
+                    const pnl = erloes - einsatz - geb;
+                    const { error } = await db.from('trades').update({
+                        status: 'geschlossen',
+                        exit_price: preis,
+                        closed_at: v.zeitpunkt,
+                        fees: geb,
+                        pnl: Math.round(pnl * 100) / 100,
+                        pnl_percent: einsatz > 0
+                            ? Math.round((pnl / einsatz) * 10000) / 100 : null,
+                        exit_reason: 'Verkauf aus einem späteren Export',
+                    }).eq('id', t.id);
+                    if (!error) geschlossen++;
+                }
+            }
+
             // Schon vorhandene Importe herausfiltern.
             //
             // Kein upsert mit onConflict: der Eindeutigkeitsindex ist ein
@@ -926,6 +1002,8 @@
 
             status('✅ ' + geschrieben + ' übernommen'
                 + (doppelt > 0 ? ', ' + doppelt + ' waren schon da' : '')
+                + (geschlossen ? ', ' + geschlossen + ' offene Position(en) '
+                    + 'nachträglich geschlossen' : '')
                 + (buchungen ? ', ' + buchungen + ' Buchungen' : '') + '.');
             if (btn) {
                 btn.style.display = 'none';
