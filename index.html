@@ -576,6 +576,18 @@
                 <p style="color: #94a3b8; font-size: 14px; margin: 0;">Offene & geschlossene Positionen mit Live-Gewichtung</p>
             </div>
 
+            <!-- Offener Punkt: Positionen aus dem Import koennen faelschlich
+                 als offen stehen, wenn der Verkauf in einem anderen
+                 Exportzeitraum liegt. Wird behoben; bis dahin ein Hinweis,
+                 damit niemand die Zahlen fuer bare Muenze nimmt. -->
+            <div class="bereich-warnung">
+                <strong>Diese Zahlen können falsch sein.</strong>
+                Positionen aus einem Import stehen möglicherweise noch als offen,
+                obwohl sie längst verkauft sind — dann sind Exposure, Anzahl und
+                Gewichtung zu hoch. Wir arbeiten daran. Verlass dich bis dahin
+                auf dein Depot, nicht auf diese Seite.
+            </div>
+
             <!-- ===== PORTFOLIO STATS ===== -->
             <div class="stat-grid-4">
                 <!-- Euro in Positionen -->

@@ -4701,3 +4701,19 @@ body.pwa-installed .pwa-install-btn { display: none !important; }
     border-radius: 5px;
     padding: 2px 6px;
 }
+
+/* Hinweis auf bekannte Unsicherheit in den Zahlen eines Bereichs.
+   Auffaelliger als ein Kleingedrucktes, aber nicht so laut wie eine
+   Fehlermeldung - die Seite funktioniert ja, sie ist nur nicht
+   verlaesslich. */
+.bereich-warnung {
+    margin: 4px 0 22px;
+    padding: 13px 16px;
+    border-radius: 11px;
+    border: 1px solid rgba(251, 191, 36, 0.32);
+    background: rgba(251, 191, 36, 0.07);
+    color: #d8c9a8;
+    font-size: 12.5px;
+    line-height: 1.65;
+}
+.bereich-warnung strong { color: #fbbf24; }
