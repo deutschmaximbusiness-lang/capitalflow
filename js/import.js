@@ -477,6 +477,7 @@
 
     let analyse = null;        // letzter Bericht
     let tickerFeld = {};       // Dateiname des Basiswerts -> Kuerzel
+    let laeuft = false;        // waehrend ein Import schreibt
 
     function el(id) { return document.getElementById(id); }
     function status(t) { const e = el('trImportStatus'); if (e) e.textContent = t || ''; }
@@ -606,6 +607,7 @@
     window.cfTrImportGelesen = function (input) {
         const datei = input && input.files && input.files[0];
         if (!datei) return;
+        if (laeuft) { status('Der laufende Import muss erst fertig werden.'); return; }
         status('Datei wird gelesen…');
         const leser = new FileReader();
         leser.onload = function () {
@@ -622,6 +624,15 @@
         const btn = el('trImportBtn');
         if (!ziel) return;
         ziel.style.display = 'block';
+
+        // Knopf auf Anfang zuruecksetzen.
+        //
+        // Nach einem geglueckten Import stand er auf "Läuft…" und war
+        // deaktiviert - beim naechsten Bericht kam er genau so wieder
+        // zum Vorschein und liess sich nicht druecken. Der Zustand
+        // gehoert dorthin, wo der Knopf neu gezeigt wird, nicht nur in
+        // den Fehlerzweig.
+        if (btn) { btn.disabled = false; btn.textContent = 'Übernehmen'; }
 
         if (!a.ok) {
             ziel.innerHTML = '<div class="zert-warnung" style="display:block;">'
@@ -731,11 +742,12 @@
      * geschrieben und einmal am Ende nachgeladen.
      */
     window.cfTrImportUebernehmen = async function () {
-        if (!analyse || !analyse.ok) return;
+        if (!analyse || !analyse.ok || laeuft) return;
         const db = window.cfDb;
         if (!db) { status('Keine Verbindung zur Datenbank.'); return; }
 
         const btn = el('trImportBtn');
+        laeuft = true;
         if (btn) { btn.disabled = true; btn.textContent = 'Läuft…'; }
 
         try {
@@ -915,7 +927,15 @@
             status('✅ ' + geschrieben + ' übernommen'
                 + (doppelt > 0 ? ', ' + doppelt + ' waren schon da' : '')
                 + (buchungen ? ', ' + buchungen + ' Buchungen' : '') + '.');
-            if (btn) btn.style.display = 'none';
+            if (btn) {
+                btn.style.display = 'none';
+                btn.disabled = false;
+                btn.textContent = 'Übernehmen';
+            }
+            // Derselbe Bericht darf nicht ein zweites Mal geschrieben
+            // werden - die Schluessel wuerden zwar greifen, aber der
+            // Nutzer bekaeme "0 übernommen" ohne zu wissen warum.
+            analyse = null;
             if (typeof showToast === 'function') {
                 showToast('✅ ' + geschrieben + ' Trades importiert');
             }
@@ -923,6 +943,8 @@
             console.error('TR-Import:', e);
             status('❌ ' + e.message);
             if (btn) { btn.disabled = false; btn.textContent = 'Übernehmen'; }
+        } finally {
+            laeuft = false;
         }
     };
 })();
