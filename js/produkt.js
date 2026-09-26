@@ -293,11 +293,11 @@
             if (k.ok) {
                 const pz = k.wert.prozent;
                 const kl = pz < 5 ? 'rot' : (pz < 10 ? 'warn' : 'gut');
-                teile.push(kachel('Abstand zur KO-Schwelle',
+                teile.push(kachel('KO-Abstand',
                     nz(pz, 1) + ' %', 'entspricht ' + nz(k.wert.absolut, 2)
                     + ' im Basiswert', kl));
             } else {
-                teile.push(leer('Abstand zur KO-Schwelle', k.grund));
+                teile.push(leer('KO-Abstand', k.grund));
             }
 
             // --- Aufgeld

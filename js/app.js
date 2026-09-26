@@ -2674,11 +2674,11 @@ function updatePositionsVorschau() {
     const k = window.cfZert.koAbstand(p);
     if (k.ok) {
         const pz = k.wert.prozent;
-        teile.push(kachel('Abstand zur KO-Schwelle', nz(pz, 1) + ' %',
+        teile.push(kachel('KO-Abstand', nz(pz, 1) + ' %',
             'Basiswert steht bei ' + nz(d.kurs, 2) + ' $',
             pz < 5 ? 'rot' : (pz < 10 ? 'warn' : 'gut')));
     } else {
-        teile.push(kachel('Abstand zur KO-Schwelle', '—',
+        teile.push(kachel('KO-Abstand', '—',
             'Knockout-Preis und Hebel eintragen', 'leer'));
     }
 

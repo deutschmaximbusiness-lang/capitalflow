@@ -4633,3 +4633,21 @@ body.pwa-installed .pwa-install-btn { display: none !important; }
     letter-spacing: 0;
     font-size: 11.5px;
 }
+
+/* Eingabefelder auf eine Linie, auch wenn die Beschriftung umbricht.
+   .form-group ist eine Flex-Spalte in einem Grid: ohne das hier klebt
+   das Feld direkt unter seiner Beschriftung, und eine zweizeilige
+   Beschriftung schiebt es gegenueber den Nachbarn nach unten.
+   space-between haelt die Beschriftung oben und das Feld unten. */
+.form-row > .form-group {
+    justify-content: space-between;
+}
+
+/* Kachel-Beschriftungen ebenso: sonst steht die Zahl in der einen
+   Kachel hoeher als in der daneben. */
+.zert-kachel {
+    display: flex;
+    flex-direction: column;
+}
+.zert-kachel-label { min-height: 2.4em; display: flex; align-items: flex-start; }
+.zert-kachel-wert { margin-top: auto; }
