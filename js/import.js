@@ -839,18 +839,47 @@
                 });
             });
 
-            // In Haeppchen, sonst laeuft die Anfrage ins Zeitlimit.
-            // upsert mit ignoreDuplicates: schon importierte Trades
-            // werden uebersprungen statt den ganzen Import abzubrechen.
+            // Schon vorhandene Importe herausfiltern.
+            //
+            // Kein upsert mit onConflict: der Eindeutigkeitsindex ist ein
+            // Teilindex (nur fuer Zeilen mit import_key), und darauf kann
+            // ON CONFLICT nicht verweisen - Postgres lehnt die Anweisung
+            // ab. Also vorher fragen, was schon da ist. Der Index bleibt
+            // als Netz fuer den Fall, dass zwei Geraete gleichzeitig
+            // importieren.
+            status('Vorhandene Trades prüfen…');
+            const { data: vorhanden, error: leseFehler } = await db
+                .from('trades').select('import_key').not('import_key', 'is', null);
+            if (leseFehler) throw new Error('Vorhandene prüfen: ' + leseFehler.message);
+            const schonDa = new Set((vorhanden || []).map(function (r) {
+                return r.import_key; }));
+
+            const neue = zeilen.filter(function (z) {
+                return !z.import_key || !schonDa.has(z.import_key); });
+            const doppelt = zeilen.length - neue.length;
+
             let geschrieben = 0;
-            for (let i = 0; i < zeilen.length; i += 25) {
-                const teil = zeilen.slice(i, i + 25);
-                status('Trades schreiben… ' + (i + teil.length) + '/' + zeilen.length);
+            for (let i = 0; i < neue.length; i += 25) {
+                const teil = neue.slice(i, i + 25);
+                status('Trades schreiben… ' + (i + teil.length) + '/' + neue.length);
                 const { data, error } = await db.from('trades')
-                    .upsert(teil, { onConflict: 'user_id,import_key',
-                                    ignoreDuplicates: true })
-                    .select('id');
-                if (error) throw new Error('Trades schreiben: ' + error.message);
+                    .insert(teil).select('id');
+                if (error) {
+                    // 23505: der Index hat zugeschlagen, weil parallel
+                    // importiert wurde. Dann einzeln, damit ein
+                    // Doppelter nicht die anderen 24 mitreisst.
+                    if (String(error.code) !== '23505') {
+                        throw new Error('Trades schreiben: ' + error.message);
+                    }
+                    for (const z of teil) {
+                        const r = await db.from('trades').insert(z).select('id');
+                        if (!r.error) geschrieben += 1;
+                        else if (String(r.error.code) !== '23505') {
+                            throw new Error('Trades schreiben: ' + r.error.message);
+                        }
+                    }
+                    continue;
+                }
                 geschrieben += (data || []).length;
             }
 
@@ -883,7 +912,6 @@
                 window.cfAnsichtenAufbauen();
             }
 
-            const doppelt = zeilen.length - geschrieben;
             status('✅ ' + geschrieben + ' übernommen'
                 + (doppelt > 0 ? ', ' + doppelt + ' waren schon da' : '')
                 + (buchungen ? ', ' + buchungen + ' Buchungen' : '') + '.');
