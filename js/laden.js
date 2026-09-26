@@ -40,8 +40,25 @@
         }
     }
 
+    /**
+     * Zeitstempel aus der Datenbank in das Format, das die Oberflaeche
+     * ueberall erwartet: TT.MM.JJJJ.
+     *
+     * Vorher kam hier das ISO-Datum zurueck. Sechs Stellen in app.js
+     * zerlegen t.date mit split('.') - bei "2026-05-11" ergibt das ein
+     * einziges Stueck, daraus wird ein ungueltiges Datum, und das
+     * Ergebnis ist NaN. Sichtbar wurde das als leerer P&L-Kalender und
+     * als Wochentagsstatistik ohne Zahlen. Kein Fehler in der Konsole,
+     * nur Striche in der Oberflaeche.
+     *
+     * Dieselbe Falle wie bei der Migration: die App schreibt de-DE,
+     * die Datenbank liefert ISO, und niemand uebersetzt dazwischen.
+     */
     function datumNur(iso) {
-        return iso ? String(iso).slice(0, 10) : '';
+        if (!iso) return '';
+        const s = String(iso).slice(0, 10);
+        const m = s.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+        return m ? m[3] + '.' + m[2] + '.' + m[1] : s;
     }
 
     function zaehle(key) {

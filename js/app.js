@@ -830,9 +830,9 @@ function getFilteredTrades(trades) {
     
     // Hebel Filter
     if (currentFilter === 'leverage') {
-        filtered = filtered.filter(t => t.leverage && t.leverage > 1);
+        filtered = filtered.filter(istHebelTrade);
     } else if (currentFilter === 'normal') {
-        filtered = filtered.filter(t => !t.leverage || t.leverage === 1);
+        filtered = filtered.filter(t => !istHebelTrade(t));
     }
     
     // Setup-Type Filter
@@ -994,6 +994,35 @@ function formatLeverage(value) {
 }
 
 /**
+ * Ist das ein Hebelprodukt?
+ *
+ * Nicht am Hebelwert festmachen: bei importierten Zertifikaten ist der
+ * Hebel UNBEKANNT, weil in der TR-Datei nicht steht, wo der Basiswert
+ * beim Kauf stand. Er steht dann auf 1 - und ein Filter "Nur Hebel"
+ * ueber leverage > 1 haette die Haelfte der Trades aussortiert, obwohl
+ * sie alle gehebelt waren.
+ *
+ * Bekannt ist dagegen immer, WAS gehandelt wurde. Danach wird gefiltert.
+ */
+function istHebelTrade(t) {
+    if (t && t.produkt && t.produkt.art && t.produkt.art !== 'aktie') return true;
+    return Boolean(t && parseFloat(t.leverage) > 1);
+}
+
+/** Abzeichen fuer den Hebel - mit Fragezeichen, wenn er nicht bekannt ist. */
+function hebelBadge(t) {
+    const lev = parseFloat(t && t.leverage);
+    if (lev > 1) return '<span class="trade-leverage-badge">'
+        + formatLeverage(lev) + '</span>';
+    if (istHebelTrade(t)) {
+        return '<span class="trade-leverage-badge" title="Hebel unbekannt — '
+            + 'die TR-Datei nennt den Kurs des Basiswerts nicht. '
+            + 'Trag ihn nach, dann wird er gerechnet.">Hebel ?</span>';
+    }
+    return '';
+}
+
+/**
  * Abzeichen mit dem Abstand zur KO-Schwelle.
  *
  * Die Zahl gehoert in die Liste und nicht nur ins Formular: erst im
@@ -1064,7 +1093,10 @@ function normalizeTrade(trade, index) {
         riskReward: num(trade.riskReward, 0),
         reason: trade.reason || '',
         notes: trade.notes || '',
-        date: trade.date || new Date().toISOString().slice(0, 10),
+        // Der Rest der App zerlegt date mit split('.') - ein ISO-Datum
+        // als Ersatzwert waere hier ein blinder Passagier.
+        date: trade.date || new Date().toLocaleDateString('de-DE',
+            { year: 'numeric', month: '2-digit', day: '2-digit' }),
         screenshot: trade.screenshot && String(trade.screenshot).trim()
             ? trade.screenshot : null,
         setupType: trade.setupType || 'Sonstiges',
@@ -1128,7 +1160,7 @@ function loadTrades() {
                 <div class="trade-ticker">
                     ${escapeHtml(trade.ticker)}
                     <span class="dir-badge dir-${trade.direction === 'short' ? 'short' : 'long'}">${trade.direction === 'short' ? 'SHORT' : 'LONG'}</span>
-                    ${trade.leverage > 1 ? `<span class="trade-leverage-badge">${formatLeverage(trade.leverage)}</span>` : ''}
+                    ${hebelBadge(trade)}
                     ${koBadge(trade)}
                 </div>
                 <div class="trade-pnl ${trade.pnl > 0 ? 'profit' : 'loss'}">
@@ -1640,24 +1672,42 @@ function loadDashboard() {
     const totalByDay = { Mon: 0, Tue: 0, Wed: 0, Thu: 0, Fri: 0, Sat: 0, Sun: 0 };
     const dayMap = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
     
+    const pnlByDay = { Mon: 0, Tue: 0, Wed: 0, Thu: 0, Fri: 0, Sat: 0, Sun: 0 };
+
     trades.forEach(t => {
-        const [day, month, year] = t.date.split('.');
+        const [day, month, year] = String(t.date).split('.');
         const d = new Date(`${year}-${month}-${day}`);
+        // Ein unlesbares Datum darf die Statistik nicht vergiften:
+        // dayMap[NaN] ist undefined, und totalByDay[undefined]++ macht
+        // aus jeder Auswertung danach NaN.
+        if (isNaN(d.getTime())) return;
         const dayName = dayMap[d.getDay()];
+        if (!dayName) return;
         totalByDay[dayName]++;
+        pnlByDay[dayName] += (parseFloat(t.pnl) || 0);
         if (t.pnl > 0) winsByDay[dayName]++;
     });
     
     const winRateByDay = Object.keys(winsByDay).map(day => ({
         day,
         rate: totalByDay[day] > 0 ? ((winsByDay[day] / totalByDay[day]) * 100).toFixed(0) : 0,
-        total: totalByDay[day]
+        total: totalByDay[day],
+        pnl: pnlByDay[day]
     }));
-    
-    const bestDay = winRateByDay.reduce((max, day) => 
-        parseInt(day.rate) > parseInt(max.rate) ? day : max, 
-        winRateByDay[0] || { day: '-', rate: 0 }
-    );
+
+    // Bester Wochentag nach ERGEBNIS, nicht nach Trefferquote.
+    //
+    // Vorher stand hier Trefferquote mal Gesamtergebnis geteilt durch
+    // hundert - eine Zahl ohne Bedeutung. Bei 60 % Treffern und minus
+    // 1404 Euro Gesamtergebnis kam "+€-842,56" heraus: ein Pluszeichen
+    // vor einem Minusbetrag, gruen eingefaerbt, als "bester Tag".
+    //
+    // Nur Tage beruecksichtigen, an denen ueberhaupt gehandelt wurde -
+    // sonst gewinnt der Samstag mit null Trades und null Euro.
+    const gehandelt = winRateByDay.filter(d => d.total > 0);
+    const bestDay = gehandelt.length
+        ? gehandelt.reduce((max, day) => day.pnl > max.pnl ? day : max)
+        : { day: '—', rate: 0, total: 0, pnl: 0 };
     
     const dashboardContent = document.getElementById('dashboard');
     dashboardContent.innerHTML = `
@@ -1710,9 +1760,9 @@ function loadDashboard() {
                 <div style="color: #94a3b8; font-size: 11px; margin-top: 8px;">Single trade best</div>
             </div>
             <div class="dashboard-card">
-                <div style="color: #94a3b8; font-size: 11px; margin-bottom: 8px; text-transform: uppercase;">Best Day</div>
-                <div style="font-size: 24px; font-weight: 700; color: #10b981;">+€${(bestDay.rate * stats.totalPnL / 100).toFixed(2)}</div>
-                <div style="color: #94a3b8; font-size: 11px; margin-top: 8px;">${bestDay.day} • ${bestDay.rate}% win</div>
+                <div style="color: #94a3b8; font-size: 11px; margin-bottom: 8px; text-transform: uppercase;">Bester Wochentag</div>
+                <div style="font-size: 24px; font-weight: 700; color: ${bestDay.pnl >= 0 ? '#10b981' : '#f87171'};">${bestDay.pnl >= 0 ? '+' : '−'}€${Math.abs(bestDay.pnl).toFixed(2)}</div>
+                <div style="color: #94a3b8; font-size: 11px; margin-top: 8px;">${bestDay.day} • ${bestDay.total} Trades • ${bestDay.rate}% Treffer</div>
             </div>
         </div>
         
@@ -2522,8 +2572,27 @@ function renderCharts(trades, stats, winRateByDay, recentTrades) {
 }
 
 // ===== POSITIONEN MANAGEMENT =====
+
+/**
+ * Offene Positionen fuer die Portfolio-Analyse.
+ *
+ * Zertifikate gehoeren hier nicht hin. Die Portfolio-Analyse zeigt, was
+ * im Depot liegt - Aktien und Fonds, die man haelt. Ein Knock-out ist
+ * ein Trade mit Verfallsrisiko, kein Bestand; zwischen NVDA-Aktien und
+ * einem Turbo darauf zu mitteln ergibt keine sinnvolle Aufteilung.
+ *
+ * Sie verschwinden nicht, sie stehen weiter unter den offenen
+ * Positionen - nur die Auswertung laesst sie aussen vor.
+ */
+function portfolioPositionen() {
+    const alle = JSON.parse(localStorage.getItem('positions')) || [];
+    return alle.filter(function (p) {
+        return !(p && p.produkt && p.produkt.art && p.produkt.art !== 'aktie');
+    });
+}
+
 function updatePortfolioSummary() {
-    const positions = JSON.parse(localStorage.getItem('positions')) || [];
+    const positions = portfolioPositionen();
     
     // Berechne Statistiken
     const openCount = positions.length;
@@ -2564,7 +2633,7 @@ function loadPositions() {
                     <div>
                         <div class="position-ticker">${escapeHtml(pos.ticker)}
                             <span class="dir-badge dir-${pos.direction === 'short' ? 'short' : 'long'}">${pos.direction === 'short' ? 'SHORT' : 'LONG'}</span>
-                            ${pos.produkt && pos.produkt.hebelEffektiv > 1 ? `<span class="trade-leverage-badge">${formatLeverage(pos.produkt.hebelEffektiv)}</span>` : ''}
+                            ${hebelBadge(Object.assign({}, pos, { leverage: pos.produkt && pos.produkt.hebelEffektiv }))}
                             ${koBadge(pos)}
                         </div>
                         <div class="position-entry">Kauf: €${parseFloat(pos.entry).toFixed(2)}</div>
