@@ -257,15 +257,22 @@
 
     window.cfDbPositionNeu = function (p) {
         return schreiben(async function () {
+            const basis = await instrumentId(p.ticker);
+            const pr = p.produkt || null;
             const zeile = {
                 user_id: await uid(),
-                instrument_id: await instrumentId(p.ticker),
+                instrument_id: basis,
+                product_id: await produktId(basis, pr),
                 status: 'offen',
-                direction: 'long',
+                direction: p.direction === 'short' ? 'short' : 'long',
                 entry_price: p.entry,
                 position_size: p.size,
                 quantity: p.entry ? p.size / p.entry : null,
-                leverage: 1,
+                leverage: pr && pr.hebelEffektiv ? pr.hebelEffektiv : 1,
+                underlying_entry: pr ? pr.basisEin : null,
+                underlying_stop: pr ? pr.basisStop : null,
+                leverage_effective: pr ? pr.hebelEffektiv : null,
+                ko_distance_percent: pr ? pr.koAbstandProzent : null,
                 thesis: p.thesis || null,
                 screenshot_path: await screenshotHoch(p.screenshot),
                 opened_at: p.dateOpened || new Date().toISOString(),

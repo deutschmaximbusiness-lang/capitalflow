@@ -2562,8 +2562,12 @@ function loadPositions() {
             <div class="position-card" data-position-id="${idx}">
                 <div class="position-header">
                     <div>
-                        <div class="position-ticker">${escapeHtml(pos.ticker)}</div>
-                        <div class="position-entry">Entry: €${parseFloat(pos.entry).toFixed(2)}</div>
+                        <div class="position-ticker">${escapeHtml(pos.ticker)}
+                            <span class="dir-badge dir-${pos.direction === 'short' ? 'short' : 'long'}">${pos.direction === 'short' ? 'SHORT' : 'LONG'}</span>
+                            ${pos.produkt && pos.produkt.hebelEffektiv > 1 ? `<span class="trade-leverage-badge">${formatLeverage(pos.produkt.hebelEffektiv)}</span>` : ''}
+                            ${koBadge(pos)}
+                        </div>
+                        <div class="position-entry">Kauf: €${parseFloat(pos.entry).toFixed(2)}</div>
                     </div>
                 </div>
                 
@@ -2578,9 +2582,13 @@ function loadPositions() {
                     </div>
                 </div>
                 
+                ${pos.thesis ? `
                 <div class="position-thesis">
                     <strong>These:</strong> ${escapeHtml(pos.thesis)}
-                </div>
+                </div>` : `
+                <div class="position-thesis" style="color:#64748b;">
+                    Keine These hinterlegt — kannst du nachtragen.
+                </div>`}
                 
                 ${pos.screenshot ? `
                     <div class="position-screenshot">
@@ -2600,6 +2608,102 @@ function loadPositions() {
     displayClosedPositions();
 }
 
+/**
+ * Die drei freiwilligen Hebelzahlen einer offenen Position auslesen.
+ * Gibt null zurueck, wenn nichts eingetragen wurde.
+ */
+function positionsHebelDaten() {
+    const z = (id) => {
+        const e = document.getElementById(id);
+        if (!e) return null;
+        const n = parseFloat(String(e.value).replace(',', '.'));
+        return Number.isFinite(n) ? n : null;
+    };
+    const dirEl = document.getElementById('positionsDirection');
+    const richtung = (dirEl && dirEl.value === 'short') ? 'short' : 'long';
+    const ko = z('positionsKo');
+    const hebelTr = z('positionsHebel');
+    const stop = z('positionsStop');
+    if (ko === null && hebelTr === null && stop === null) {
+        return { richtung: richtung, leer: true };
+    }
+
+    // Kurs des Basiswerts aus Hebel und Schwelle - dieselbe Rechnung wie
+    // im Journal. Ohne Hebel bleibt er unbekannt, dann gibt es eben
+    // keinen KO-Abstand.
+    let kurs = null;
+    if (window.cfZert && ko !== null && hebelTr !== null) {
+        const r = window.cfZert.basiswertAusHebel({
+            art: 'knockout', richtung: richtung, ko: ko, hebelAngezeigt: hebelTr
+        });
+        if (r.ok) kurs = r.wert;
+    }
+    return {
+        richtung: richtung, leer: false,
+        ko: ko, hebelAngezeigt: hebelTr, stop: stop, kurs: kurs,
+    };
+}
+
+/** Live-Vorschau unter den Hebelfeldern der Position. */
+function updatePositionsVorschau() {
+    const ziel = document.getElementById('positionsVorschau');
+    if (!ziel || !window.cfZert) return;
+
+    const d = positionsHebelDaten();
+    if (d.leer) { ziel.innerHTML = ''; return; }
+
+    const einsatzEl = document.getElementById('positionsSize');
+    const einsatz = einsatzEl ? parseFloat(einsatzEl.value) : null;
+
+    const p = {
+        art: 'knockout', richtung: d.richtung,
+        kurs: d.kurs, strike: d.ko, ko: d.ko,
+        einsatz: Number.isFinite(einsatz) ? einsatz : null,
+    };
+
+    const kachel = (label, wert, zusatz, klasse) =>
+        '<div class="zert-kachel ' + (klasse || '') + '">'
+        + '<div class="zert-kachel-label">' + label + '</div>'
+        + '<div class="zert-kachel-wert">' + wert + '</div>'
+        + (zusatz ? '<div class="zert-kachel-zusatz">' + zusatz + '</div>' : '')
+        + '</div>';
+    const nz = (x, n) => x.toLocaleString('de-DE',
+        { minimumFractionDigits: n, maximumFractionDigits: n });
+
+    const teile = [];
+    const k = window.cfZert.koAbstand(p);
+    if (k.ok) {
+        const pz = k.wert.prozent;
+        teile.push(kachel('Abstand zur KO-Schwelle', nz(pz, 1) + ' %',
+            'Basiswert steht bei ' + nz(d.kurs, 2) + ' $',
+            pz < 5 ? 'rot' : (pz < 10 ? 'warn' : 'gut')));
+    } else {
+        teile.push(kachel('Abstand zur KO-Schwelle', '—',
+            'Knockout-Preis und Hebel eintragen', 'leer'));
+    }
+
+    if (d.stop !== null) {
+        const r = window.cfZert.risiko(p, d.stop);
+        if (r.ok) {
+            let zusatz = nz(r.wert.prozent, 1) + ' % vom Einsatz';
+            const kb = (typeof getAccountBalance === 'function')
+                ? getAccountBalance() : null;
+            if (kb && kb > 0) zusatz += ' · ' + nz((r.wert.euro / kb) * 100, 1)
+                + ' % vom Konto';
+            teile.push(kachel('Risiko bei deinem Stop', nz(r.wert.euro, 2) + ' €',
+                zusatz, r.wert.totalverlust ? 'rot' : 'gut'));
+            if (r.wert.hinweis) {
+                teile.push('<div class="zert-warnung" style="grid-column:1/-1;'
+                    + 'display:block;">⚠️ ' + escapeHtml(r.wert.hinweis) + '</div>');
+            }
+        } else {
+            teile.push(kachel('Risiko bei deinem Stop', '—', r.grund, 'leer'));
+        }
+    }
+
+    ziel.innerHTML = teile.join('');
+}
+
 function addPosition(event) {
     event.preventDefault();
     
@@ -2608,9 +2712,17 @@ function addPosition(event) {
         const entry = document.getElementById('positionsEntry').value;
         const size = document.getElementById('positionsSize').value;
         const thesis = document.getElementById('positionsThesis').value.trim();
+        const hebel = positionsHebelDaten();
         
-        if (!ticker || !entry || !size || !thesis) {
-            showToast('❌ Alle Felder ausfüllen!', 'error');
+        // Die These ist freiwillig.
+        //
+        // Sie ist der wertvollste Teil eines Journals - und genau deshalb
+        // darf sie den Eintrag nicht aufhalten. Wer beim Kauf drei Saetze
+        // tippen muss, traegt die Position irgendwann gar nicht mehr ein,
+        // und dann fehlt nicht nur die These, sondern der ganze Trade.
+        // Nachtragen geht; den nicht erfassten Trade holt niemand zurueck.
+        if (!ticker || !entry || !size) {
+            showToast('❌ Ticker, Kaufpreis und Einsatz brauche ich.', 'error');
             return;
         }
         
@@ -2629,12 +2741,34 @@ function addPosition(event) {
         
         const position = {
             ticker: ticker.toUpperCase(),
+            direction: hebel.richtung,
             entry: entryNum,
             size: sizeNum,
             thesis,
             screenshot: positionsScreenshotData,
             dateOpened: new Date().toISOString()
         };
+
+        // Hebelzahlen nur anhaengen, wenn welche da sind - eine Aktie
+        // soll kein leeres produkt-Objekt mitschleppen.
+        if (!hebel.leer && hebel.ko) {
+            const abstand = hebel.kurs
+                ? (hebel.richtung === 'long' ? hebel.kurs - hebel.ko
+                                             : hebel.ko - hebel.kurs)
+                : null;
+            position.produkt = {
+                art: 'knockout',
+                richtung: hebel.richtung,
+                wkn: null, emittent: null,
+                strike: hebel.ko, ko: hebel.ko,
+                ratio: null, faktor: null,
+                basisEin: hebel.kurs, basisAus: null, basisStop: hebel.stop,
+                hebelEffektiv: (hebel.kurs && abstand > 0)
+                    ? Math.round((hebel.kurs / abstand) * 100) / 100 : null,
+                koAbstandProzent: (hebel.kurs && abstand > 0)
+                    ? Math.round((abstand / hebel.kurs) * 10000) / 100 : null,
+            };
+        }
         
         const positions = JSON.parse(localStorage.getItem('positions')) || [];
         positions.push(position);
@@ -2645,6 +2779,12 @@ function addPosition(event) {
         document.getElementById('positionsForm').reset();
         document.getElementById('positionsScreenshotPreview').innerHTML = '';
         positionsScreenshotData = null;
+        const vorschau = document.getElementById('positionsVorschau');
+        if (vorschau) vorschau.innerHTML = '';
+        document.querySelectorAll('[data-target="positionsDirection"] .direction-btn')
+            .forEach((b, i) => b.classList.toggle('active', i === 0));
+        const pdir = document.getElementById('positionsDirection');
+        if (pdir) pdir.value = 'long';
         
         loadPositions();
         showToast(`✅ Position ${ticker} geöffnet!`);
@@ -2723,10 +2863,6 @@ function confirmClosePositionModal() {
         return;
     }
     
-    if (!exitReason) {
-        showToast('❌ Grund zum Schließen erforderlich!', 'error');
-        return;
-    }
     
     try {
         const positions = JSON.parse(localStorage.getItem('positions')) || [];
@@ -2734,10 +2870,15 @@ function confirmClosePositionModal() {
         const position = positions[positionToClose];
         
         
-        // Berechne P&L
+        // P&L. Bei einem Zertifikat sind Kauf- und Verkaufspreis die
+        // Preise des Scheins - ein Short-Knockout STEIGT im Preis, wenn
+        // der Basiswert faellt, das Vorzeichen steht also schon richtig
+        // drin. Nur bei einer echten Short-Aktie muss gedreht werden.
         const shares = position.size / position.entry;
-        const pnl = (exitPrice - position.entry) * shares;
-        const pnlPercent = ((exitPrice - position.entry) / position.entry) * 100;
+        const zertifikat = Boolean(position.produkt);
+        const vz = (!zertifikat && position.direction === 'short') ? -1 : 1;
+        const pnl = (exitPrice - position.entry) * shares * vz;
+        const pnlPercent = ((exitPrice - position.entry) / position.entry) * 100 * vz;
         
         // Erstelle geschlossene Position
         const closedPosition = {
@@ -2843,9 +2984,13 @@ function displayClosedPositions() {
                     </div>
                 </div>
                 
+                ${pos.thesis ? `
                 <div class="position-thesis">
                     <strong>These:</strong> ${escapeHtml(pos.thesis)}
-                </div>
+                </div>` : `
+                <div class="position-thesis" style="color:#64748b;">
+                    Keine These hinterlegt — kannst du nachtragen.
+                </div>`}
                 
                 <div class="position-thesis" style="margin-top: 12px; color: #cbd5e1; font-size: 13px; border-top: 1px solid rgba(168, 85, 247, 0.1); padding-top: 12px;">
                     <strong>Grund zum Schließen:</strong> ${escapeHtml(pos.exitReason)}
@@ -4116,6 +4261,16 @@ function initSetups() {
     form.dataset.bound = '1';
 
     form.addEventListener('submit', addSetupsItem);
+
+    // Live-Vorschau der Positions-Hebelzahlen
+    ['positionsKo', 'positionsHebel', 'positionsStop', 'positionsSize']
+        .forEach(id => {
+            const el = document.getElementById(id);
+            if (el) el.addEventListener('input', updatePositionsVorschau);
+        });
+    document.querySelectorAll('[data-target="positionsDirection"] .direction-btn')
+        .forEach(b => b.addEventListener('click',
+            () => setTimeout(updatePositionsVorschau, 0)));
 
     ['setupsEntryFrom', 'setupsEntryTo', 'setupsStop', 'setupsTarget',
      'setupsLeverage', 'setupsKo'].forEach(id => {

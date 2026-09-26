@@ -112,11 +112,13 @@
         return {
             id: z.id,
             ticker: symbol || '—',
+            direction: z.direction === 'short' ? 'short' : 'long',
             entry: parseFloat(z.entry_price) || 0,
             size: parseFloat(z.position_size) || 0,
             thesis: z.thesis || '',
             screenshot: bild,
             dateOpened: z.opened_at,
+            produkt: alsProdukt(z),
         };
     }
 

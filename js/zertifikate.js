@@ -99,7 +99,7 @@
             if (p.faktor === null) {
                 if (!nurWidersprueche) m.push('Faktor fehlt.');
             } else if (p.faktor <= 0) {
-                m.push('Der Faktor muss groesser als 0 sein.');
+                m.push('Der Faktor muss größer als 0 sein.');
             }
             return m;
         }
@@ -112,11 +112,11 @@
 
         if (p.richtung === 'long') {
             if (p.strike >= p.kurs) {
-                m.push('Basispreis liegt ueber dem Kurs - bei einem Long waere '
+                m.push('Basispreis liegt über dem Kurs — bei einem Long wäre '
                      + 'das Zertifikat wertlos. Zahlen vertauscht?');
             }
             if (p.ko !== null && p.ko >= p.kurs) {
-                m.push('Die KO-Schwelle liegt schon ueber dem Einstiegskurs.');
+                m.push('Die KO-Schwelle liegt schon über dem Einstiegskurs.');
             }
             if (p.ko !== null && p.ko < p.strike) {
                 m.push('Die KO-Schwelle liegt unter dem Basispreis. Bei einem '
@@ -124,14 +124,14 @@
             }
         } else {
             if (p.strike <= p.kurs) {
-                m.push('Basispreis liegt unter dem Kurs - bei einem Short waere '
+                m.push('Basispreis liegt unter dem Kurs — bei einem Short wäre '
                      + 'das Zertifikat wertlos. Zahlen vertauscht?');
             }
             if (p.ko !== null && p.ko <= p.kurs) {
                 m.push('Die KO-Schwelle liegt schon unter dem Einstiegskurs.');
             }
             if (p.ko !== null && p.ko > p.strike) {
-                m.push('Die KO-Schwelle liegt ueber dem Basispreis. Bei einem '
+                m.push('Die KO-Schwelle liegt über dem Basispreis. Bei einem '
                      + 'Short ist sie gleich hoch oder niedriger.');
             }
         }
@@ -217,7 +217,7 @@
             return nein('Aufgeld gibt es nur bei Knock-Outs und Optionsscheinen.');
         }
         if (p.preis === null) return nein('Preis des Zertifikats fehlt.');
-        if (ratio === null || ratio <= 0) return nein('Bezugsverhaeltnis fehlt.');
+        if (ratio === null || ratio <= 0) return nein('Bezugsverhältnis fehlt.');
         const iw = innererWert(p);
         if (iw === null || iw <= 0) return nein('Kein innerer Wert.');
 
@@ -252,9 +252,9 @@
         if (L === null) return nein('Kein Hebel angegeben.');
         if (p.strike === null) return nein('KO-Schwelle fehlt.');
         if (p.richtung === 'long' && L <= 1) {
-            return nein('Ein Long-Knock-Out hat immer Hebel groesser als 1.');
+            return nein('Ein Long-Knock-Out hat immer Hebel größer als 1.');
         }
-        if (L <= 0) return nein('Der Hebel muss groesser als 0 sein.');
+        if (L <= 0) return nein('Der Hebel muss größer als 0 sein.');
 
         const kurs = p.richtung === 'long'
             ? (L * p.strike) / (L - 1)
@@ -287,7 +287,7 @@
         const preis = welcher === 'aus' ? p.preisAus : p.preis;
 
         if (p.strike === null) return nein('Basispreis oder KO-Schwelle fehlt.');
-        if (ratio === null || ratio <= 0) return nein('Bezugsverhaeltnis fehlt.');
+        if (ratio === null || ratio <= 0) return nein('Bezugsverhältnis fehlt.');
         if (preis === null || preis <= 0) return nein('Preis des Zertifikats fehlt.');
 
         const je = (preis * fx) / ratio;
@@ -329,7 +329,7 @@
         if (p.art !== 'knockout') return nein('Nur Knock-Outs haben eine Schwelle.');
         if (p.kurs === null) return nein('Kurs des Basiswerts fehlt.');
         if (p.ko === null) return nein('KO-Schwelle fehlt.');
-        if (p.kurs <= 0) return nein('Kurs muss groesser als 0 sein.');
+        if (p.kurs <= 0) return nein('Kurs muss größer als 0 sein.');
 
         const abstand = p.richtung === 'long' ? p.kurs - p.ko : p.ko - p.kurs;
         if (abstand <= 0) return nein('Die Schwelle ist bereits erreicht.');
@@ -401,7 +401,7 @@
             return ok({
                 euro: p.einsatz, prozent: 100, totalverlust: true,
                 hinweis: 'Der Stop liegt jenseits der KO-Schwelle. Das Produkt '
-                       + 'verfaellt vorher - der Stop loest nie aus.',
+                       + 'verfällt vorher — der Stop löst nie aus.',
             });
         }
 
@@ -440,10 +440,10 @@
         if (p.art !== 'faktor') return nein('Nur bei Faktor-Zertifikaten.');
         if (!p.faktor) return nein('Faktor fehlt.');
         if (p.kurs === null || p.kursAus === null)
-            return nein('Kurs des Basiswerts beim Ein- und Ausstieg noetig.');
+            return nein('Kurs des Basiswerts beim Ein- und Ausstieg nötig.');
         if (p.preis === null || p.preisAus === null)
-            return nein('Preis des Zertifikats beim Ein- und Ausstieg noetig.');
-        if (p.kurs <= 0 || p.preis <= 0) return nein('Kurse muessen groesser als 0 sein.');
+            return nein('Preis des Zertifikats beim Ein- und Ausstieg nötig.');
+        if (p.kurs <= 0 || p.preis <= 0) return nein('Kurse müssen größer als 0 sein.');
 
         const basis = ((p.kursAus - p.kurs) / p.kurs)
                     * (p.richtung === 'short' ? -1 : 1);

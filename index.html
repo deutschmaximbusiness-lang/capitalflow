@@ -461,8 +461,8 @@
                         <input type="number" id="leverage" placeholder="z.B. 10 oder 3.2" step="0.01" min="1">
                     </div>
                     <div class="form-group">
-                        <label>Grund</label>
-                        <input type="text" id="reason" placeholder="z.B. Technisch, Breakout..." required>
+                        <label>Grund <span class="feld-zusatz">kannst du später ergänzen</span></label>
+                        <input type="text" id="reason" placeholder="z.B. Technisch, Breakout...">
                     </div>
                 </div>
 
@@ -628,18 +628,52 @@
                             <input type="text" id="positionsTicker" placeholder="z.B. AAPL" required>
                         </div>
                         <div class="form-group">
-                            <label for="positionsEntry">Entry Price (€)</label>
-                            <input type="number" id="positionsEntry" step="0.01" placeholder="150.50" required>
+                            <label>Richtung</label>
+                            <div class="direction-toggle" data-target="positionsDirection">
+                                <button type="button" class="direction-btn active" data-direction="long">Long</button>
+                                <button type="button" class="direction-btn" data-direction="short">Short</button>
+                            </div>
+                            <input type="hidden" id="positionsDirection" value="long">
                         </div>
                         <div class="form-group">
-                            <label for="positionsSize">Position Size (€)</label>
-                            <input type="number" id="positionsSize" step="0.01" placeholder="1000" required>
+                            <label for="positionsEntry">Kaufpreis (€) <span class="feld-zusatz">je Stück bzw. je Schein</span></label>
+                            <input type="number" id="positionsEntry" step="any" placeholder="150.50" required>
                         </div>
+                        <div class="form-group">
+                            <label for="positionsSize">Einsatz (€)</label>
+                            <input type="number" id="positionsSize" step="any" placeholder="1000" required>
+                        </div>
+                    </div>
+
+                    <!-- Hebelprodukt: drei freiwillige Zahlen, alle beim Kauf
+                         auf dem Schirm. Wer sie eintraegt, sieht sofort sein
+                         Euro-Risiko; wer nicht, hat eine normale Position. -->
+                    <div class="zert-block" style="margin-bottom: 18px;">
+                        <div class="zert-gruppe-kopf" style="margin-bottom: 12px;">
+                            <span class="zert-nr grau">+</span>
+                            <span>Hebelprodukt? Dann diese drei Zahlen</span>
+                            <span class="zert-waehrung">freiwillig, alles in $</span>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="positionsKo">Knockout-Preis</label>
+                                <input type="number" id="positionsKo" step="any" placeholder="z.B. 165.00">
+                            </div>
+                            <div class="form-group">
+                                <label for="positionsHebel">Hebel <span class="feld-zusatz">wie TR ihn anzeigt</span></label>
+                                <input type="number" id="positionsHebel" step="any" placeholder="z.B. 12">
+                            </div>
+                            <div class="form-group">
+                                <label for="positionsStop">Dein Stop auf dem Basiswert</label>
+                                <input type="number" id="positionsStop" step="any" placeholder="z.B. 172.00">
+                            </div>
+                        </div>
+                        <div class="zert-ergebnis" id="positionsVorschau"></div>
                     </div>
 
                     <div class="form-group">
                         <label for="positionsThesis">These / Begründung</label>
-                        <textarea id="positionsThesis" placeholder="Warum bin ich in dieser Position? Was ist der Plan?" rows="4" required></textarea>
+                        <textarea id="positionsThesis" placeholder="Warum bin ich in dieser Position? Was ist der Plan? (kannst du später ergänzen)" rows="4"></textarea>
                     </div>
 
                     <!-- ===== SCREENSHOT PASTE AREA ===== -->
@@ -1249,7 +1283,7 @@
 
             <div class="form-group" style="margin-bottom: 24px;">
                 <label for="modalExitReason" style="display: block; font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: #94a3b8; margin-bottom: 10px;">Grund zum Schließen</label>
-                <textarea id="modalExitReason" placeholder="Warum schließe ich diese Position? (z.B. Target erreicht, Stop Hit, Trendwechsel)" rows="3" required style="width: 100%; background: rgba(168, 85, 247, 0.08); border: 1px solid rgba(168, 85, 247, 0.2); border-radius: 10px; padding: 12px 16px; color: #f1f5f9; font-size: 14px; font-weight: 500; font-family: 'Inter', sans-serif; resize: none;"></textarea>
+                <textarea id="modalExitReason" placeholder="Warum schließe ich diese Position? (optional)" rows="3" style="width: 100%; background: rgba(168, 85, 247, 0.08); border: 1px solid rgba(168, 85, 247, 0.2); border-radius: 10px; padding: 12px 16px; color: #f1f5f9; font-size: 14px; font-weight: 500; font-family: 'Inter', sans-serif; resize: none;"></textarea>
             </div>
 
             <div style="display: flex; gap: 12px;">
