@@ -994,6 +994,24 @@ function formatLeverage(value) {
 }
 
 /**
+ * Euro-Betrag mit dem Vorzeichen, das die Zahl wirklich hat.
+ *
+ * Drei Kacheln in dieser App hatten ein hartcodiertes Plus im Text und
+ * zeigten damit "+€-421". Wer das Vorzeichen in die Vorlage schreibt,
+ * schreibt eine Behauptung hin statt eines Werts.
+ */
+function eurMitVorzeichen(n) {
+    const z = parseFloat(n);
+    if (!Number.isFinite(z)) return '—';
+    return (z >= 0 ? '+' : '−') + '€' + Math.abs(z).toFixed(2);
+}
+
+/** Gruen im Plus, rot im Minus - passend zu eurMitVorzeichen(). */
+function farbeFuer(n) {
+    return (parseFloat(n) || 0) >= 0 ? '#10b981' : '#f87171';
+}
+
+/**
  * Ist das ein Hebelprodukt?
  *
  * Nicht am Hebelwert festmachen: bei importierten Zertifikaten ist der
@@ -2087,17 +2105,53 @@ function loadAnalytics() {
     const stdDev = Math.sqrt(variance);
     const sharpeRatio = stdDev !== 0 ? (avgReturn / stdDev).toFixed(2) : 0;
     
-    // Calculate Max Drawdown
-    let maxDD = 0;
-    let peak = 0;
-    let cumPnL = 0;
-    trades.forEach(t => {
-        cumPnL += t.pnl;
-        if (cumPnL > peak) peak = cumPnL;
-        const dd = peak - cumPnL;
-        if (dd > maxDD) maxDD = dd;
+    // Maximaler Rueckgang (Max Drawdown)
+    //
+    // Gemessen am HOECHSTSTAND des Kontos, nicht am Gesamtergebnis.
+    // Vorher stand hier maxDD / totalPnL: bei negativem Gesamtergebnis
+    // wird dieser Bruch negativ, und zusammen mit dem hartcodierten
+    // Minus davor kam "--160 %" heraus. Ein Rueckgang von 160 Prozent
+    // gibt es nicht.
+    //
+    // Startpunkt ist das eingezahlte Kapital. Ohne das waere der erste
+    // Verlusttrade immer ein Rueckgang von 100 Prozent.
+    const ddSortiert = trades.slice().sort((a, b) => {
+        const z = (x) => {
+            const [d, m, j] = String(x.date || '').split('.');
+            return new Date(`${j}-${m}-${d}`).getTime() || 0;
+        };
+        return z(a) - z(b);
+    });
+    const startKapital = (typeof getNetDeposits === 'function')
+        ? getNetDeposits() : 0;
+    let maxDD = 0;              // in Euro
+    let maxDDProzent = null;    // null = nicht bestimmbar
+    let kapital = startKapital;
+    let hoch = startKapital;
+    ddSortiert.forEach(t => {
+        kapital += (parseFloat(t.pnl) || 0);
+        if (kapital > hoch) hoch = kapital;
+        const dd = hoch - kapital;
+        if (dd > maxDD) {
+            maxDD = dd;
+            maxDDProzent = hoch > 0 ? (dd / hoch) * 100 : null;
+        }
     });
     
+    // Bester Kalendertag: nach Datum gruppieren und das beste Ergebnis
+    // nehmen. Vorher stand in der Kachel Gesamtergebnis mal 0,3 - eine
+    // Zahl, die mit keinem Tag etwas zu tun hatte.
+    const jeTag = {};
+    trades.forEach(t => {
+        if (!t.date) return;
+        jeTag[t.date] = (jeTag[t.date] || 0) + (parseFloat(t.pnl) || 0);
+    });
+    const tage = Object.keys(jeTag);
+    const besterTag = tage.length
+        ? tage.reduce((b, d) => jeTag[d] > b.pnl ? { datum: d, pnl: jeTag[d] } : b,
+                      { datum: tage[0], pnl: jeTag[tage[0]] })
+        : { datum: null, pnl: 0 };
+
     // Behavioral Score (mock data - in real app would be calculated from trade patterns)
     const behavioralScore = {
         discipline: Math.min(100, stats.winRate * 1.5),
@@ -2204,7 +2258,21 @@ function loadAnalytics() {
                 <div style="text-align: center; margin-bottom: 16px;">
                     <div style="font-size: 14px; font-weight: 600; color: #10b981;">BEHAVIORAL SCORE</div>
                 </div>
-                <canvas id="behavioralChart" style="max-height: 250px; margin-bottom: 16px;"></canvas>
+                <!-- Der Radar ist noch keine echte Auswertung.
+                     "Disziplin" ist Trefferquote mal 1,5, "Strategie"
+                     Trefferquote mal 1,2 - drei der sechs Achsen sind
+                     dieselbe Zahl in anderer Skalierung. Eine Grafik, die
+                     Erkenntnis vortaeuscht, ist schlimmer als keine: wer
+                     genau hinsieht, merkt es, und dann sind auch die
+                     echten Zahlen daneben verdaechtig.
+                     Sichtbar bleibt sie als Ausblick, bis das Playbook
+                     aus M3 echte Werte liefert. -->
+                <div style="position: relative; margin-bottom: 16px;">
+                    <div style="opacity: 0.35; filter: blur(3px); pointer-events: none;">
+                        <canvas id="behavioralChart" style="max-height: 250px;"></canvas>
+                    </div>
+                    <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: rgba(20, 20, 35, 0.9); padding: 10px 18px; border-radius: 8px; color: #a855f7; font-weight: 700; font-size: 11px; text-transform: uppercase; letter-spacing: 0.8px; border: 1.5px solid #a855f7; white-space: nowrap;">Kommt mit dem Playbook</div>
+                </div>
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; font-size: 12px;">
                     <div style="text-align: center;">
                         <div style="color: #94a3b8; margin-bottom: 4px;">Win Rate</div>
@@ -2278,16 +2346,16 @@ function loadAnalytics() {
                 <div style="font-size: 13px; text-transform: uppercase; color: #94a3b8; font-weight: 600; margin-bottom: 16px;">KEY STATS</div>
                 <div style="font-size: 12px; color: #cbd5e1; line-height: 2;">
                     <div style="display: flex; justify-content: space-between;">
-                        <span style="color: #94a3b8;">Best Day</span>
-                        <span style="color: #10b981; font-weight: 600;">+€${stats.totalPnL * 0.3 | 0}</span>
+                        <span style="color: #94a3b8;">Bester Tag</span>
+                        <span style="color: ${farbeFuer(besterTag.pnl)}; font-weight: 600;" title="${besterTag.datum || ''}">${besterTag.datum ? eurMitVorzeichen(besterTag.pnl) : '—'}</span>
                     </div>
                     <div style="display: flex; justify-content: space-between;">
-                        <span style="color: #94a3b8;">Avg Trade</span>
-                        <span style="color: #cbd5e1; font-weight: 600;">+€${stats.expectancy.toFixed(2)}</span>
+                        <span style="color: #94a3b8;">Ø je Trade</span>
+                        <span style="color: ${farbeFuer(stats.expectancy)}; font-weight: 600;">${eurMitVorzeichen(stats.expectancy)}</span>
                     </div>
                     <div style="display: flex; justify-content: space-between;">
-                        <span style="color: #94a3b8;">Max DD</span>
-                        <span style="color: #f87171; font-weight: 600;">-${(maxDD / stats.totalPnL * 100 | 0)}%</span>
+                        <span style="color: #94a3b8;" title="Größter Rückgang vom Kontohöchststand">Max. Rückgang</span>
+                        <span style="color: #f87171; font-weight: 600;">−€${maxDD.toFixed(2)}${maxDDProzent !== null ? ' · ' + maxDDProzent.toFixed(1) + ' %' : ''}</span>
                     </div>
                 </div>
             </div>
