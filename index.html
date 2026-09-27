@@ -13,17 +13,21 @@
 
 <meta property="og:title" content="CapitalFlow — Trading Journal">
 <meta property="og:description" content="Journal und Auswertung für Swing Trader bei Trade Republic. CSV-Import statt Abtippen.">
-<meta property="og:image" content="img/capitalflow-icon.png">
+<meta property="og:image" content="img/start-vorschau.webp">
 <meta property="og:type" content="website">
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
 
 <style>
-/* Eigenes, knappes Stylesheet statt style.css.
+/* Eigenes, knappes Stylesheet statt css/style.css.
    Die Startseite ist die erste Datei, die jemand laedt - sie soll nicht
-   5.400 Zeilen App-CSS mitziehen, von denen sie nichts braucht. */
+   5.400 Zeilen App-CSS mitziehen, von denen sie nichts braucht.
+
+   Die Werte fuer Karten, Raender, Schatten und Hover sind woertlich aus
+   der App uebernommen (.dashboard-big-card und .aus-karte), damit der
+   Uebergang von hier in die App keinen Bruch hat. */
 * { margin: 0; padding: 0; box-sizing: border-box; }
 
 :root {
@@ -33,7 +37,16 @@
     --grau:   #94a3b8;
     --dunkel: #64748b;
     --bg:     #0a0a15;
+
+    /* Aus der App, woertlich */
+    --karte-bg:     linear-gradient(135deg, rgba(168, 85, 247, 0.1) 0%, rgba(236, 72, 153, 0.08) 100%);
+    --karte-rand:   rgba(168, 85, 247, 0.2);
+    --karte-schatten: 0 20px 60px rgba(0, 0, 0, 0.4);
+    --hover-rand:   rgba(168, 85, 247, 0.4);
+    --hover-schatten: 0 30px 80px rgba(168, 85, 247, 0.15);
 }
+
+html { scroll-behavior: smooth; }
 
 body {
     font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
@@ -43,56 +56,124 @@ body {
     overflow-x: hidden;
 }
 
-/* Sanfter Lichtschein oben, wie in der App */
-body::before {
+/* Zwei Lichtscheine, die sich langsam bewegen. Sehr langsam und sehr
+   schwach - Bewegung, die man bemerkt, lenkt vom Text ab. */
+body::before, body::after {
     content: '';
     position: fixed;
-    top: -40vh; left: 50%;
-    width: 120vw; height: 90vh;
-    transform: translateX(-50%);
-    background: radial-gradient(ellipse at center,
-        rgba(168, 85, 247, 0.13) 0%, transparent 65%);
+    border-radius: 50%;
     pointer-events: none;
     z-index: 0;
+    filter: blur(90px);
+}
+body::before {
+    top: -30vh; left: 50%;
+    width: 90vw; height: 70vh;
+    transform: translateX(-50%);
+    background: radial-gradient(ellipse at center,
+        rgba(168, 85, 247, 0.16) 0%, transparent 62%);
+    animation: atmen 16s ease-in-out infinite;
+}
+body::after {
+    top: 34vh; right: -18vw;
+    width: 52vw; height: 52vh;
+    background: radial-gradient(circle at center,
+        rgba(236, 72, 153, 0.11) 0%, transparent 62%);
+    animation: atmen 21s ease-in-out infinite reverse;
 }
 
-.huelle { position: relative; z-index: 1; max-width: 960px; margin: 0 auto; padding: 0 20px; }
+@keyframes atmen {
+    0%, 100% { opacity: 0.75; transform: translateX(-50%) scale(1); }
+    50%      { opacity: 1;    transform: translateX(-50%) scale(1.12); }
+}
+body::after { animation-name: atmen2; }
+@keyframes atmen2 {
+    0%, 100% { opacity: 0.6; transform: scale(1); }
+    50%      { opacity: 1;   transform: scale(1.16); }
+}
+
+.huelle { position: relative; z-index: 1; max-width: 980px; margin: 0 auto; padding: 0 20px; }
 
 /* ---------------------------------------------------------- Kopf */
 header {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 22px 0;
+    padding: 24px 0;
+    gap: 16px;
 }
 
-.marke { display: flex; align-items: center; gap: 12px; }
-.marke img { width: 40px; height: 40px; border-radius: 10px; }
-.marke-text { font-size: 19px; font-weight: 800; letter-spacing: -0.3px; }
+.marke { display: flex; align-items: center; gap: 14px; }
+
+.marke-logo {
+    width: 52px; height: 52px;
+    border-radius: 13px;
+    /* Der Schein unter dem Logo ist der Markenfarbe entnommen und
+       atmet mit - das ist der lebendigste Punkt der Seite und er
+       sitzt genau dort, wo der Name steht. */
+    box-shadow: 0 0 0 1px rgba(168, 85, 247, 0.25),
+                0 10px 34px rgba(168, 85, 247, 0.34);
+    animation: logoschein 5.5s ease-in-out infinite;
+}
+
+@keyframes logoschein {
+    0%, 100% { box-shadow: 0 0 0 1px rgba(168, 85, 247, 0.25),
+                           0 10px 34px rgba(168, 85, 247, 0.30); }
+    50%      { box-shadow: 0 0 0 1px rgba(236, 72, 153, 0.35),
+                           0 14px 46px rgba(236, 72, 153, 0.42); }
+}
+
+.marke-text {
+    font-size: 27px;
+    font-weight: 900;
+    letter-spacing: -0.8px;
+    line-height: 1.1;
+}
 .marke-text span {
-    background: linear-gradient(135deg, var(--lila), var(--pink));
+    background: linear-gradient(120deg, var(--lila), var(--pink), var(--lila));
+    background-size: 220% auto;
     -webkit-background-clip: text; background-clip: text;
     -webkit-text-fill-color: transparent;
+    animation: fliessen 7s linear infinite;
 }
+@keyframes fliessen {
+    to { background-position: 220% center; }
+}
+
+.marke-unter {
+    color: var(--dunkel);
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.3px;
+    margin-top: 2px;
+}
+.marke-unter b { color: var(--grau); font-weight: 700; }
 
 .kopf-link {
     color: var(--grau);
     text-decoration: none;
     font-size: 13px;
     font-weight: 600;
-    padding: 9px 16px;
+    padding: 10px 18px;
     border: 1px solid rgba(148, 163, 184, 0.2);
-    border-radius: 9px;
-    transition: all 0.2s;
+    border-radius: 10px;
+    white-space: nowrap;
+    transition: all 0.3s ease;
 }
-.kopf-link:hover { color: var(--hell); border-color: rgba(168, 85, 247, 0.45); }
+.kopf-link:hover {
+    color: var(--hell);
+    border-color: var(--hover-rand);
+    box-shadow: 0 8px 26px rgba(168, 85, 247, 0.16);
+}
 
 /* -------------------------------------------------------- Bühne */
-.buehne { padding: 64px 0 56px; text-align: center; }
+.buehne { padding: 58px 0 52px; text-align: center; }
 
 .marke-zeile {
-    display: inline-block;
-    padding: 6px 14px;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 7px 16px;
     margin-bottom: 26px;
     border: 1px solid rgba(168, 85, 247, 0.32);
     border-radius: 999px;
@@ -103,28 +184,42 @@ header {
     letter-spacing: 0.7px;
     text-transform: uppercase;
 }
+.punkt {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: #34d399;
+    box-shadow: 0 0 0 0 rgba(52, 211, 153, 0.6);
+    animation: puls 2.4s ease-out infinite;
+}
+@keyframes puls {
+    0%   { box-shadow: 0 0 0 0 rgba(52, 211, 153, 0.55); }
+    70%  { box-shadow: 0 0 0 7px rgba(52, 211, 153, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(52, 211, 153, 0); }
+}
 
 h1 {
-    font-size: clamp(32px, 6vw, 54px);
-    font-weight: 800;
-    line-height: 1.12;
-    letter-spacing: -1.4px;
-    margin-bottom: 20px;
+    font-size: clamp(33px, 6.2vw, 57px);
+    font-weight: 900;
+    line-height: 1.1;
+    letter-spacing: -1.6px;
+    margin-bottom: 22px;
 }
 
 h1 em {
     font-style: normal;
-    background: linear-gradient(135deg, var(--lila), var(--pink));
+    background: linear-gradient(120deg, var(--lila), var(--pink), var(--lila));
+    background-size: 220% auto;
     -webkit-background-clip: text; background-clip: text;
     -webkit-text-fill-color: transparent;
+    animation: fliessen 7s linear infinite;
 }
 
 .unter {
-    max-width: 580px;
-    margin: 0 auto 34px;
+    max-width: 590px;
+    margin: 0 auto 36px;
     color: var(--grau);
     font-size: clamp(15px, 2vw, 17px);
-    line-height: 1.7;
+    line-height: 1.75;
 }
 
 .knoepfe {
@@ -132,118 +227,175 @@ h1 em {
     gap: 12px;
     justify-content: center;
     flex-wrap: wrap;
-    margin-bottom: 14px;
+    margin-bottom: 15px;
 }
 
 .knopf {
+    position: relative;
     display: inline-flex;
     align-items: center;
     gap: 9px;
-    padding: 15px 30px;
+    padding: 16px 32px;
     border: none;
-    border-radius: 12px;
+    border-radius: 13px;
     font-family: inherit;
     font-size: 15px;
     font-weight: 700;
     cursor: pointer;
     text-decoration: none;
-    transition: transform 0.15s, box-shadow 0.2s;
+    overflow: hidden;
+    transition: all 0.3s ease;
 }
 
 .knopf-haupt {
     background: linear-gradient(135deg, var(--lila), var(--pink));
     color: #fff;
-    box-shadow: 0 8px 28px rgba(168, 85, 247, 0.32);
+    box-shadow: 0 12px 34px rgba(168, 85, 247, 0.34);
 }
-.knopf-haupt:hover { transform: translateY(-2px); box-shadow: 0 12px 34px rgba(168, 85, 247, 0.42); }
+.knopf-haupt:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 22px 52px rgba(168, 85, 247, 0.45);
+}
+/* Ein Lichtstreifen, der beim Darüberfahren einmal durchläuft. */
+.knopf-haupt::after {
+    content: '';
+    position: absolute;
+    top: 0; left: -120%;
+    width: 60%; height: 100%;
+    background: linear-gradient(100deg, transparent,
+        rgba(255, 255, 255, 0.28), transparent);
+    transition: left 0.65s ease;
+}
+.knopf-haupt:hover::after { left: 130%; }
 
 .knopf-neben {
     background: rgba(255, 255, 255, 0.05);
     border: 1px solid rgba(148, 163, 184, 0.22);
     color: #cbd5e1;
 }
-.knopf-neben:hover { border-color: rgba(168, 85, 247, 0.45); color: var(--hell); }
+.knopf-neben:hover {
+    transform: translateY(-4px);
+    border-color: var(--hover-rand);
+    color: var(--hell);
+    box-shadow: 0 16px 40px rgba(168, 85, 247, 0.14);
+}
 
 .klein { color: var(--dunkel); font-size: 12.5px; line-height: 1.65; }
 
 /* ------------------------------------------------------- Vorschau */
 .vorschau {
-    margin: 40px auto 0;
-    max-width: 880px;
-    border: 1px solid rgba(168, 85, 247, 0.2);
-    border-radius: 16px;
+    margin: 44px auto 0;
+    max-width: 900px;
+    border: 1px solid var(--karte-rand);
+    border-radius: 18px;
     overflow: hidden;
-    box-shadow: 0 24px 70px rgba(0, 0, 0, 0.55);
+    box-shadow: var(--karte-schatten);
+    cursor: zoom-in;
+    transition: all 0.4s ease;
+}
+.vorschau:hover {
+    transform: translateY(-5px);
+    border-color: var(--hover-rand);
+    box-shadow: var(--hover-schatten);
 }
 .vorschau img { display: block; width: 100%; height: auto; }
 
 /* ------------------------------------------------------ Abschnitte */
-section { padding: 56px 0; border-top: 1px solid rgba(148, 163, 184, 0.09); }
+section { padding: 60px 0; border-top: 1px solid rgba(148, 163, 184, 0.09); }
 
 h2 {
-    font-size: clamp(22px, 3.4vw, 30px);
+    font-size: clamp(23px, 3.4vw, 31px);
     font-weight: 800;
-    letter-spacing: -0.7px;
-    margin-bottom: 12px;
+    letter-spacing: -0.8px;
+    margin-bottom: 13px;
 }
 
 .abschnitt-text {
-    max-width: 620px;
+    max-width: 630px;
     color: var(--grau);
     font-size: 14.5px;
-    line-height: 1.75;
-    margin-bottom: 30px;
+    line-height: 1.8;
+    margin-bottom: 32px;
 }
 
 .raster {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-    gap: 16px;
+    grid-template-columns: repeat(auto-fit, minmax(255px, 1fr));
+    gap: 18px;
 }
 
+/* Woertlich .dashboard-big-card aus der App, inklusive Hover. */
 .karte {
-    background: rgba(168, 85, 247, 0.045);
-    border: 1px solid rgba(168, 85, 247, 0.16);
-    border-radius: 14px;
-    padding: 22px 24px;
+    background: var(--karte-bg);
+    border: 1px solid var(--karte-rand);
+    border-radius: 16px;
+    padding: 24px;
+    box-shadow: var(--karte-schatten);
+    transition: all 0.3s ease;
+}
+.karte:hover {
+    transform: translateY(-4px);
+    border-color: var(--hover-rand);
+    box-shadow: var(--hover-schatten);
 }
 
-.karte h3 { font-size: 15px; font-weight: 700; margin-bottom: 9px; color: #e9d5ff; }
-.karte p { color: var(--grau); font-size: 13px; line-height: 1.7; }
+.karte h3 {
+    font-size: 15px; font-weight: 700;
+    margin-bottom: 10px; color: #e9d5ff;
+    display: flex; align-items: center; gap: 8px;
+}
+.karte h3 svg { flex: 0 0 auto; color: var(--lila); }
+.karte p { color: var(--grau); font-size: 13px; line-height: 1.75; }
 
-.bild-karte { overflow: hidden; padding: 0; }
+.bild-karte { overflow: hidden; padding: 0; cursor: zoom-in; }
 .bild-karte img { display: block; width: 100%; height: auto; }
-.bild-karte div { padding: 14px 20px; color: var(--grau); font-size: 12.5px; line-height: 1.6; }
+.bild-karte figcaption {
+    padding: 14px 20px;
+    color: var(--grau);
+    font-size: 12.5px;
+    line-height: 1.6;
+    border-top: 1px solid rgba(168, 85, 247, 0.12);
+}
+.bild-karte figcaption::after {
+    content: ' · klicken zum Vergrößern';
+    color: var(--dunkel);
+}
 
 /* --------------------------------------------------------- Schritte */
-.schritte { counter-reset: schritt; list-style: none; max-width: 620px; }
+.schritte { counter-reset: schritt; list-style: none; max-width: 640px; }
 .schritte li {
     counter-increment: schritt;
     position: relative;
-    padding-left: 44px;
-    margin-bottom: 22px;
+    padding-left: 48px;
+    margin-bottom: 24px;
     color: var(--grau);
     font-size: 14px;
-    line-height: 1.7;
+    line-height: 1.75;
 }
 .schritte li::before {
     content: counter(schritt);
     position: absolute;
-    left: 0; top: -2px;
-    width: 28px; height: 28px;
+    left: 0; top: -3px;
+    width: 30px; height: 30px;
     display: flex; align-items: center; justify-content: center;
-    border-radius: 9px;
+    border-radius: 10px;
     background: rgba(168, 85, 247, 0.15);
     border: 1px solid rgba(168, 85, 247, 0.35);
     color: #c084fc;
     font-size: 13px;
     font-weight: 700;
+    transition: all 0.3s ease;
+}
+.schritte li:hover::before {
+    background: rgba(168, 85, 247, 0.28);
+    border-color: var(--hover-rand);
+    box-shadow: 0 0 22px rgba(168, 85, 247, 0.3);
 }
 .schritte strong { color: var(--hell); }
 
 /* ------------------------------------------------------------- Fuß */
 footer {
-    padding: 34px 0 44px;
+    padding: 36px 0 46px;
     border-top: 1px solid rgba(148, 163, 184, 0.09);
     display: flex;
     flex-wrap: wrap;
@@ -253,14 +405,74 @@ footer {
     color: var(--dunkel);
     font-size: 12px;
 }
-footer a { color: var(--grau); text-decoration: none; }
+footer a { color: var(--grau); text-decoration: none; transition: color 0.3s ease; }
 footer a:hover { color: var(--hell); }
 
+/* ------------------------------------------------------ Einblenden
+   Abschnitte gleiten beim Scrollen herein. Kurz und knapp, sonst
+   wartet man auf seinen eigenen Text. */
+.rein {
+    opacity: 0;
+    transform: translateY(22px);
+    transition: opacity 0.6s ease, transform 0.6s ease;
+}
+.rein.da { opacity: 1; transform: none; }
+
+/* ----------------------------------------------------------- Lupe */
+.lupe {
+    position: fixed;
+    inset: 0;
+    z-index: 50;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    padding: 28px;
+    background: rgba(5, 5, 14, 0.92);
+    backdrop-filter: blur(6px);
+    cursor: zoom-out;
+    opacity: 0;
+    transition: opacity 0.25s ease;
+}
+.lupe.auf { display: flex; opacity: 1; }
+.lupe img {
+    max-width: 100%;
+    max-height: 100%;
+    border-radius: 14px;
+    border: 1px solid var(--hover-rand);
+    box-shadow: 0 30px 90px rgba(0, 0, 0, 0.7);
+}
+.lupe-zu {
+    position: absolute;
+    top: 20px; right: 24px;
+    width: 40px; height: 40px;
+    border: 1px solid rgba(148, 163, 184, 0.3);
+    border-radius: 10px;
+    background: rgba(15, 15, 32, 0.8);
+    color: var(--grau);
+    font-size: 20px;
+    line-height: 1;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+.lupe-zu:hover { color: var(--hell); border-color: var(--hover-rand); }
+
 @media (max-width: 640px) {
-    .buehne { padding: 40px 0 40px; }
+    .buehne { padding: 36px 0 40px; }
     .knopf { width: 100%; justify-content: center; }
-    header { padding: 16px 0; }
-    .marke-text { font-size: 17px; }
+    header { padding: 18px 0; }
+    .marke-logo { width: 44px; height: 44px; }
+    .marke-text { font-size: 22px; }
+    .vorschau { margin-top: 32px; }
+}
+
+/* Wer Bewegung abgestellt hat, bekommt keine. */
+@media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+        animation: none !important;
+        transition: none !important;
+    }
+    .rein { opacity: 1; transform: none; }
+    html { scroll-behavior: auto; }
 }
 </style>
 </head>
@@ -270,14 +482,17 @@ footer a:hover { color: var(--hell); }
 
     <header>
         <div class="marke">
-            <img src="img/capitalflow-icon.png" alt="">
-            <div class="marke-text">Capital<span>Flow</span></div>
+            <img class="marke-logo" src="img/capitalflow-icon.png" alt="">
+            <div>
+                <div class="marke-text">Capital<span>Flow</span></div>
+                <div class="marke-unter">Track Your Edge. <b>Before Everyone Else.</b></div>
+            </div>
         </div>
         <a class="kopf-link" href="app.html">Anmelden</a>
     </header>
 
     <div class="buehne">
-        <div class="marke-zeile">Vorabzugriff · Zugang nur mit Schlüssel</div>
+        <div class="marke-zeile"><span class="punkt"></span>Vorabzugriff · Zugang nur mit Schlüssel</div>
 
         <h1>Dein Broker zeigt dir,<br>was du <em>verdient</em> hast.<br>Nicht, warum.</h1>
 
@@ -301,12 +516,12 @@ footer a:hover { color: var(--hell); }
             ohne Store, ohne Setup-Datei. Läuft auf Windows, Mac, iPhone und Android.
         </p>
 
-        <figure class="vorschau">
+        <figure class="vorschau" data-gross="img/start-vorschau.webp">
             <img src="img/start-vorschau.webp" alt="Das Dashboard von CapitalFlow mit Tages-, Wochen- und Gesamtergebnis" width="1280" height="720">
         </figure>
     </div>
 
-    <section>
+    <section class="rein">
         <h2>Wofür das gut ist</h2>
         <p class="abschnitt-text">
             Drei Zahlen, die in keiner Broker-App stehen — und die bei gehebelten
@@ -314,19 +529,28 @@ footer a:hover { color: var(--hell); }
         </p>
         <div class="raster">
             <div class="karte">
-                <h3>KO-Abstand</h3>
+                <h3>
+                    <svg viewBox="0 0 24 24" width="17" height="17" aria-hidden="true"><path fill="currentColor" d="M12 2 4 6v6c0 5.5 3.8 10.7 8 12 4.2-1.3 8-6.5 8-12V6l-8-4zm0 6a1 1 0 0 1 1 1v4a1 1 0 1 1-2 0V9a1 1 0 0 1 1-1zm0 8.2a1.1 1.1 0 1 1 0 2.2 1.1 1.1 0 0 1 0-2.2z"/></svg>
+                    KO-Abstand
+                </h3>
                 <p>Wie weit der Kurs fallen durfte, bevor alles weg ist. Im Rückblick
                    siehst du, ob deine Gewinner immer die knappen Abstände waren —
                    und wann der eine Totalverlust kam, der alles davor auffrisst.</p>
             </div>
             <div class="karte">
-                <h3>Echter Hebel</h3>
+                <h3>
+                    <svg viewBox="0 0 24 24" width="17" height="17" aria-hidden="true"><path fill="currentColor" d="M16 6l2.29 2.29-4.88 4.88-4-4L2 16.59 3.41 18 10 11.41l4 4 6.3-6.29L22 12v-6z"/></svg>
+                    Echter Hebel
+                </h3>
                 <p>Nicht der, den der Schein behauptet, sondern der auf dein
                    eingesetztes Geld. Aus Knockout-Preis und angezeigtem Hebel
                    zurückgerechnet.</p>
             </div>
             <div class="karte">
-                <h3>Risiko in Euro</h3>
+                <h3>
+                    <svg viewBox="0 0 24 24" width="17" height="17" aria-hidden="true"><path fill="currentColor" d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm3.5-9c0 1.93-1.57 3.5-3.5 3.5S8.5 12.93 8.5 11 10.07 7.5 12 7.5s3.5 1.57 3.5 3.5z"/></svg>
+                    Risiko in Euro
+                </h3>
                 <p>Was dein Stop dich gekostet hätte. Liegt er jenseits der Schwelle,
                    steht dort der volle Einsatz — mehr als alles kannst du nicht
                    verlieren.</p>
@@ -334,7 +558,7 @@ footer a:hover { color: var(--hell); }
         </div>
     </section>
 
-    <section>
+    <section class="rein">
         <h2>Du musst nichts abtippen</h2>
         <p class="abschnitt-text">
             Trade Republic gibt dir eine Datei mit allem, was du gehandelt hast.
@@ -343,22 +567,41 @@ footer a:hover { color: var(--hell); }
             Denselben Export kannst du jeden Monat neu einlesen.
         </p>
         <div class="raster">
-            <figure class="bild-karte karte">
+            <figure class="bild-karte karte" data-gross="img/anleitung/02-import.webp">
                 <img src="img/anleitung/02-import.webp" alt="Der Daten-Tab mit CSV-Import" loading="lazy">
-                <div>Import, Sicherung und Löschen an einer Stelle</div>
+                <figcaption>Import, Sicherung und Löschen an einer Stelle</figcaption>
             </figure>
-            <figure class="bild-karte karte">
+            <figure class="bild-karte karte" data-gross="img/anleitung/04-kacheln.webp">
                 <img src="img/anleitung/04-kacheln.webp" alt="Berechnete Kennzahlen zu einem Knock-Out" loading="lazy">
-                <div>Zwei Zahlen vom Schein — den Rest rechnet die App</div>
+                <figcaption>Zwei Zahlen vom Schein — den Rest rechnet die App</figcaption>
             </figure>
         </div>
     </section>
 
-    <section>
+    <section class="rein">
+        <h2>Jeder Trade mit Grund und Screenshot</h2>
+        <p class="abschnitt-text">
+            Importierte Trades lassen sich nachträglich ergänzen: Stop, These,
+            Setup-Typ, Chartbild. Erst damit wird aus einer Liste von Ergebnissen
+            eine Auswertung, die dir sagt, welche Art Trade dich Geld kostet.
+        </p>
+        <div class="raster">
+            <figure class="bild-karte karte" data-gross="img/anleitung/06-tradekarte.webp">
+                <img src="img/anleitung/06-tradekarte.webp" alt="Eine Trade-Karte im Journal" loading="lazy">
+                <figcaption>Eine Trade-Karte im Journal</figcaption>
+            </figure>
+            <figure class="bild-karte karte" data-gross="img/anleitung/03-knockout.webp">
+                <img src="img/anleitung/03-knockout.webp" alt="Das Knock-Out-Formular im Journal" loading="lazy">
+                <figcaption>Das Formular für Knock-Outs</figcaption>
+            </figure>
+        </div>
+    </section>
+
+    <section class="rein">
         <h2>So kommst du rein</h2>
         <ol class="schritte">
             <li><strong>Zugangsschlüssel besorgen.</strong> CapitalFlow ist noch nicht
-                offen. Zugang gibt es nur direkt von Maxim.</li>
+                offen — Zugang gibt es derzeit nur auf Einladung.</li>
             <li><strong>App installieren</strong> oder einfach im Browser öffnen —
                 beides derselbe Stand, beides dieselben Daten.</li>
             <li><strong>Mit Discord anmelden</strong>, danach erscheint das Feld für
@@ -370,10 +613,15 @@ footer a:hover { color: var(--hell); }
     </section>
 
     <footer>
-        <div>CapitalFlow · Vorabzugriff · von Maxim</div>
+        <div>CapitalFlow · Vorabzugriff</div>
         <div><a href="app.html">Zur App</a></div>
     </footer>
 
+</div>
+
+<div class="lupe" id="lupe">
+    <button type="button" class="lupe-zu" id="lupeZu" aria-label="Schließen">&times;</button>
+    <img id="lupeBild" src="" alt="">
 </div>
 
 <script>
@@ -464,6 +712,60 @@ footer a:hover { color: var(--hell); }
         hinweis.style.color = '#fcd34d';
         setTimeout(function () { window.location.href = 'app.html'; }, 2600);
     });
+
+    // ------------------------------------------------------- Lupe
+    //
+    // Dieselbe Geste wie im Journal: Bild anklicken, Bild gross. Die
+    // Screenshots sind sonst zu klein, um die Zahlen darin zu lesen -
+    // und genau die sind der Grund, warum sie hier stehen.
+    var lupe  = document.getElementById('lupe');
+    var bild  = document.getElementById('lupeBild');
+    var zu    = document.getElementById('lupeZu');
+
+    function auf(quelle, beschreibung) {
+        bild.src = quelle;
+        bild.alt = beschreibung || '';
+        lupe.classList.add('auf');
+        document.body.style.overflow = 'hidden';
+    }
+
+    function schliessen() {
+        lupe.classList.remove('auf');
+        document.body.style.overflow = '';
+        // Quelle stehen lassen: ein leeres src wuerde beim naechsten
+        // Oeffnen kurz ein kaputtes Bild zeigen.
+    }
+
+    document.querySelectorAll('[data-gross]').forEach(function (e) {
+        e.addEventListener('click', function () {
+            var img = e.querySelector('img');
+            auf(e.getAttribute('data-gross'), img ? img.alt : '');
+        });
+    });
+
+    lupe.addEventListener('click', function (e) {
+        if (e.target === lupe || e.target === zu) schliessen();
+    });
+    document.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape') schliessen();
+    });
+
+    // -------------------------------------------- Abschnitte einblenden
+    var rein = document.querySelectorAll('.rein');
+    if (!('IntersectionObserver' in window)) {
+        // Ohne Beobachter alles sofort zeigen. Eine Seite, deren Inhalt
+        // von Javascript abhaengt, ist im Zweifel eine leere Seite.
+        rein.forEach(function (e) { e.classList.add('da'); });
+        return;
+    }
+    var beobachter = new IntersectionObserver(function (eintraege) {
+        eintraege.forEach(function (e) {
+            if (!e.isIntersecting) return;
+            e.target.classList.add('da');
+            beobachter.unobserve(e.target);
+        });
+    }, { threshold: 0.12, rootMargin: '0px 0px -40px 0px' });
+    rein.forEach(function (e) { beobachter.observe(e); });
 })();
 </script>
 
