@@ -4879,15 +4879,28 @@ body.pwa-installed .pwa-install-btn { display: none !important; }
     font-size: 12.5px;
     line-height: 1.6;
 }
-.aus-tabelle { overflow-x: auto; }
+/* Keine Querleiste. Wer eine Tabelle seitlich schieben muss, liest die
+   hinteren Spalten nie - und genau dort stehen die Ergebnisse.
+   Stattdessen: feste Aufteilung, erste Spalte darf umbrechen, Zahlen
+   bleiben in einer Zeile. */
+.aus-tabelle { overflow: visible; }
 .aus-tabelle table {
     width: 100%;
+    table-layout: fixed;
     border-collapse: collapse;
     font-size: 12.5px;
 }
+.aus-tabelle th:first-child, .aus-tabelle td:first-child { width: 31%; }
+.aus-tabelle th:not(:first-child), .aus-tabelle td:not(:first-child) {
+    width: 17.25%;
+}
+.aus-tabelle td:first-child, .aus-tabelle th:first-child {
+    white-space: normal;
+    word-break: break-word;
+}
 .aus-tabelle th {
     text-align: left;
-    padding: 0 10px 8px 0;
+    padding: 0 6px 8px 0;
     color: #64748b;
     font-size: 10.5px;
     font-weight: 700;
@@ -4897,7 +4910,7 @@ body.pwa-installed .pwa-install-btn { display: none !important; }
 }
 .aus-tabelle th.rechts, .aus-tabelle td.rechts { text-align: right; }
 .aus-tabelle td {
-    padding: 9px 10px 9px 0;
+    padding: 9px 6px 9px 0;
     color: #cbd5e1;
     border-top: 1px solid rgba(148, 163, 184, 0.1);
     white-space: nowrap;
@@ -4921,6 +4934,10 @@ body.pwa-installed .pwa-install-btn { display: none !important; }
     line-height: 1.65;
 }
 .aus-fuss strong { color: #7dd3fc; }
+@media (max-width: 520px) {
+    .aus-tabelle table { font-size: 11.5px; }
+    .aus-karte { padding: 18px 16px; }
+}
 .aus-leer {
     margin: 0;
     color: #64748b;

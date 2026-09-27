@@ -2371,6 +2371,12 @@ function loadAnalytics() {
             </div>
         </div>
         
+        <!-- Die eigenen Auswertungen stehen VOR dem Win/Loss-Diagramm.
+             Sie beantworten eine Frage; das Ringdiagramm zeigt eine
+             Quote, die drei Zeilen weiter oben schon steht. Was etwas
+             erklaert, gehoert nach oben. -->
+        <div id="cfAuswertung"></div>
+
         <!-- Win/Loss Donut -->
         <div class="dashboard-section" style="background: linear-gradient(135deg, rgba(168, 85, 247, 0.08) 0%, rgba(236, 72, 153, 0.05) 100%); border: 1px solid rgba(168, 85, 247, 0.2); border-radius: 16px; padding: 24px; margin-bottom: 40px;">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
@@ -2397,12 +2403,9 @@ function loadAnalytics() {
     // Render charts
     setTimeout(() => {
         renderAnalyticsCharts(trades, stats, wins, losses, behavioralScore);
-        // Die eigenstaendigen Auswertungen haengen hinten dran, damit
-        // loadAnalytics() sie beim naechsten Umbau nicht ueberschreibt.
+        // Der Behaelter steht jetzt fest im Markup oben - hier wird er
+        // nur noch gefuellt.
         if (typeof window.cfAuswertungAufbauen === 'function') {
-            const ziel = document.createElement('div');
-            ziel.id = 'cfAuswertung';
-            analyticsContent.appendChild(ziel);
             window.cfAuswertungAufbauen();
         }
     }, 50);

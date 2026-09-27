@@ -144,7 +144,7 @@
 
         return karte('Haltedauer',
             'Verlieren deine Trades, je länger du sie hältst?',
-            tabelle(['Gehalten', 'Trades', 'Treffer', 'Ergebnis', 'Ø je Trade'], zeilen),
+            tabelle(['Gehalten', 'Trades', 'Treffer', 'Ergebnis', 'Ø'], zeilen),
             fuss);
     }
 
@@ -188,8 +188,8 @@
 
         return karte('Mit Hebel gegen ohne',
             'Bringt der Hebel dir tatsächlich mehr?',
-            tabelle(['', 'Trades', 'Treffer', 'Ergebnis', 'Ø gehalten'],
-                    [reihe('Hebelprodukte', mitHebel), reihe('Aktien und Fonds', ohne)]),
+            tabelle(['', 'Trades', 'Treffer', 'Ergebnis', 'Ø Dauer'],
+                    [reihe('Hebelprodukte', mitHebel), reihe('Aktien, Fonds', ohne)]),
             fuss);
     }
 
@@ -203,8 +203,10 @@
 
         const zeilen = data.map(function (m) {
             return { zellen: [
+                // Kurzer Monatsname: "September 2026" sprengt die
+                // Spalte und erzwingt eine Querleiste.
                 { text: new Date(m.monat).toLocaleDateString('de-DE',
-                    { month: 'long', year: 'numeric' }) },
+                    { month: 'short', year: '2-digit' }) },
                 { text: String(m.trades) },
                 { text: '−€' + Number(m.gebuehren).toFixed(2), farbe: '#fbbf24' },
                 { text: eur(m.pnl_netto), farbe: farbe(m.pnl_netto) },
@@ -225,7 +227,7 @@
 
         return karte('Was dich der Broker kostet',
             'Trade Republic wirbt mit „kostenlos“ — was zahlst du wirklich?',
-            tabelle(['Monat', 'Trades', 'Gebühren', 'Ergebnis netto', 'vom Einsatz'],
+            tabelle(['Monat', 'Trades', 'Gebühren', 'Netto', '% Einsatz'],
                     zeilen),
             fuss);
     }
@@ -253,7 +255,7 @@
 
         return karte('Abstand zur KO-Schwelle',
             'Zahlen sich knappe Abstände aus — oder frisst ein Totalverlust alles davor?',
-            tabelle(['Abstand beim Einstieg', 'Trades', 'Ø Hebel', 'Treffer', 'Ergebnis'],
+            tabelle(['Abstand', 'Trades', 'Ø Hebel', 'Treffer', 'Ergebnis'],
                     zeilen),
             'Je knapper der Abstand, desto größer der Hebel — und desto öfter '
             + 'der Totalverlust. Diese Tabelle sagt dir, wo bei dir die Grenze liegt.');
