@@ -385,15 +385,39 @@ footer a:hover { color: var(--hell); }
     var hinweis = document.getElementById('installHinweis');
     var ereignis = null;
 
-    function istInstalliert() {
-        return window.matchMedia('(display-mode: standalone)').matches
-            || window.navigator.standalone === true;
+    /**
+     * Laeuft die Seite in einem App-Fenster statt in einem Browsertab?
+     *
+     * Hier stand nur die Abfrage auf 'standalone'. Das Manifest erlaubt
+     * aber auch 'window-controls-overlay' und 'minimal-ui', und in
+     * diesen Modi ist 'standalone' FALSCH - die installierte App
+     * bekam dann die Startseite zu sehen statt ihres Journals. Ein
+     * Fehler, der nur auftritt, wenn man die App wirklich installiert
+     * hat, und der im Browser nie auffaellt.
+     */
+    function imAppFenster() {
+        if (window.navigator.standalone === true) return true;   // iOS
+        return ['standalone', 'minimal-ui', 'fullscreen',
+                'window-controls-overlay']
+            .some(function (m) {
+                return window.matchMedia('(display-mode: ' + m + ')').matches;
+            });
     }
 
-    // Wer die App schon installiert hat und sie startet, landet über
-    // start_url hier - und soll nicht die Werbeseite fuer etwas sehen,
-    // das er laengst hat.
-    if (istInstalliert()) {
+    /** War hier schon mal jemand angemeldet? */
+    function kenntDieApp() {
+        try { return localStorage.getItem('capitalflow_logged_in') === 'true'; }
+        catch (e) { return false; }
+    }
+
+    // Mit ?start=1 laesst sich die Startseite trotzdem ansehen - sonst
+    // bekaeme man sie nach der ersten Anmeldung nie wieder zu Gesicht
+    // und koennte auch nicht pruefen, was Neue sehen.
+    var erzwingen = /[?&]start=1/.test(window.location.search);
+
+    // Wer die App installiert hat oder hier schon angemeldet war, will
+    // sein Journal und keine Produktbeschreibung.
+    if (!erzwingen && (imAppFenster() || kenntDieApp())) {
         window.location.replace('app.html');
         return;
     }
