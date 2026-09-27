@@ -269,6 +269,21 @@
         }
         badgeSetzen();
 
+        // Beim allerersten Mal auf der Anleitung landen statt auf einem
+        // leeren Dashboard.
+        //
+        // Nur einmal, nur ohne Trades, und es wird gemerkt - wer die
+        // Anleitung einmal gesehen hat, soll beim naechsten Login dort
+        // anfangen, wo er aufgehoert hat. Eine Begruessung, die sich
+        // wiederholt, wird beim zweiten Mal zum Hindernis.
+        const gesehen = 'capitalflow_anleitung_gesehen::' + kennung;
+        if (!bestand.length && !window.cfRawStorage.get(gesehen)) {
+            window.cfRawStorage.set(gesehen, '1');
+            setTimeout(function () {
+                if (typeof handleTabChange === 'function') handleTabChange('anleitung');
+            }, 1200);
+        }
+
         // Hinweis nur, wenn die Daten aus einem frueheren Zugang stammen
         if (kennung !== nutzer.id && bestand.length > 0) {
             setTimeout(function () {

@@ -1480,7 +1480,14 @@ function loadTrades() {
     }
     
     if (filteredTrades.length === 0) {
-        tradesContainer.innerHTML = '<div style="text-align: center; padding: 40px; color: #94a3b8;">Keine Trades in dieser Kategorie</div>';
+        // Zwei verschiedene Lagen, die bisher denselben Satz bekamen:
+        // ueberhaupt keine Trades, oder nur keine in diesem Filter. Der
+        // erste Fall braucht einen Weg nach vorn, der zweite nur den
+        // Hinweis, dass der Filter greift.
+        tradesContainer.innerHTML = trades.length === 0
+            ? leererStart(0)
+            : '<div style="text-align: center; padding: 40px; color: #94a3b8;">'
+              + 'Keine Trades in dieser Kategorie</div>';
         return;
     }
     
@@ -1958,6 +1965,41 @@ function buildDashboardGreeting(trades, stats) {
         </div>`;
 }
 
+/**
+ * Der Kasten, der erscheint, solange noch kein einziger Trade da ist.
+ *
+ * Ohne ihn sieht ein neuer Nutzer ein Dashboard voller Nullen und weiss
+ * nicht, dass es einen CSV-Import gibt - die App sieht dann aus, als
+ * waere sie kaputt oder als muesste man vierzig Trades abtippen. Beides
+ * fuehrt dazu, dass er nicht wiederkommt.
+ *
+ * Bewusst an dieser Stelle und nicht als Tour beim ersten Start: eine
+ * Tour klickt man weg, bevor man sie gelesen hat, und findet sie danach
+ * nie wieder. Dieser Kasten erscheint von selbst und verschwindet von
+ * selbst, sobald der erste Trade da ist.
+ */
+function leererStart(anzahlTrades) {
+    if (anzahlTrades > 0) return '';
+    return `
+        <div class="start-kasten">
+            <div class="start-kopf">Noch keine Trades</div>
+            <p class="start-text">
+                Du musst nichts abtippen. Trade Republic gibt dir eine Datei mit
+                allem, was du gehandelt hast — die liest CapitalFlow ein und baut
+                daraus dein Journal. Dauert zwei Minuten.
+            </p>
+            <div class="start-knoepfe">
+                <button type="button" class="btn btn-primary"
+                        onclick="handleTabChange('daten')">Trades importieren</button>
+                <button type="button" class="btn btn-secondary"
+                        onclick="handleTabChange('anleitung')">Erst die Anleitung lesen</button>
+            </div>
+            <p class="start-fuss">
+                Oder trag deinen ersten Trade von Hand im Journal ein.
+            </p>
+        </div>`;
+}
+
 function loadDashboard() {
     const allTrades = JSON.parse(localStorage.getItem('trades')) || [];
     const trades = getFilteredTrades(allTrades);
@@ -2063,8 +2105,9 @@ function loadDashboard() {
 
     const dashboardContent = document.getElementById('dashboard');
     dashboardContent.innerHTML = `
+        ${leererStart(allTrades.length)}
         ${buildDashboardGreeting(trades, stats)}
-        
+
         <!-- ===== FILTER BUTTONS ===== -->
         <div class="trades-filter" style="margin-bottom: 30px;">
             <button class="filter-btn ${currentFilter === 'all' ? 'active' : ''}" data-filter="all">Alle Trades</button>
@@ -2126,7 +2169,7 @@ function loadDashboard() {
         </div>
         
         <!-- TRADE SCORE + ACTIVITY GRID -->
-        <div style="display: grid; grid-template-columns: 1fr 1.2fr; gap: 20px; margin-bottom: 30px;">
+        <div class="dashboard-zwei" style="display: grid; grid-template-columns: 1fr 1.2fr; gap: 20px; margin-bottom: 30px;">
             <!-- Trade Score Card -->
             <div class="dashboard-section" style="background: linear-gradient(135deg, rgba(168, 85, 247, 0.08) 0%, rgba(236, 72, 153, 0.05) 100%); border: 1px solid rgba(168, 85, 247, 0.2); border-radius: 16px; padding: 24px;">
                 <div style="text-align: center; margin-bottom: 20px;">

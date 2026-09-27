@@ -5389,3 +5389,73 @@ body.pwa-installed .pwa-install-btn { display: none !important; }
     .hilfe-block { padding: 18px 16px; }
     .hilfe-bild { max-width: 100%; }
 }
+
+/* ===== LEERER START =====
+   Erscheint auf Dashboard und Journal, solange kein Trade da ist.
+   Auffällig genug, dass man ihn nicht übersieht, aber ohne Overlay:
+   was man wegklicken muss, klickt man weg. */
+.start-kasten {
+    background: linear-gradient(135deg, rgba(168, 85, 247, 0.1), rgba(236, 72, 153, 0.06));
+    border: 1px solid rgba(168, 85, 247, 0.3);
+    border-radius: 16px;
+    padding: 26px 28px;
+    margin-bottom: 26px;
+}
+
+.start-kopf {
+    font-size: 18px;
+    font-weight: 700;
+    color: #f1f5f9;
+    margin-bottom: 10px;
+}
+
+.start-text {
+    margin: 0 0 18px 0;
+    color: #cbd5e1;
+    font-size: 13.5px;
+    line-height: 1.7;
+    max-width: 560px;
+}
+
+.start-knoepfe {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.start-fuss {
+    margin: 14px 0 0 0;
+    color: #64748b;
+    font-size: 12px;
+}
+
+@media (max-width: 640px) {
+    .start-kasten { padding: 20px 18px; }
+    .start-knoepfe .btn { width: 100%; }
+}
+
+/* ===== DASHBOARD AUF DEM HANDY =====
+   Es gab schon eine Regel dafür, aber sie glich den Stil-TEXT ab:
+   [style*="grid-template-columns: 1fr 1fr"]. Das Raster mit dem
+   Aktivitätsgitter steht auf "1fr 1.2fr" und fiel deshalb durch - auf
+   einem 390px-Bildschirm ragte es 106 Pixel über den Rand, und die
+   ganze Seite ließ sich seitwärts schieben.
+
+   Stil-Text abzugleichen ist immer brüchig: eine geänderte Zahl, ein
+   Leerzeichen mehr, und die Regel greift still nicht mehr. Deshalb
+   hier eine Klasse - und darunter ein Fangnetz für alles, was im
+   Dashboard sonst noch mehrspaltig steht. Auf einem Telefon ist
+   mehrspaltig ohnehin nie richtig. */
+@media (max-width: 768px) {
+    .dashboard-zwei { grid-template-columns: 1fr !important; }
+
+    #dashboard [style*="grid-template-columns"] {
+        grid-template-columns: 1fr !important;
+    }
+
+    #dashboard { overflow-x: hidden; }
+
+    /* Knöpfe im Leerstart-Kasten: als Flex-Element ist width:100%
+       unzuverlässig, flex-basis ist der richtige Hebel. */
+    .start-knoepfe .btn { flex: 1 1 100%; width: auto; }
+}
