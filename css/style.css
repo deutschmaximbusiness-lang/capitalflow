@@ -4854,9 +4854,12 @@ body.pwa-installed .pwa-install-btn { display: none !important; }
     font-weight: 700;
     color: #f1f5f9;
 }
+/* Hoechstens zwei Karten nebeneinander. Bei dreien bleiben je Spalte
+   rund 60 Pixel - dann steht "+€213,77" direkt an "+€35,63" und man
+   liest zwei Betraege als einen. */
 .aus-raster {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(440px, 1fr));
     gap: 20px;
     margin-top: 18px;
     align-items: start;
@@ -4890,9 +4893,12 @@ body.pwa-installed .pwa-install-btn { display: none !important; }
     border-collapse: collapse;
     font-size: 12.5px;
 }
-.aus-tabelle th:first-child, .aus-tabelle td:first-child { width: 31%; }
+.aus-tabelle th:first-child, .aus-tabelle td:first-child { width: 30%; }
 .aus-tabelle th:not(:first-child), .aus-tabelle td:not(:first-child) {
-    width: 17.25%;
+    width: 17.5%;
+    /* Abstand nach links, damit zwei Betraege nie aneinanderkleben.
+       Ohne den stand in der Ueberschrift "GEBUEHRENNETTO". */
+    padding-left: 12px;
 }
 .aus-tabelle td:first-child, .aus-tabelle th:first-child {
     white-space: normal;
@@ -4900,7 +4906,7 @@ body.pwa-installed .pwa-install-btn { display: none !important; }
 }
 .aus-tabelle th {
     text-align: left;
-    padding: 0 6px 8px 0;
+    padding: 0 0 8px 0;
     color: #64748b;
     font-size: 10.5px;
     font-weight: 700;
@@ -4910,7 +4916,7 @@ body.pwa-installed .pwa-install-btn { display: none !important; }
 }
 .aus-tabelle th.rechts, .aus-tabelle td.rechts { text-align: right; }
 .aus-tabelle td {
-    padding: 9px 6px 9px 0;
+    padding: 9px 0;
     color: #cbd5e1;
     border-top: 1px solid rgba(148, 163, 184, 0.1);
     white-space: nowrap;
@@ -4934,9 +4940,11 @@ body.pwa-installed .pwa-install-btn { display: none !important; }
     line-height: 1.65;
 }
 .aus-fuss strong { color: #7dd3fc; }
-@media (max-width: 520px) {
+@media (max-width: 560px) {
     .aus-tabelle table { font-size: 11.5px; }
     .aus-karte { padding: 18px 16px; }
+    .aus-tabelle th:not(:first-child),
+    .aus-tabelle td:not(:first-child) { padding-left: 7px; }
 }
 .aus-leer {
     margin: 0;
