@@ -434,6 +434,89 @@
     window.cfProduktEingaben = eingaben;
     window.cfProduktArt = art;
 
+    // --------------------------------------------- Formular vorbefuellen
+
+    function setzen(id, v) {
+        const e = el(id);
+        if (!e) return;
+        e.value = (v === null || v === undefined || v === '') ? '' : String(v);
+    }
+
+    function artSetzen(a) {
+        const ziel = el('produktArt');
+        if (ziel) ziel.value = a;
+        const gruppe = document.querySelector('.produkt-toggle');
+        if (gruppe) {
+            gruppe.querySelectorAll('.produkt-btn').forEach(function (b) {
+                b.classList.toggle('active', b.getAttribute('data-art') === a);
+            });
+        }
+    }
+
+    /**
+     * Setzt die Zertifikatsfelder auf einen gespeicherten Trade.
+     *
+     * Wird vom Bearbeiten im Journal gebraucht. Zwei Felder bleiben
+     * bewusst leer:
+     *
+     *   zHebelTr  - der von TR angezeigte Hebel wird nirgends
+     *               gespeichert; aus ihm wurde beim ersten Eintragen der
+     *               Kurs des Basiswerts gerechnet, und der steht jetzt
+     *               im Feld darunter. Die Rechnung laeuft rueckwaerts
+     *               identisch, es geht also nichts verloren.
+     *   zRatio    - nur wenn wirklich eines gespeichert ist. Ein
+     *               fehlendes Bezugsverhaeltnis heisst unbekannt; eine
+     *               eingesetzte 1 wuerde die Hebelrechnung auf den
+     *               Preisweg umlenken und eine Zahl liefern, die um den
+     *               Faktor des echten Verhaeltnisses danebenliegt.
+     */
+    window.cfProduktSetzen = function (p) {
+        if (!p || !p.art || p.art === AKTIE) {
+            artSetzen(AKTIE);
+            ['zKo', 'zHebelTr', 'zStop', 'zBasisEin', 'zBasisAus', 'zFaktor',
+             'zBasisEinF', 'zBasisAusF', 'zStopF', 'zStrike', 'zRatio',
+             'zFx', 'zWkn', 'zEmittent'].forEach(function (id) { setzen(id, ''); });
+            beschriften();
+            rechnenUndZeigen();
+            return;
+        }
+
+        artSetzen(p.art);
+        setzen('zWkn', p.wkn || '');
+        setzen('zEmittent', p.emittent || '');
+        setzen('zRatio', p.ratio !== null && p.ratio !== undefined ? p.ratio : '');
+        setzen('zFx', '');
+        setzen('zHebelTr', '');
+
+        if (p.art === 'faktor') {
+            setzen('zFaktor', p.faktor);
+            setzen('zBasisEinF', p.basisEin);
+            setzen('zBasisAusF', p.basisAus);
+            setzen('zStopF', p.basisStop);
+        } else {
+            setzen('zKo', p.ko !== null && p.ko !== undefined ? p.ko : p.strike);
+            // Der Basispreis nur dann eigens, wenn er sich von der
+            // Schwelle unterscheidet - sonst steht dieselbe Zahl zweimal
+            // im Formular und sieht aus wie zwei Angaben.
+            setzen('zStrike', (p.strike !== null && p.ko !== null
+                && p.strike !== p.ko) ? p.strike : '');
+            setzen('zBasisEin', p.basisEin);
+            setzen('zBasisAus', p.basisAus);
+            setzen('zStop', p.basisStop);
+        }
+
+        beschriften();
+        rechnenUndZeigen();
+    };
+
+    /** Nach dem Abbrechen oder Speichern zurueck auf Aktie. */
+    window.cfProduktZuruecksetzen = function () {
+        window.cfProduktSetzen(null);
+    };
+
+    /** Neu rechnen, wenn von aussen Felder gefuellt wurden. */
+    window.cfProduktNeuRechnen = rechnenUndZeigen;
+
     /**
      * Was vor dem Speichern stimmen muss. Leere Pflichtfelder werden
      * hier abgefangen, damit kein halber Zertifikatstrade im Journal

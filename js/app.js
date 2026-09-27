@@ -599,7 +599,25 @@ document.addEventListener('DOMContentLoaded', () => {
     loadTrades();
     loadDashboard();
     tradeForm.addEventListener('submit', addTrade);
-    
+
+    // Zuruecksetzen beendet auch das Bearbeiten. Sonst steht das
+    // Formular leer da, der Bearbeitungszustand laeuft im Hintergrund
+    // weiter - und der naechste Klick auf Speichern ueberschreibt den
+    // Trade mit leeren Feldern.
+    tradeForm.addEventListener('reset', function () {
+        if (!tradeInBearbeitung) return;
+        tradeInBearbeitung = null;
+        bearbeitungsLeiste(null);
+        // Die Haken und das Bild raeumt das Formular nicht von allein
+        // ab: reset() stellt nur den Ausgangszustand des Markups wieder
+        // her, und der Screenshot liegt ohnehin in einer Variablen.
+        setTimeout(function () {
+            clearScreenshot();
+            document.querySelectorAll('.setup-type-checkbox')
+                .forEach(function (cb) { cb.checked = false; });
+        }, 0);
+    });
+
     // Screenshot Paste & Click Handler
     const pasteArea = document.getElementById('screenshotPasteArea');
     const screenshotInput = document.getElementById('screenshot');
@@ -854,9 +872,137 @@ function getFilteredTrades(trades) {
 }
 
 // ===== TRADES =====
+
+/**
+ * Der Trade, der gerade im Formular liegt - oder null.
+ *
+ * Es gibt bewusst kein zweites Formular fuer das Bearbeiten. Das
+ * Journal-Formular kennt Aktien, Knock-Outs und Faktor-Zertifikate,
+ * rechnet Hebel und KO-Abstand mit und zeigt Widersprueche an; eine
+ * zweite Fassung davon waere ab dem ersten Tag eine halbe Kopie, die
+ * langsam auseinanderlaeuft. Stattdessen wechselt dasselbe Formular in
+ * einen Bearbeitungszustand.
+ */
+let tradeInBearbeitung = null;
+
+function bearbeitungsLeiste(trade) {
+    const leiste = document.getElementById('tradeEditHinweis');
+    const btn = document.querySelector('#tradeForm button[type="submit"]');
+    const abbrechen = document.getElementById('tradeEditAbbrechen');
+
+    if (!trade) {
+        if (leiste) leiste.style.display = 'none';
+        if (btn) btn.textContent = '✨ Trade Hinzufügen';
+        if (abbrechen) abbrechen.style.display = 'none';
+        return;
+    }
+
+    if (leiste) {
+        leiste.innerHTML = '<strong>Du bearbeitest einen Trade:</strong> '
+            + escapeHtml(trade.ticker) + ' vom ' + escapeHtml(trade.date)
+            + '. Beim Speichern wird der bestehende Eintrag überschrieben, '
+            + 'nicht ein zweiter angelegt.';
+        leiste.style.display = '';
+    }
+    if (btn) btn.textContent = '💾 Änderungen speichern';
+    if (abbrechen) abbrechen.style.display = '';
+}
+
+/**
+ * Laedt einen Trade ins Formular.
+ *
+ * Der Anlass sind die importierten Trades: die Trade-Republic-Datei
+ * nennt weder Stop noch These noch den Kurs des Basiswerts, also stehen
+ * nach einem Import vierzig Eintraege im Journal, zu denen die Haelfte
+ * jeder Auswertung fehlt. Bisher liess sich davon nichts nachtragen -
+ * ein Trade konnte nur angelegt oder geloescht werden.
+ */
+function tradeBearbeiten(id) {
+    const trades = JSON.parse(localStorage.getItem('trades')) || [];
+    const trade = trades.find(t => String(t.id) === String(id));
+    if (!trade) {
+        showToast('Dieser Trade ist nicht mehr da.', 'error');
+        return;
+    }
+
+    if (currentTab !== 'journal') handleTabChange('journal');
+
+    // Erst den Zustand setzen, dann die Felder: cfProduktSetzen rechnet
+    // am Ende neu, und dafuer muessen Ticker, Richtung und Preise schon
+    // stehen.
+    tradeInBearbeitung = trade;
+
+    const setz = (fid, v) => {
+        const el = document.getElementById(fid);
+        if (el) el.value = (v === null || v === undefined) ? '' : String(v);
+    };
+
+    const zert = Boolean(trade.produkt && trade.produkt.art
+        && trade.produkt.art !== 'aktie');
+
+    setz('ticker', trade.ticker === '—' ? '' : trade.ticker);
+    setz('entryPrice', trade.entryPrice || '');
+    setz('exitPrice', trade.exitPrice || '');
+    setz('positionSize', trade.positionSize || '');
+    setz('reason', trade.reason || '');
+    setz('notes', trade.notes || '');
+
+    // Bei einem Zertifikat steht in stopLoss der Stop auf dem BASISWERT
+    // und in leverage der gerechnete Hebel. Beides gehoert nicht in die
+    // Aktienfelder - dort waeren es getippte Angaben, die sie nie waren.
+    setz('stopLoss', zert ? '' : (trade.stopLoss || ''));
+    setz('leverage', zert ? '' : (trade.leverage > 1 ? trade.leverage : ''));
+
+    const richtung = trade.direction === 'short' ? 'short' : 'long';
+    setz('direction', richtung);
+    document.querySelectorAll('[data-target="direction"] .direction-btn')
+        .forEach(b => b.classList.toggle('active', b.dataset.direction === richtung));
+
+    // Setup-Typ: mehrere, durch Komma getrennt
+    const gewaehlt = String(trade.setupType || '')
+        .split(',').map(s => s.trim()).filter(Boolean);
+    document.querySelectorAll('.setup-type-checkbox')
+        .forEach(cb => { cb.checked = gewaehlt.indexOf(cb.value) >= 0; });
+
+    // Fehlertyp liegt in einem versteckten Feld, sichtbar ist die
+    // eigengebaute Auswahl - beides muss gesetzt werden, sonst zeigt sie
+    // "Kein Fehler" und speichert etwas anderes.
+    const fehler = trade.errorType || 'Kein Fehler';
+    setz('errorType', fehler);
+    const kopf = document.querySelector('.custom-select[data-select-id="errorType"] '
+        + '.custom-select-value');
+    if (kopf) kopf.textContent = fehler;
+
+    if (trade.screenshot) displayScreenshot(trade.screenshot);
+    else clearScreenshot();
+
+    if (window.cfProduktSetzen) window.cfProduktSetzen(trade.produkt || null);
+
+    bearbeitungsLeiste(trade);
+
+    const form = document.getElementById('tradeForm');
+    if (form) form.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+    // Bei importierten Trades ist der Stop das, was fehlt - und das Feld,
+    // in dem der Cursor steht, ist das Feld, das ausgefuellt wird.
+    const ziel = document.getElementById(zert ? 'zKo' : 'stopLoss');
+    if (ziel) setTimeout(() => ziel.focus(), 400);
+}
+
+function bearbeitenAbbrechen() {
+    tradeInBearbeitung = null;
+    const form = document.getElementById('tradeForm');
+    if (form) form.reset();
+    clearScreenshot();
+    document.querySelectorAll('.setup-type-checkbox').forEach(cb => { cb.checked = false; });
+    if (window.cfProduktZuruecksetzen) window.cfProduktZuruecksetzen();
+    bearbeitungsLeiste(null);
+    showToast('Bearbeitung abgebrochen — nichts geändert.');
+}
+
 function addTrade(e) {
     e.preventDefault();
-    
+
     try {
         const ticker = document.getElementById('ticker').value.toUpperCase();
         const entryPrice = parseFloat(document.getElementById('entryPrice').value);
@@ -930,11 +1076,17 @@ function addTrade(e) {
         const reward = pnl;
         const riskReward = risk !== 0 ? reward / risk : 0;
 
-        const date = new Date().toLocaleDateString('de-DE', { year: 'numeric', month: '2-digit', day: '2-digit' });
+        const alt = tradeInBearbeitung;
+        // Beim Bearbeiten bleibt das Datum, wie es war. Das Formular hat
+        // kein Datumsfeld - wuerde hier "heute" hineingeschrieben,
+        // wanderte jeder nachgetragene Trade im Kalender auf den Tag des
+        // Nachtragens, und die Monatsauswertung waere still verschoben.
+        const date = alt ? alt.date : new Date().toLocaleDateString('de-DE',
+            { year: 'numeric', month: '2-digit', day: '2-digit' });
 
         // Trade Object erstellen
         const trade = {
-            id: Date.now(),
+            id: alt ? alt.id : Date.now(),
             ticker,
             direction,
             entryPrice,
@@ -958,20 +1110,53 @@ function addTrade(e) {
             date,
             produkt: produkt || null
         };
-        
-        // In localStorage speichern
+
+        // Alles, was der Trade schon hatte und das Formular nicht kennt,
+        // wandert mit. Ohne diese Zeilen verlieren importierte Trades
+        // beim ersten Nachtragen Gebuehren, Kauf- und Verkaufszeitpunkt
+        // und den Pfad zum Screenshot - und zwar lautlos. Genau so
+        // verschwinden Daten: nicht mit einer Fehlermeldung, sondern
+        // weil ein neu gebautes Objekt ein Feld nicht kennt.
+        if (alt) {
+            ['geoeffnet', 'geschlossen', 'gebuehren', 'screenshotPfad',
+             'quelle'].forEach(function (f) {
+                if (alt[f] !== undefined) trade[f] = alt[f];
+            });
+            // Nachgetragen heisst vollstaendig, sobald Stop und Grund da
+            // sind - dieselbe Bedingung wie beim Schreiben.
+            trade.unvollstaendig = !(trade.stopLoss > 0
+                && String(trade.reason || '').trim());
+        }
+
         const trades = JSON.parse(localStorage.getItem('trades')) || [];
-        trades.push(trade);
+        if (alt) {
+            const i = trades.findIndex(t => String(t.id) === String(alt.id));
+            if (i >= 0) trades[i] = trade; else trades.push(trade);
+        } else {
+            trades.push(trade);
+        }
         localStorage.setItem('trades', JSON.stringify(trades));
-        if (window.cfDbTradeNeu) window.cfDbTradeNeu(trade);
-        
-        // UI Update
-        showToast(`Trade hinzugefügt: ${ticker} (P&L: €${trade.pnl.toFixed(2)})`);
+
+        if (alt) {
+            if (window.cfDbTradeAendern) window.cfDbTradeAendern(alt.id, trade);
+        } else if (window.cfDbTradeNeu) {
+            window.cfDbTradeNeu(trade);
+        }
+
+        showToast(alt
+            ? `✅ ${ticker} geändert (P&L: €${trade.pnl.toFixed(2)})`
+            : `Trade hinzugefügt: ${ticker} (P&L: €${trade.pnl.toFixed(2)})`);
+
+        tradeInBearbeitung = null;
+        bearbeitungsLeiste(null);
         tradeForm.reset();
+        document.querySelectorAll('.setup-type-checkbox')
+            .forEach(cb => { cb.checked = false; });
         document.getElementById('screenshotPreview').innerHTML = '';
         clearScreenshot();
+        if (window.cfProduktZuruecksetzen) window.cfProduktZuruecksetzen();
         loadTrades();
-        
+
     } catch (error) {
         console.error('Error adding trade:', error);
         showToast('Fehler beim Hinzufügen des Trades!', 'error');
@@ -1069,6 +1254,35 @@ function koBadge(trade) {
     return '<span class="trade-ko-badge' + eng + '" title="'
         + escapeHtml(titel) + '">KO ' + pz.toFixed(1).replace('.', ',')
         + ' %</span>';
+}
+
+/**
+ * Was an einem importierten Trade noch fehlt - als Satz, nicht als Liste.
+ *
+ * Ohne diesen Hinweis bleibt nach einem CSV-Import die Haelfte jeder
+ * Auswertung leer, und niemand erfaehrt warum: die Trades sehen
+ * vollstaendig aus, weil P&L und Datum ja dastehen. Genannt wird nur,
+ * was wirklich fehlt, und dazu der Weg dorthin.
+ */
+function nachtragenHinweis(trade) {
+    if (!trade || !trade.unvollstaendig) return '';
+
+    const fehlt = [];
+    if (!(parseFloat(trade.stopLoss) > 0)) fehlt.push('dein Stop');
+    if (!String(trade.reason || '').trim()) fehlt.push('der Grund');
+    if (istHebelTrade(trade) && !(parseFloat(trade.leverage) > 1)) {
+        fehlt.push('der Hebel vom Schein');
+    }
+    if (!fehlt.length) return '';
+
+    const text = fehlt.length > 1
+        ? fehlt.slice(0, -1).join(', ') + ' und ' + fehlt[fehlt.length - 1]
+        : fehlt[0];
+
+    return '<div class="trade-nachtragen">Aus dem Import — es '
+        + (fehlt.length > 1 ? 'fehlen ' : 'fehlt ') + escapeHtml(text)
+        + '. <button type="button" class="trade-nachtragen-btn" onclick="tradeBearbeiten(\''
+        + trade.id + '\')">Jetzt nachtragen</button></div>';
 }
 
 function normalizeTrade(trade, index) {
@@ -1233,7 +1447,11 @@ function loadTrades() {
             </div>
             ${trade.notes ? `<div class="trade-detail"><span class="trade-detail-label">Notes</span><span class="trade-detail-value">${escapeHtml(trade.notes)}</span></div>` : ''}
             ${trade.screenshot && trade.screenshot.trim() ? `<div class="trade-screenshot"><img src="${trade.screenshot}" alt="Trade Setup" onclick="openScreenshotModal('${trade.screenshot}')" style="cursor: pointer;"></div>` : ''}
-            <button class="trade-delete" onclick="confirmDelete('${trade.id}')">🗑️ Löschen</button>
+            ${nachtragenHinweis(trade)}
+            <div class="trade-aktionen">
+                <button class="trade-edit" onclick="tradeBearbeiten('${trade.id}')">✏️ Bearbeiten</button>
+                <button class="trade-delete" onclick="confirmDelete('${trade.id}')">🗑️ Löschen</button>
+            </div>
         </div>
     `;
 

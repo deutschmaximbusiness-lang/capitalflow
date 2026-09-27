@@ -126,14 +126,19 @@
         };
         if (p.art === 'faktor') {
             zeile.factor = p.faktor;
-            // Das Schema verlangt bei Zertifikaten Basispreis und
-            // Bezugsverhaeltnis. Ein Faktor-Zertifikat hat beides nicht -
-            // deshalb hier neutrale Werte statt einer Ausnahme im Check.
+            // Das Schema verlangt bei Zertifikaten einen Basispreis. Ein
+            // Faktor-Zertifikat hat keinen - deshalb hier ein neutraler
+            // Wert statt einer Ausnahme im Check.
             zeile.strike = 0;
-            zeile.ratio = 1;
         } else {
             zeile.strike = p.strike;
-            zeile.ratio = p.ratio !== null && p.ratio !== undefined ? p.ratio : 1;
+            // Kein Bezugsverhaeltnis eingetragen heisst UNBEKANNT, nicht
+            // eins. Eine erfundene 1 sieht aus wie eine Angabe, und die
+            // Hebelrechnung bevorzugt den Weg ueber das Verhaeltnis -
+            // bei einem Schein mit echtem 0,1 kaeme der zehnfache Hebel
+            // heraus, ohne dass irgendwo etwas unplausibel aussieht.
+            zeile.ratio = p.ratio !== null && p.ratio !== undefined
+                ? p.ratio : null;
             zeile.ko_barrier = p.ko !== null && p.ko !== undefined ? p.ko : p.strike;
         }
 
@@ -241,9 +246,12 @@
                 pnl_percent: t.pnlPercent,
                 risk_amount: t.risk || null,
                 thesis: t.reason || null,
-                notes: t.setupType
-                    ? ((t.notes ? t.notes + '\n\n' : '') + 'Setup: ' + t.setupType)
-                    : (t.notes || null),
+                // Der Setup-Typ hat seit 06_bearbeiten.sql eine eigene
+                // Spalte. Vorher wurde er hinten an die Notizen geklebt
+                // und beim Laden nicht wieder herausgeholt - jeder
+                // Klick im Formular war nach dem Neustart weg.
+                notes: t.notes || null,
+                setup_type: t.setupType || null,
                 error_type: t.errorType || null,
                 screenshot_path: await screenshotHoch(t.screenshot),
                 opened_at: alsZeitpunkt(t.date),
@@ -253,6 +261,83 @@
             const { error } = await window.cfDb.from('trades').insert(zeile);
             pruefe(error, 'Trade anlegen');
         }, 'Trade');
+    };
+
+    /**
+     * Einen bestehenden Trade ueberschreiben.
+     *
+     * Der Grund, warum es das gibt: nach einem CSV-Import stehen vierzig
+     * Trades im Journal, denen Stop, These, Setup-Typ und die
+     * Hebelzahlen fehlen - die Trade-Republic-Datei nennt sie nicht. Ohne
+     * einen Weg, das nachzutragen, bleibt die halbe Auswertung dauerhaft
+     * leer und der Import ist nicht mehr als eine Kontoauszugsanzeige.
+     *
+     * Geschrieben wird der GANZE Datensatz, nicht nur die geaenderten
+     * Felder. Ein Teilupdate muesste wissen, was sich geaendert hat, und
+     * jedes Feld, an das dabei niemand denkt, bleibt still auf dem alten
+     * Wert stehen - dieselbe Klasse Fehler wie der verschluckte
+     * Setup-Typ.
+     */
+    window.cfDbTradeAendern = function (id, t) {
+        return schreiben(async function () {
+            const basis = await instrumentId(t.ticker);
+            const p = t.produkt || null;
+
+            // Bild: ein neues kommt als data:-URL und wird hochgeladen.
+            // Kommt eine signierte Adresse zurueck, liegt das Bild schon
+            // im Storage - dann bleibt der bekannte Pfad stehen, statt
+            // ihn durch null zu ersetzen und das Bild zu verlieren.
+            let bild = t.screenshotPfad || null;
+            if (t.screenshot && String(t.screenshot).startsWith('data:')) {
+                bild = await screenshotHoch(t.screenshot);
+            } else if (!t.screenshot) {
+                bild = null;
+            }
+
+            const zeile = {
+                instrument_id: basis,
+                product_id: await produktId(basis, p),
+                underlying_entry: p ? p.basisEin : null,
+                underlying_exit: p ? p.basisAus : null,
+                underlying_stop: p ? p.basisStop : null,
+                leverage_effective: p ? p.hebelEffektiv : null,
+                ko_distance_percent: p ? p.koAbstandProzent : null,
+                direction: t.direction === 'short' ? 'short' : 'long',
+                entry_price: t.entryPrice,
+                exit_price: t.exitPrice,
+                stop_loss: t.stopLoss || null,
+                position_size: t.positionSize,
+                quantity: t.entryPrice ? t.positionSize / t.entryPrice : null,
+                leverage: t.leverage || 1,
+                pnl: t.pnl,
+                pnl_percent: t.pnlPercent,
+                risk_amount: t.risk || null,
+                thesis: t.reason || null,
+                notes: t.notes || null,
+                setup_type: t.setupType || null,
+                error_type: t.errorType || null,
+                screenshot_path: bild,
+                // Die beiden Zeitpunkte bleiben, wie sie sind.
+                //
+                // Das Formular hat kein Datumsfeld - es kennt nur das
+                // Anzeigedatum. Beides daraus neu zu setzen wuerde bei
+                // jedem importierten Trade den Kaufzeitpunkt auf den
+                // Verkaufstag ziehen: aus drei Wochen Haltedauer wuerden
+                // null Tage, und die Haltedaueranalyse waere nach dem
+                // ersten Nachtragen wertlos. Nur wenn nichts da ist,
+                // wird aus dem Anzeigedatum einer gemacht.
+                opened_at: t.geoeffnet || alsZeitpunkt(t.date),
+                closed_at: t.geschlossen || alsZeitpunkt(t.date),
+                // Was den Trade unvollstaendig gemacht hat, war das
+                // Fehlen von Stop und These. Sind beide da, ist die
+                // Markierung erledigt - und zwar hier, nicht als
+                // Handgriff, den man vergessen kann.
+                incomplete: !(t.stopLoss > 0 && String(t.reason || '').trim()),
+            };
+            const { error } = await window.cfDb.from('trades')
+                .update(zeile).eq('id', id);
+            pruefe(error, 'Trade ändern');
+        }, 'Trade ändern');
     };
 
     window.cfDbPositionNeu = function (p) {

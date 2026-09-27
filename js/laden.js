@@ -100,6 +100,28 @@
         };
     }
 
+    /**
+     * Setup-Typ aus einer Zeile holen.
+     *
+     * Bis 06_bearbeiten.sql gab es keine eigene Spalte: der Typ wurde
+     * hinten an die Notizen geklebt und hier als leerer String
+     * zurueckgegeben. Jeder angeklickte Setup-Typ war nach dem naechsten
+     * Start weg, und der Setup-Filter im Journal kannte genau eine
+     * Kategorie. Die Migration traegt den Bestand nach; dieser Zweig hier
+     * faengt Zeilen ab, die vor dem Ausfuehren geschrieben wurden.
+     */
+    function setupTyp(z) {
+        if (z.setup_type) return String(z.setup_type);
+        const m = String(z.notes || '').match(/Setup:\s*(.+?)\s*$/);
+        return m ? m[1] : '';
+    }
+
+    function notizen(z) {
+        const roh = String(z.notes || '');
+        if (z.setup_type) return roh;
+        return roh.replace(/\n*Setup:\s*.+?\s*$/, '');
+    }
+
     function alsTrade(z, symbol, bild) {
         const einstieg = parseFloat(z.entry_price) || 0;
         const groesse = parseFloat(z.position_size) || 0;
@@ -116,10 +138,19 @@
             pnlPercent: parseFloat(z.pnl_percent) || 0,
             risk: parseFloat(z.risk_amount) || 0,
             reason: z.thesis || '',
-            setupType: '',
+            setupType: setupTyp(z),
             errorType: z.error_type || '',
-            notes: z.notes || '',
+            notes: notizen(z),
             screenshot: bild,
+            // Der Pfad im Storage, nicht nur die signierte Adresse: beim
+            // Bearbeiten wird der Trade neu geschrieben, und ohne den
+            // Pfad waere das Bild danach weg - die signierte Adresse
+            // laeuft nach einer Stunde ab und taugt nicht als Verweis.
+            screenshotPfad: z.screenshot_path || null,
+            // Importiert und noch nicht ergaenzt. Steht als Hinweis auf
+            // der Karte, sonst traegt die niemand nach.
+            unvollstaendig: Boolean(z.incomplete),
+            quelle: z.source || 'manuell',
             date: datumNur(z.closed_at || z.opened_at),
             // Beide Zeitpunkte einzeln, nicht nur das Anzeigedatum:
             // ohne sie laesst sich keine Haltedauer rechnen, und die

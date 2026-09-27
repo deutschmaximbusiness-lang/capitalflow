@@ -274,6 +274,12 @@
         <div id="journal" class="tab-content">
             <!-- ===== FORM ===== -->
             <form class="form" id="tradeForm" novalidate>
+                <!-- Bearbeitungsmodus. Dasselbe Formular schreibt einen
+                     bestehenden Trade um - ohne diese Leiste sieht man
+                     dem Formular nicht an, dass es gerade kein neuer
+                     Trade ist, und legt aus Versehen einen zweiten an. -->
+                <div id="tradeEditHinweis" class="edit-hinweis" style="display: none;"></div>
+
                 <!-- Produktart. Entscheidet, welche Felder gebraucht werden
                      und wie die P&L gerechnet wird: bei einem Zertifikat
                      steckt der Hebel bereits im Preis und darf nicht noch
@@ -543,6 +549,8 @@
 
                 <div class="form-buttons">
                     <button type="submit" class="btn btn-primary">✨ Trade Hinzufügen</button>
+                    <button type="button" class="btn btn-secondary" id="tradeEditAbbrechen"
+                            onclick="bearbeitenAbbrechen()" style="display: none;">Bearbeiten abbrechen</button>
                     <button type="reset" class="btn btn-secondary">Zurücksetzen</button>
                 </div>
             </form>
