@@ -83,6 +83,15 @@ comment on function public.daten_loeschen(boolean) is
     'ausschliesslich importierte Trades. Screenshots im Storage muessen '
     'getrennt entfernt werden, die liegen nicht in dieser Datenbank.';
 
+-- ---------------------------------------------------- Schema neu laden
+--
+-- Supabase spricht ueber PostgREST mit der Datenbank, und PostgREST
+-- haelt einen eigenen Zwischenspeicher der vorhandenen Funktionen. Eine
+-- frisch angelegte Funktion steht dort noch nicht drin - die App bekommt
+-- dann "Could not find the function ... in the schema cache", obwohl sie
+-- laengst existiert. Diese Zeile stoesst das Neuladen an.
+notify pgrst, 'reload schema';
+
 -- ------------------------------------------------------------- Kontrolle
 select
     (select count(*) from pg_proc p
@@ -90,4 +99,7 @@ select
       where n.nspname = 'public' and p.proname = 'daten_loeschen')  as funktion,
     (select p.prosecdef from pg_proc p
        join pg_namespace n on n.oid = p.pronamespace
-      where n.nspname = 'public' and p.proname = 'daten_loeschen')  as security_definer;
+      where n.nspname = 'public' and p.proname = 'daten_loeschen')  as security_definer,
+    (select pg_get_function_identity_arguments(p.oid) from pg_proc p
+       join pg_namespace n on n.oid = p.pronamespace
+      where n.nspname = 'public' and p.proname = 'daten_loeschen')  as parameter;

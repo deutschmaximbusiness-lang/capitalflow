@@ -4717,3 +4717,49 @@ body.pwa-installed .pwa-install-btn { display: none !important; }
     line-height: 1.65;
 }
 .bereich-warnung strong { color: #fbbf24; }
+
+/* --- Knöpfe für Löschaktionen ---------------------------------------
+   Dieselbe Formensprache wie „Sicherung herunterladen": volle Breite,
+   12px Radius, Verlauf, Schein darunter, Anheben beim Überfahren. Nur
+   die Farbe sagt, dass es hier nicht zurückgeht. */
+.btn-gefahr, .btn-warnung {
+    width: 100%;
+    padding: 14px 20px;
+    border-radius: 12px;
+    border: none;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    font-size: 14px;
+    font-weight: 700;
+    color: #fff;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+.btn-gefahr {
+    background: linear-gradient(135deg, #f43f5e 0%, #dc2626 100%);
+    box-shadow: 0 4px 15px rgba(244, 63, 94, 0.28);
+}
+.btn-gefahr:hover:not(:disabled) {
+    box-shadow: 0 8px 25px rgba(244, 63, 94, 0.45);
+    transform: translateY(-2px);
+}
+/* Gesperrt heisst gesperrt: kein Schein, kein Anheben, kein Zeiger.
+   Ein Knopf, der aussieht wie klickbar und nichts tut, ist ein Fehler. */
+.btn-gefahr:disabled {
+    background: linear-gradient(135deg, rgba(244, 63, 94, 0.25), rgba(220, 38, 38, 0.25));
+    color: rgba(255, 255, 255, 0.45);
+    box-shadow: none;
+    cursor: not-allowed;
+    transform: none;
+}
+.btn-warnung {
+    margin-bottom: 16px;
+    background: linear-gradient(135deg, rgba(251, 191, 36, 0.16), rgba(245, 158, 11, 0.12));
+    border: 1px solid rgba(251, 191, 36, 0.35);
+    color: #fbbf24;
+    font-weight: 600;
+}
+.btn-warnung:hover {
+    background: linear-gradient(135deg, rgba(251, 191, 36, 0.26), rgba(245, 158, 11, 0.2));
+    border-color: rgba(251, 191, 36, 0.6);
+    transform: translateY(-2px);
+}

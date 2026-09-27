@@ -338,10 +338,11 @@
         const f = el('loeschBestaetigung');
         const b = el('loeschAllesBtn');
         if (!f || !b) return;
-        const passt = f.value.trim().toUpperCase() === 'LÖSCHEN';
-        b.disabled = !passt;
-        b.style.opacity = passt ? '1' : '0.4';
-        b.style.cursor = passt ? 'pointer' : 'not-allowed';
+        // Nur disabled setzen - Aussehen macht das Stylesheet.
+        // Inline-Styles hier haben vorher die Regeln aus .btn-gefahr
+        // ueberschrieben, und der Knopf sah im gesperrten Zustand
+        // genauso aus wie im freigegebenen.
+        b.disabled = f.value.trim().toUpperCase() !== 'LÖSCHEN';
     };
 
     window.cfLoeschImporte = function () {
