@@ -2397,6 +2397,14 @@ function loadAnalytics() {
     // Render charts
     setTimeout(() => {
         renderAnalyticsCharts(trades, stats, wins, losses, behavioralScore);
+        // Die eigenstaendigen Auswertungen haengen hinten dran, damit
+        // loadAnalytics() sie beim naechsten Umbau nicht ueberschreibt.
+        if (typeof window.cfAuswertungAufbauen === 'function') {
+            const ziel = document.createElement('div');
+            ziel.id = 'cfAuswertung';
+            analyticsContent.appendChild(ziel);
+            window.cfAuswertungAufbauen();
+        }
     }, 50);
 }
 

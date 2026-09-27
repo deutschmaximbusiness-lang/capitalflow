@@ -121,6 +121,12 @@
             notes: z.notes || '',
             screenshot: bild,
             date: datumNur(z.closed_at || z.opened_at),
+            // Beide Zeitpunkte einzeln, nicht nur das Anzeigedatum:
+            // ohne sie laesst sich keine Haltedauer rechnen, und die
+            // ist bei Swing-Tradern die aussagekraeftigste Gruppierung.
+            geoeffnet: z.opened_at || null,
+            geschlossen: z.closed_at || null,
+            gebuehren: parseFloat(z.fees) || 0,
             produkt: alsProdukt(z),
         };
     }
