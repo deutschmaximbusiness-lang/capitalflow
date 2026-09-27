@@ -5047,3 +5047,197 @@ body.pwa-installed .pwa-install-btn { display: none !important; }
     font-size: 12px;
     line-height: 1.6;
 }
+
+/* ===== ZUGÄNGE (Admin) =====
+   Gleiche Kachelsprache wie der Daten-Tab: dunkle Karte, lila Rand,
+   keine eigene Formensprache fuer einen Bereich, den nur einer sieht. */
+.admin-karte {
+    background: rgba(15, 15, 32, 0.6);
+    border: 1px solid rgba(168, 85, 247, 0.15);
+    border-radius: 16px;
+    padding: 24px;
+    margin-bottom: 24px;
+}
+
+.admin-karte-kopf {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.admin-karte-titel {
+    margin: 0 0 8px 0;
+    font-size: 17px;
+    font-weight: 700;
+    color: #f1f5f9;
+}
+
+.admin-karte-text {
+    margin: 0 0 18px 0;
+    color: #94a3b8;
+    font-size: 13px;
+    line-height: 1.6;
+}
+
+.admin-zahl {
+    color: #c084fc;
+    font-size: 12px;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.admin-formular {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.admin-feld {
+    flex: 1 1 180px;
+    min-width: 0;
+    padding: 11px 14px;
+    background: rgba(10, 10, 24, 0.8);
+    border: 1px solid rgba(168, 85, 247, 0.2);
+    border-radius: 10px;
+    color: #e2e8f0;
+    font-family: inherit;
+    font-size: 13px;
+}
+
+.admin-feld:focus {
+    outline: none;
+    border-color: rgba(168, 85, 247, 0.55);
+}
+
+.admin-formular .btn {
+    flex: 0 0 auto;
+}
+
+/* Der einmalig sichtbare Schlüssel. Bewusst groß und monospace -
+   er wird vorgelesen und abgetippt. */
+.admin-key-karte {
+    margin-top: 20px;
+    padding: 20px;
+    background: rgba(168, 85, 247, 0.07);
+    border: 1px solid rgba(168, 85, 247, 0.35);
+    border-radius: 12px;
+}
+
+.admin-key-warn {
+    color: #fcd34d;
+    font-size: 12px;
+    line-height: 1.6;
+    margin-bottom: 16px;
+}
+
+.admin-key-label {
+    color: #94a3b8;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    font-weight: 600;
+    margin-bottom: 8px;
+}
+
+.admin-key-wert {
+    font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', monospace;
+    font-size: 19px;
+    font-weight: 600;
+    color: #f1f5f9;
+    letter-spacing: 1px;
+    word-break: break-all;
+    user-select: all;
+    padding: 12px 14px;
+    background: rgba(10, 10, 24, 0.75);
+    border-radius: 8px;
+    margin-bottom: 14px;
+}
+
+.admin-key-hinweis {
+    margin-top: 14px;
+    color: #64748b;
+    font-size: 12px;
+    line-height: 1.6;
+}
+
+/* Liste der vergebenen Schlüssel */
+.admin-liste-leer {
+    color: #64748b;
+    font-size: 13px;
+    text-align: center;
+    padding: 24px 0;
+}
+
+.admin-zeile {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 14px 16px;
+    background: rgba(10, 10, 24, 0.5);
+    border: 1px solid rgba(148, 163, 184, 0.1);
+    border-left: 3px solid #475569;
+    border-radius: 10px;
+    margin-bottom: 10px;
+}
+
+.admin-zeile.drin     { border-left-color: #10b981; }
+.admin-zeile.offen    { border-left-color: #fbbf24; }
+.admin-zeile.gesperrt { border-left-color: #ef4444; opacity: 0.65; }
+
+.admin-zeile-text { flex: 1; min-width: 0; }
+
+.admin-zeile-name {
+    color: #f1f5f9;
+    font-size: 14px;
+    font-weight: 600;
+}
+
+.admin-zeile-notiz {
+    color: #64748b;
+    font-size: 12px;
+    font-weight: 400;
+}
+
+.admin-zeile-stand {
+    color: #94a3b8;
+    font-size: 12px;
+    margin-top: 3px;
+}
+
+.admin-zeile-warn {
+    color: #fcd34d;
+    font-size: 12px;
+    margin-top: 6px;
+    line-height: 1.5;
+}
+
+.admin-zeile-btn {
+    flex: 0 0 auto;
+    padding: 8px 14px;
+    background: rgba(239, 68, 68, 0.1);
+    border: 1px solid rgba(239, 68, 68, 0.3);
+    color: #ef4444;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 12px;
+    font-weight: 600;
+    transition: all 0.2s;
+}
+
+.admin-zeile-btn:hover { background: rgba(239, 68, 68, 0.2); }
+
+.admin-zeile-btn.auf {
+    background: rgba(16, 185, 129, 0.1);
+    border-color: rgba(16, 185, 129, 0.3);
+    color: #10b981;
+}
+
+.admin-zeile-btn.auf:hover { background: rgba(16, 185, 129, 0.2); }
+
+.admin-zeile-btn:disabled { opacity: 0.5; cursor: default; }
+
+@media (max-width: 640px) {
+    .admin-zeile { flex-wrap: wrap; }
+    .admin-zeile-btn { width: 100%; }
+}

@@ -234,6 +234,13 @@
                 <svg class="nav-icon" viewBox="0 0 24 24" width="20" height="20"><path fill="currentColor" d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>
                 <span>Roadmap</span>
             </div>
+            <!-- Nur fuer Admins. Wird von js/admin.js eingeblendet, wenn
+                 profiles.is_admin gesetzt ist. Das Ausblenden ist
+                 Bequemlichkeit - die Sperre sitzt in der Datenbank. -->
+            <div class="nav-item" data-tab="admin" style="display: none;">
+                <svg class="nav-icon" viewBox="0 0 24 24" width="20" height="20"><path fill="currentColor" d="M12 1 3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm0 10.99h7c-.53 4.12-3.28 7.79-7 8.94V12H5V6.3l7-3.11v8.8z"/></svg>
+                <span>Zugänge</span>
+            </div>
             
             <div class="sidebar-logout-divider"></div>
             
@@ -1064,6 +1071,46 @@
         </div>
 
         <!-- ===== ROADMAP TAB ===== -->
+        <!-- ===== ZUGÄNGE (nur Admin) =====
+             Ersetzt den alten Ablauf über js/keys.js: Schlüssel erzeugen,
+             Zeile kopieren, committen, pushen. Hier wirkt alles sofort,
+             weil die Schlüssel in der Datenbank liegen. -->
+        <div id="admin" class="tab-content">
+            <div style="margin-bottom: 32px;">
+                <h2 style="margin-bottom: 8px; font-size: 32px; font-weight: 700;">Zugänge</h2>
+                <p style="color: #94a3b8; font-size: 14px; margin: 0;">Wer darf rein — und wer nicht mehr</p>
+            </div>
+
+            <div class="admin-karte">
+                <h3 class="admin-karte-titel">Neuen Zugang anlegen</h3>
+                <p class="admin-karte-text">
+                    Der Schlüssel wird hier im Browser erzeugt und nur als Prüfsumme
+                    gespeichert. Er ist genau einmal zu sehen — danach nirgends mehr,
+                    auch nicht für dich.
+                </p>
+                <div class="admin-formular">
+                    <input type="text" id="adminName" class="admin-feld"
+                           placeholder="Für wen? z.B. Marcel" autocomplete="off" spellcheck="false">
+                    <input type="text" id="adminNotiz" class="admin-feld"
+                           placeholder="Notiz (optional)" autocomplete="off">
+                    <button type="button" class="btn btn-primary" id="adminAnlegenBtn">Schlüssel erzeugen</button>
+                </div>
+                <div id="adminNeuerKey"></div>
+            </div>
+
+            <div class="admin-karte">
+                <div class="admin-karte-kopf">
+                    <h3 class="admin-karte-titel">Vergebene Schlüssel</h3>
+                    <span class="admin-zahl" id="adminZahl"></span>
+                </div>
+                <p class="admin-karte-text">
+                    Sperren wirkt sofort, auch mitten in einer laufenden Sitzung.
+                    Die Daten der Person bleiben dabei erhalten.
+                </p>
+                <div id="adminListe" class="admin-liste"></div>
+            </div>
+        </div>
+
         <div id="roadmap" class="tab-content">
             <div style="margin-bottom: 40px;">
                 <h2 style="margin-bottom: 8px; font-size: 32px; font-weight: 700;">Product Roadmap</h2>
@@ -1400,5 +1447,7 @@
     <script src="js/app.js"></script>
     <!-- Formular-Verdrahtung nach app.js, damit getAccountBalance steht -->
     <script src="js/produkt.js"></script>
+    <!-- Zugangsverwaltung nach app.js: braucht generateUserKey und sha256Hex -->
+    <script src="js/admin.js"></script>
 </body>
 </html>

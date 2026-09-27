@@ -170,9 +170,88 @@ function initCountdownTimer() {
 // Der Admin-Key steht nicht mehr im Klartext hier, sondern nur
 // als Hash in js/keys.js
 
+/**
+ * Erzeugt einen Zugangsschluessel.
+ *
+ * Die alte Fassung war
+ *
+ *     'CF-' + Math.random().toString(36).substr(2, 16).toUpperCase()
+ *
+ * und hatte zwei Fehler, die beide nicht auffallen, weil das Ergebnis
+ * zufaellig AUSSIEHT:
+ *
+ *   1. Math.random() ist kein Zufallsgenerator fuer Geheimnisse. Der
+ *      Browser benutzt xorshift128+, und aus wenigen Ausgaben laesst
+ *      sich der interne Zustand zurueckrechnen. Wer einen Schluessel
+ *      bekommen hat, kann daraus die naechsten ableiten.
+ *   2. substr(2, 16) liefert keine 16 Zeichen. Eine Gleitkommazahl hat
+ *      53 Bit Mantisse, in Basis 36 sind das rund elf Stellen - die
+ *      Schluessel waren also kuerzer als beabsichtigt, und mehr als 53
+ *      Bit Zufall war ohnehin nicht drin.
+ *
+ * Jetzt: 20 Zeichen aus crypto.getRandomValues, also rund 100 Bit. Das
+ * Alphabet laesst 0/O und 1/I/L weg, weil diese Schluessel abgetippt
+ * und vorgelesen werden.
+ *
+ * Die Gleichverteilung ist wichtig: ein einfaches Modulo auf 256 Werte
+ * bevorzugt die ersten Buchstaben des Alphabets leicht. Deshalb werden
+ * Bytes ueber 247 verworfen statt umgebogen.
+ */
 function generateUserKey() {
-    return 'CF-' + Math.random().toString(36).substr(2, 16).toUpperCase();
+    const ZEICHEN = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';   // 31 Zeichen
+    const LAENGE = 20;
+    const GRENZE = 256 - (256 % ZEICHEN.length);          // 248
+
+    if (!(window.crypto && window.crypto.getRandomValues)) {
+        // Lieber gar keinen Schluessel als einen schwachen. Ohne
+        // crypto.getRandomValues laeuft die App in einem Browser, der
+        // ohnehin nichts von dem kann, was sie braucht.
+        throw new Error('Dieser Browser kann keine sicheren Zufallszahlen '
+            + 'erzeugen. Schlüssel wurde nicht angelegt.');
+    }
+
+    let aus = '';
+    while (aus.length < LAENGE) {
+        const puffer = new Uint8Array(LAENGE);
+        window.crypto.getRandomValues(puffer);
+        for (let i = 0; i < puffer.length && aus.length < LAENGE; i++) {
+            if (puffer[i] >= GRENZE) continue;            // sonst schief verteilt
+            aus += ZEICHEN[puffer[i] % ZEICHEN.length];
+        }
+    }
+
+    return 'CF-' + aus;
 }
+
+/**
+ * Bringt einen eingetippten Schluessel auf die Form, ueber die gehasht
+ * wird.
+ *
+ * Gehasht wird immer diese eine Form, sonst haengt der Zugang davon ab,
+ * ob jemand Leerzeichen mitkopiert hat. Angezeigt wird der Schluessel in
+ * Vierergruppen - wer die Bindestriche mit abtippt, kommt trotzdem rein.
+ *
+ * Wichtig: bei den alten Schluesseln ("CF-" plus elf Zeichen) muss diese
+ * Funktion den Text unveraendert lassen, sonst sperrt sie Marcel und die
+ * anderen aus. Deshalb wird nur zusammengeschoben und genau ein
+ * Bindestrich nach CF wieder eingesetzt - bei einem alten Schluessel
+ * kommt exakt der Ausgangstext heraus.
+ */
+function cfSchluesselNormalisieren(roh) {
+    const nur = String(roh || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+    if (!nur) return '';
+    if (nur.slice(0, 2) === 'CF') return 'CF-' + nur.slice(2);
+    return nur;
+}
+
+/** Nur fuer die Anzeige: in Fuenfergruppen, damit man ihn vorlesen kann. */
+function cfSchluesselAnzeigen(key) {
+    const n = cfSchluesselNormalisieren(key);
+    const rest = n.slice(3);
+    return 'CF-' + (rest.match(/.{1,5}/g) || []).join('-');
+}
+window.cfSchluesselNormalisieren = cfSchluesselNormalisieren;
+window.cfSchluesselAnzeigen = cfSchluesselAnzeigen;
 
 // Keys liegen jetzt als Hash-Liste in js/keys.js, nicht mehr im Browser.
 
@@ -811,6 +890,9 @@ function handleTabChange(tabId) {
     }
     if (tabId === 'setups') {
         setTimeout(() => loadSetups(), 100);
+    }
+    if (tabId === 'admin' && typeof cfAdminOeffnen === 'function') {
+        setTimeout(() => cfAdminOeffnen(), 100);
     }
     if (tabId === 'daten') {
         // Der Migrationsblock erscheint nur, wenn es lokal ueberhaupt
