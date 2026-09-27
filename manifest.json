@@ -4,7 +4,7 @@
   "description": "Track Your Edge. Before Everyone Else. Journal, Setups und Portfolio-Analyse für Swing Trader.",
   "lang": "de",
   "dir": "ltr",
-  "start_url": "./index.html",
+  "start_url": "./app.html",
   "scope": "./",
   "display": "standalone",
   "display_override": ["window-controls-overlay", "standalone", "minimal-ui"],

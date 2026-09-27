@@ -1,0 +1,1662 @@
+
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <title>CapitalFlow - Swing Trading Journal</title>
+    <link rel="icon" type="image/png" sizes="32x32" href="img/capitalflow-icon-32.png">
+    <link rel="icon" type="image/png" sizes="192x192" href="img/capitalflow-icon-192.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="img/capitalflow-icon-180.png">
+    <meta name="theme-color" content="#0a0a15">
+    <link rel="manifest" href="manifest.json">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="CapitalFlow">
+    <meta name="mobile-web-app-capable" content="yes">
+    <link rel="stylesheet" href="css/style.css">
+    <!-- Chart.js liegt lokal: die installierte App funktioniert damit auch
+         ohne Internet, und es gibt keine Abhaengigkeit von einem fremden
+         Server. Der CDN-Aufruf springt nur ein, falls js/vendor/ beim
+         Kopieren ins Repo mal fehlt. -->
+    <script src="js/vendor/chart.min.js"></script>
+    <script>
+        if (typeof Chart === 'undefined') {
+            document.write('<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"><\/script>');
+        }
+    </script>
+</head>
+<body>
+    <!-- ===== LOGIN SCREEN ===== -->
+    <div class="login-screen" id="loginScreen">
+        <div class="login-container" style="max-width: 380px;">
+            <!-- Logo -->
+            <div style="margin-bottom: 32px; text-align: center;">
+                <img src="img/capitalflow-icon.png" alt="CapitalFlow Logo" style="width: 100px; height: 100px; border-radius: 23px; box-shadow: 0 20px 60px rgba(168, 85, 247, 0.2); margin-bottom: 20px; transition: all 0.3s ease; cursor: pointer;" 
+                onmouseover="this.style.boxShadow='0 20px 80px rgba(168, 85, 247, 0.4), 0 0 40px rgba(168, 85, 247, 0.3)'; this.style.transform='scale(1.05)'"
+                onmouseout="this.style.boxShadow='0 20px 60px rgba(168, 85, 247, 0.2)'; this.style.transform='scale(1)'">
+                <h1 style="margin: 0; font-size: 42px; font-weight: 800; font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; letter-spacing: -0.5px; color: #d8b4fe; -webkit-font-smoothing: antialiased;">Capital<span style="font-weight: 800; background: linear-gradient(135deg, #c084fc 0%, #f472b6 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; filter: drop-shadow(0 0 18px rgba(192, 132, 252, 0.45));">Flow</span></h1>
+                <p style="margin: 10px 0 0 0; font-size: 13px; font-weight: 600; letter-spacing: 0.3px; color: #64748b;">Track Your Edge. <span style="background: linear-gradient(135deg, #a855f7 0%, #ec4899 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;">Before Everyone Else.</span></p>
+            </div>
+
+            <!-- Countdown Timer Compact -->
+            <div style="background: rgba(15, 15, 30, 0.8); border: 1px solid rgba(168, 85, 247, 0.15); border-radius: 14px; padding: 24px; margin-bottom: 32px; text-align: center;">
+                <div style="color: #64748b; font-size: 11px; text-transform: uppercase; letter-spacing: 0.8px; font-weight: 600; margin-bottom: 14px; font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;">Launch Countdown</div>
+                
+                <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px;">
+                    <div>
+                        <div id="countdownDays" style="font-size: 28px; font-weight: 800; color: #a855f7; line-height: 1; margin-bottom: 6px;">0</div>
+                        <div style="color: #64748b; font-size: 10px; text-transform: uppercase; letter-spacing: 0.3px; font-weight: 600;">Days</div>
+                    </div>
+                    <div>
+                        <div id="countdownHours" style="font-size: 28px; font-weight: 800; color: #a855f7; line-height: 1; margin-bottom: 6px;">0</div>
+                        <div style="color: #64748b; font-size: 10px; text-transform: uppercase; letter-spacing: 0.3px; font-weight: 600;">Hours</div>
+                    </div>
+                    <div>
+                        <div id="countdownMinutes" style="font-size: 28px; font-weight: 800; color: #a855f7; line-height: 1; margin-bottom: 6px;">0</div>
+                        <div style="color: #64748b; font-size: 10px; text-transform: uppercase; letter-spacing: 0.3px; font-weight: 600;">Min</div>
+                    </div>
+                    <div>
+                        <div id="countdownSeconds" style="font-size: 28px; font-weight: 800; color: #a855f7; line-height: 1; margin-bottom: 6px;">0</div>
+                        <div style="color: #64748b; font-size: 10px; text-transform: uppercase; letter-spacing: 0.3px; font-weight: 600;">Sec</div>
+                    </div>
+                </div>
+                
+                <div style="height: 1px; background: rgba(168, 85, 247, 0.1); margin-top: 14px;"></div>
+                <p style="color: #64748b; font-size: 11px; margin: 10px 0 0 0; font-weight: 500;">Jan 1, 2027</p>
+            </div>
+
+            <!-- Login Form -->
+            <div class="login-form" id="normalLoginForm">
+
+                <!-- ===== 1. Nicht angemeldet ===== -->
+                <div id="authPanelLogin">
+                    <button class="discord-btn" id="discordLoginBtn">
+                        <svg viewBox="0 0 127 96" width="20" height="16" aria-hidden="true"><path fill="currentColor" d="M107.7 8.07A105.15 105.15 0 0 0 81.47 0a72.06 72.06 0 0 0-3.36 6.83 97.68 97.68 0 0 0-29.11 0A72.37 72.37 0 0 0 45.64 0a105.89 105.89 0 0 0-26.25 8.09C2.79 32.65-1.71 56.6.54 80.21a105.73 105.73 0 0 0 32.17 16.15 77.7 77.7 0 0 0 6.89-11.11 68.42 68.42 0 0 1-10.85-5.18c.91-.66 1.8-1.34 2.66-2a75.57 75.57 0 0 0 64.32 0c.87.71 1.76 1.39 2.66 2a68.68 68.68 0 0 1-10.87 5.19 77 77 0 0 0 6.89 11.1 105.25 105.25 0 0 0 32.19-16.14c2.64-27.38-4.51-51.11-18.9-72.15ZM42.45 65.69C36.18 65.69 31 60 31 53s5-12.74 11.43-12.74S54 46 53.89 53s-5.05 12.69-11.44 12.69Zm42.24 0C78.41 65.69 73.25 60 73.25 53s5-12.74 11.44-12.74S96.23 46 96.12 53s-5.04 12.69-11.43 12.69Z"/></svg>
+                        <span>Mit Discord anmelden</span>
+                    </button>
+                    <p style="margin: 16px 0 0 0; color: #64748b; font-size: 11px; text-align: center; line-height: 1.6;">Early Access — du brauchst zusätzlich einen Access Key</p>
+                    <button class="auth-link" id="showAdminBtn">Admin</button>
+                </div>
+
+                <!-- ===== 2. Angemeldet, noch nicht freigeschaltet ===== -->
+                <div id="authPanelKey" style="display: none;">
+                    <div class="auth-konto">
+                        <img class="auth-konto-bild" id="authDiscordAvatar" alt="" style="display: none;">
+                        <div class="auth-konto-text">
+                            <div class="auth-konto-label">Angemeldet über Discord</div>
+                            <div class="auth-konto-name" id="authDiscordName"></div>
+                        </div>
+                        <span class="auth-konto-punkt"></span>
+                    </div>
+
+                    <div class="auth-hinweis">
+                        <span class="auth-hinweis-titel">Noch ein Schritt</span>
+                        Gib deinen Access Key ein, um CapitalFlow freizuschalten.
+                    </div>
+
+                    <div class="login-form-group">
+                        <input type="password" id="inviteKeyInput" class="login-input" placeholder="Access Key" autocomplete="off" spellcheck="false" style="background: rgba(15, 15, 30, 0.9); border: 1px solid rgba(168, 85, 247, 0.15); backdrop-filter: blur(10px); color: #cbd5e1; font-family: 'Inter', sans-serif; font-size: 13px; text-align: center; letter-spacing: 1.5px;">
+                    </div>
+                    <button class="login-btn" id="redeemBtn">Freischalten</button>
+                    <button class="auth-link" id="keyLogoutBtn">Mit anderem Konto anmelden</button>
+                </div>
+
+                <!-- ===== 3. Admin ===== -->
+                <div id="authPanelAdmin" style="display: none;">
+                    <div class="login-form-group">
+                        <input type="password" id="loginKeyInput" class="login-input" placeholder="Admin Key" autocomplete="off" style="background: rgba(15, 15, 30, 0.9); border: 1px solid rgba(168, 85, 247, 0.15); backdrop-filter: blur(10px); color: #cbd5e1; font-family: 'Inter', sans-serif; font-size: 13px;">
+                    </div>
+                    <button class="login-btn" id="loginBtn">Weiter</button>
+                    <button class="auth-link" id="backFromAdminBtn">Zurück</button>
+                </div>
+            </div>
+            
+            <button class="pwa-install-btn pwa-install-login" id="pwaInstallBtnLogin" style="display: none;"
+                    onclick="cfInstallieren()" title="CapitalFlow als eigenes Programm installieren">
+                <svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true"><path fill="currentColor" d="M12 3a1 1 0 0 1 1 1v8.59l2.3-2.3a1 1 0 1 1 1.4 1.42l-4 4a1 1 0 0 1-1.4 0l-4-4a1 1 0 1 1 1.4-1.42l2.3 2.3V4a1 1 0 0 1 1-1zM5 18a1 1 0 0 1 1-1h12a1 1 0 1 1 0 2H6a1 1 0 0 1-1-1z"/></svg>
+                <span>Als Desktop-App installieren</span>
+            </button>
+
+            <div class="login-footer" style="margin-top: 24px; text-align: center;">
+                <p style="color: #475569; font-size: 10px; margin: 0; text-transform: uppercase; letter-spacing: 0.4px; font-weight: 500;">CapitalFlow © 2026</p>
+            </div>
+        </div>
+    </div>
+    
+    <!-- ===== ADMIN PANEL ===== -->
+    <div class="admin-panel" id="adminPanel">
+        <div class="admin-header">
+            <div>
+                <div class="admin-title">Admin Panel</div>
+                <div class="admin-subtitle">CapitalFlow Key Management</div>
+            </div>
+            <button class="admin-logout-btn" id="adminLogoutBtn">Logout</button>
+        </div>
+        
+        <div class="admin-content">
+            <!-- Generate Key Section -->
+            <div class="admin-section">
+                <h3>Generate New User Key</h3>
+                <div style="display: flex; gap: 12px;">
+                    <input type="text" id="adminUserNameInput" class="admin-input" placeholder="Name des Nutzers" autocomplete="off">
+                    <button class="admin-btn-primary" id="generateNewKeyBtn">Generate Key</button>
+                </div>
+            </div>
+            
+            <!-- Keys List -->
+            <div class="admin-section">
+                <h3>Active Keys</h3>
+                <div id="keysList" class="keys-list">
+                    <p style="color: #94a3b8; text-align: center; padding: 20px;">No keys generated yet</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- NAVBAR & APP (Hidden until logged in) -->
+    <div class="navbar">
+        <button class="hamburger-menu" id="hamburgerMenu">
+            <span></span>
+            <span></span>
+            <span></span>
+        </button>
+        <div class="navbar-content">
+            <div class="navbar-logo-section">
+                <div class="navbar-logo-wrapper">
+                    <img src="img/capitalflow-icon.png" alt="CapitalFlow Logo" class="navbar-logo-img">
+                </div>
+                <div class="navbar-text">
+                    <div class="navbar-title">Capital<span class="navbar-title-accent">Flow</span></div>
+                    <div class="navbar-subtitle">Track Your Edge. <span class="navbar-subtitle-accent">Before Everyone Else.</span></div>
+                </div>
+            </div>
+            <div class="navbar-right">
+                <div class="session-badge" id="sessionBadge" style="display: none;">
+                    <img class="session-avatar" id="sessionAvatar" alt="" style="display: none;">
+                    <span class="session-dot" id="sessionDot"></span>
+                    <span class="session-name" id="sessionName"></span>
+                    <span class="session-sep" id="sessionSep">·</span>
+                    <span class="session-key" id="sessionKey"></span>
+                </div>
+                <button class="daten-btn" id="datenBtn" onclick="cfDatenModalAuf()"
+                        title="Daten sichern oder einspielen">
+                    <svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true"><path fill="currentColor" d="M12 2c-4.42 0-8 1.34-8 3v14c0 1.66 3.58 3 8 3s8-1.34 8-3V5c0-1.66-3.58-3-8-3zm0 2c3.87 0 6 1.1 6 1s-2.13 1-6 1-6-1.1-6-1 2.13-1 6-1zm6 15c0 .1-2.13 1-6 1s-6-.9-6-1v-2.23C7.61 17.55 9.72 18 12 18s4.39-.45 6-1.23V19zm0-5c0 .1-2.13 1-6 1s-6-.9-6-1v-2.23C7.61 12.55 9.72 13 12 13s4.39-.45 6-1.23V14zm0-5c0 .1-2.13 1-6 1s-6-.9-6-1V6.77C7.61 7.55 9.72 8 12 8s4.39-.45 6-1.23V9z"/></svg>
+                    <span>Daten</span>
+                </button>
+                <button class="pwa-install-btn" id="pwaInstallBtn" style="display: none;"
+                        onclick="cfInstallieren()" title="CapitalFlow als eigenes Programm installieren">
+                    <svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true"><path fill="currentColor" d="M12 3a1 1 0 0 1 1 1v8.59l2.3-2.3a1 1 0 1 1 1.4 1.42l-4 4a1 1 0 0 1-1.4 0l-4-4a1 1 0 1 1 1.4-1.42l2.3 2.3V4a1 1 0 0 1 1-1zM5 18a1 1 0 0 1 1-1h12a1 1 0 1 1 0 2H6a1 1 0 0 1-1-1z"/></svg>
+                    <span>App installieren</span>
+                </button>
+                <div class="navbar-phase">Early Access • Phase 1/4</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== SIDEBAR ===== -->
+    <div class="sidebar">
+        <nav class="sidebar-nav">
+            <div class="nav-item active" data-tab="dashboard">
+                <svg class="nav-icon" viewBox="0 0 24 24" width="20" height="20"><path fill="currentColor" d="M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z"/></svg>
+                <span>Dashboard</span>
+            </div>
+            <div class="nav-item" data-tab="journal">
+                <svg class="nav-icon" viewBox="0 0 24 24" width="20" height="20"><path fill="currentColor" d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V5h14v14zm-5.04-6.71l-2.75 3.54-2.16-2.66c-.23-.29-.62-.29-.85 0-.29.23-.29.62 0 .85l2.59 3.2c.23.29.62.29.85 0l3.54-4.29c.29-.23.29-.62 0-.85-.23-.29-.62-.29-.85 0z"/></svg>
+                <span>Journal</span>
+            </div>
+            <div class="nav-item" data-tab="analytics">
+                <svg class="nav-icon" viewBox="0 0 24 24" width="20" height="20"><path fill="currentColor" d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-5 9.5h3v5h-3zm-4-3h3v8h-3zm-4 5h3v3H6z"/></svg>
+                <span>Analytics</span>
+            </div>
+            <div class="nav-item" data-tab="positions">
+                <svg class="nav-icon" viewBox="0 0 24 24" width="20" height="20"><path fill="currentColor" d="M3 6c0 1.1.9 2 2 2h4c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v2zm0 12c0 1.1.9 2 2 2h4c1.1 0 2-.9 2-2v-2c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v2zm11-9h7c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2h-7c-1.1 0-2 .9-2 2v2c0 1.1.9 2 2 2zm0 9h7c1.1 0 2-.9 2-2v-2c0-1.1-.9-2-2-2h-7c-1.1 0-2 .9-2 2v2c0 1.1.9 2 2 2z"/></svg>
+                <span>Portfolio Analyse</span>
+            </div>
+            <div class="nav-item" data-tab="calendar">
+                <svg class="nav-icon" viewBox="0 0 24 24" width="20" height="20"><path fill="currentColor" d="M19 3h-1V1h-2v2H8V1H6v2H5c-1.11 0-1.99.9-1.99 2L3 19c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V8h14v11z"/></svg>
+                <span>PnL-Kalender</span>
+            </div>
+            <div class="nav-item" data-tab="setups">
+                <svg class="nav-icon" viewBox="0 0 24 24" width="20" height="20"><path fill="currentColor" d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/></svg>
+                <span>Setups</span>
+            </div>
+            <div class="nav-item nav-gesperrt" data-tab="transactions" title="Wird gerade überarbeitet">
+                <svg class="nav-icon" viewBox="0 0 24 24" width="20" height="20"><path fill="currentColor" d="M4 6h16v2H4zm0 5h16v2H4zm0 5h16v2H4z"/></svg>
+                <span>Transaktionen</span>
+            </div>
+            <div class="nav-item" data-tab="daten">
+                <svg class="nav-icon" viewBox="0 0 24 24" width="20" height="20"><path fill="currentColor" d="M12 3C7.58 3 4 4.79 4 7s3.58 4 8 4 8-1.79 8-4-3.58-4-8-4zM4 9v3c0 2.21 3.58 4 8 4s8-1.79 8-4V9c0 2.21-3.58 4-8 4s-8-1.79-8-4zm0 5v3c0 2.21 3.58 4 8 4s8-1.79 8-4v-3c0 2.21-3.58 4-8 4s-8-1.79-8-4z"/></svg>
+                <span>Daten</span>
+            </div>
+            <div class="nav-item" data-tab="anleitung">
+                <svg class="nav-icon" viewBox="0 0 24 24" width="20" height="20"><path fill="currentColor" d="M18 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zM8 5h8v2H8V5zm0 4h8v2H8V9zm0 4h5v2H8v-2z"/></svg>
+                <span>Anleitung</span>
+            </div>
+            <div class="nav-item" data-tab="roadmap">
+                <svg class="nav-icon" viewBox="0 0 24 24" width="20" height="20"><path fill="currentColor" d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>
+                <span>Roadmap</span>
+            </div>
+            <!-- Nur fuer Admins. Wird von js/admin.js eingeblendet, wenn
+                 profiles.is_admin gesetzt ist. Das Ausblenden ist
+                 Bequemlichkeit - die Sperre sitzt in der Datenbank. -->
+            <div class="nav-item" data-tab="admin" style="display: none;">
+                <svg class="nav-icon" viewBox="0 0 24 24" width="20" height="20"><path fill="currentColor" d="M12 1 3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm0 10.99h7c-.53 4.12-3.28 7.79-7 8.94V12H5V6.3l7-3.11v8.8z"/></svg>
+                <span>Zugänge</span>
+            </div>
+            
+            <div class="sidebar-logout-divider"></div>
+            
+            <button class="sidebar-logout-btn" id="sidebarLogoutBtn">
+                <svg class="nav-icon" viewBox="0 0 24 24" width="20" height="20"><path fill="currentColor" d="M17 7l-1.41 1.41L18.17 11H8v2h10.17l-2.58 2.58L17 17l5-5zM4 5h8V3H4c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h8v-2H4V5z"/></svg>
+                <span>Logout</span>
+            </button>
+        </nav>
+    </div>
+
+    <!-- ===== MAIN WRAPPER ===== -->
+    <div class="main-wrapper">
+        <!-- ===== CONTAINER ===== -->
+        <!-- Hier standen vier SVG-Symbole (icon-balance, icon-chart,
+             icon-target, icon-trending), auf die nirgends verwiesen
+             wurde. Sie waren nicht als versteckte Vorlagen eingepackt,
+             sondern rendern direkt - vier lose Symbole ueber dem Inhalt
+             JEDES Tabs, auch auf den Screenshots der Anleitung.
+
+             Dazu kam ein herrenloses schliessendes svg-Tag und eine
+             ZWEITE container-Huelle um dasselbe herum. Die doppelte
+             Huelle ist der Grund, warum js/auth.js beim Ein- und
+             Ausblenden ueber alle .container laufen muss - das steht
+             dort als Kommentar und war nie die Ursache, sondern die
+             Folge. -->
+        <div class="container">
+        <div id="journal" class="tab-content">
+            <!-- ===== FORM ===== -->
+            <form class="form" id="tradeForm" novalidate>
+                <!-- Bearbeitungsmodus. Dasselbe Formular schreibt einen
+                     bestehenden Trade um - ohne diese Leiste sieht man
+                     dem Formular nicht an, dass es gerade kein neuer
+                     Trade ist, und legt aus Versehen einen zweiten an. -->
+                <div id="tradeEditHinweis" class="edit-hinweis" style="display: none;"></div>
+
+                <!-- Produktart. Entscheidet, welche Felder gebraucht werden
+                     und wie die P&L gerechnet wird: bei einem Zertifikat
+                     steckt der Hebel bereits im Preis und darf nicht noch
+                     einmal multipliziert werden. -->
+                <div class="form-row">
+                    <div class="form-group" style="grid-column: 1 / -1;">
+                        <label>Was hast du gehandelt?</label>
+                        <div class="produkt-toggle" data-target="produktArt">
+                            <button type="button" class="produkt-btn active" data-art="aktie">Aktie / ETF</button>
+                            <button type="button" class="produkt-btn" data-art="knockout">Knock-Out</button>
+                            <button type="button" class="produkt-btn" data-art="faktor">Faktor-Zertifikat</button>
+                        </div>
+                        <input type="hidden" id="produktArt" value="aktie">
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Ticker <span class="feld-zusatz" id="tickerZusatz"></span></label>
+                        <input type="text" id="ticker" placeholder="z.B. AAPL" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Richtung</label>
+                        <div class="direction-toggle" data-target="direction">
+                            <button type="button" class="direction-btn active" data-direction="long" id="dirLongBtn">Long</button>
+                            <button type="button" class="direction-btn" data-direction="short" id="dirShortBtn">Short</button>
+                        </div>
+                        <input type="hidden" id="direction" value="long">
+                    </div>
+                    <div class="form-group">
+                        <label id="entryPriceLabel">Entry Preis ($)</label>
+                        <input type="number" id="entryPrice" placeholder="0.00" step="0.01" required>
+                    </div>
+                    <div class="form-group">
+                        <label id="exitPriceLabel">Exit Preis ($)</label>
+                        <input type="number" id="exitPrice" placeholder="0.00" step="0.01" required>
+                    </div>
+                    <div class="form-group" id="stopLossGruppe">
+                        <label>Stop Loss ($) <span style="color: #64748b; font-size: 11px;">(Optional)</span></label>
+                        <input type="number" id="stopLoss" placeholder="0.00" step="0.01">
+                    </div>
+                </div>
+
+                <!-- ===== Zertifikats-Angaben. Nur sichtbar, wenn oben ein
+                     Hebelprodukt gewaehlt ist.
+
+                     Aufbau nach Waehrung, nicht nach Fachbegriff: oben im
+                     Formular stehen die Euro-Betraege (was bezahlt wurde),
+                     hier unten die Kurse des Basiswerts in Dollar. Wer das
+                     mischt, bekommt einen falschen Hebel ohne Fehlermeldung.
+
+                     Die Beschriftungen sind Fragen. Ein Feld namens
+                     "Basispreis" muss man wissen, ein Feld namens "Wo lag
+                     die KO-Schwelle?" nicht. ===== -->
+                <div id="zertBlock" class="zert-block" style="display: none;">
+                    <div class="zert-kopf">
+                        <span id="zertTitel">Angaben zum Zertifikat</span>
+                        <span class="zert-quelle">Hebel und Knockout-Preis stehen beim Schein in der TR-App</span>
+                    </div>
+
+                    <div class="zert-hinweis">
+                        <strong>Das hier ist freiwillig.</strong> Ohne die Felder speichert der Trade
+                        ganz normal. Mit den zwei Zahlen vom Schein rechnet die App dir aus,
+                        wie weit du von der Schwelle weg warst und was dein Stop in Euro gekostet hätte —
+                        das zeigt dir Trade Republic nirgends.
+                    </div>
+
+                    <div id="zertFelderKo">
+                        <div class="zert-gruppe">
+                            <div class="zert-gruppe-kopf">
+                                <span class="zert-nr">1</span>
+                                <span>Vom Schein abgelesen</span>
+                                <span class="zert-waehrung">beim Kauf, direkt aus der TR-App</span>
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label>Knockout-Preis ($) <span class="feld-zusatz">die Schwelle</span></label>
+                                    <input type="number" id="zKo" placeholder="z.B. 165.00" step="any">
+                                </div>
+                                <div class="form-group">
+                                    <label>Hebel <span class="feld-zusatz">wie TR ihn beim Kauf anzeigt</span></label>
+                                    <input type="number" id="zHebelTr" placeholder="z.B. 12" step="any" min="0">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="zert-gruppe">
+                            <div class="zert-gruppe-kopf">
+                                <span class="zert-nr">2</span>
+                                <span>Dein Trade</span>
+                                <span class="zert-waehrung">alles in $</span>
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label>Wo lag dein Stop? <span class="feld-zusatz">auf dem Chart</span></label>
+                                    <input type="number" id="zStop" placeholder="z.B. 172.00" step="any">
+                                </div>
+                                <div class="form-group">
+                                    <label id="lblBasisEin">Basiswert beim Kauf <span class="feld-zusatz">leer = wird gerechnet</span></label>
+                                    <input type="number" id="zBasisEin" placeholder="wird gerechnet" step="any">
+                                </div>
+                                <div class="form-group">
+                                    <label id="lblBasisAus">Basiswert beim Verkauf <span class="feld-zusatz">optional</span></label>
+                                    <input type="number" id="zBasisAus" placeholder="optional" step="any">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="zertFelderFaktor" style="display: none;">
+                        <div class="zert-gruppe">
+                            <div class="zert-gruppe-kopf">
+                                <span class="zert-nr">1</span>
+                                <span>Faktor und Kurse des Basiswerts</span>
+                                <span class="zert-waehrung">Kurse in $</span>
+                            </div>
+                            <!-- Beim Faktor-Zertifikat gibt es keinen Basispreis,
+                                 aus dem sich der Kurs zurueckrechnen liesse. Die
+                                 beiden Kurse muessen von Hand kommen - sonst
+                                 laesst sich der Pfadeffekt nicht bestimmen. -->
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label>Welcher Faktor? <span class="feld-zusatz">steht im Produktnamen</span></label>
+                                    <input type="number" id="zFaktor" placeholder="z.B. 5" step="any" min="1">
+                                </div>
+                                <div class="form-group">
+                                    <label id="lblBasisEinF">Basiswert beim Kauf <span class="feld-zusatz">vom Chart ablesen</span></label>
+                                    <input type="number" id="zBasisEinF" placeholder="z.B. 180.00" step="any">
+                                </div>
+                                <div class="form-group">
+                                    <label id="lblBasisAusF">Basiswert beim Verkauf</label>
+                                    <input type="number" id="zBasisAusF" placeholder="z.B. 187.00" step="any">
+                                </div>
+                                <div class="form-group">
+                                    <label>Wo lag dein Stop?</label>
+                                    <input type="number" id="zStopF" placeholder="z.B. 172.00" step="any">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Alles hier ist verzichtbar. Zusammengeklappt, damit
+                         das Formular auf den ersten Blick nicht doppelt so
+                         voll aussieht, wie es ist. -->
+                    <details class="zert-gruppe zert-optional">
+                        <summary class="zert-gruppe-kopf">
+                            <span class="zert-nr grau">3</span>
+                            <span>Feinheiten — kannst du weglassen</span>
+                            <span class="zert-waehrung">für Sonderfälle und den späteren Import</span>
+                        </summary>
+                        <div class="form-row">
+                            <div class="form-group" id="zStrikeGruppe">
+                                <label>Basispreis ($) <span class="feld-zusatz">leer = wie KO-Preis</span></label>
+                                <input type="number" id="zStrike" placeholder="wie Knockout-Preis" step="any">
+                            </div>
+                            <div class="form-group" id="zRatioGruppe">
+                                <label>Bezugsverhältnis <span class="feld-zusatz">falls ausgewiesen</span></label>
+                                <input type="number" id="zRatio" placeholder="z.B. 0.1" step="any">
+                            </div>
+                            <div class="form-group" id="zFxGruppe">
+                                <label>EUR/USD <span class="feld-zusatz">nur dafür nötig</span></label>
+                                <input type="number" id="zFx" placeholder="z.B. 1.10" step="any">
+                            </div>
+                            <div class="form-group">
+                                <label>WKN</label>
+                                <input type="text" id="zWkn" placeholder="z.B. HS1ABC" maxlength="12">
+                            </div>
+                            <div class="form-group">
+                                <label>Emittent</label>
+                                <input type="text" id="zEmittent" placeholder="z.B. HSBC" maxlength="40">
+                            </div>
+                        </div>
+                    </details>
+
+                    <!-- Ergebnis. Wird bei jeder Eingabe neu gerechnet.
+                         Was sich nicht rechnen laesst, bleibt leer statt
+                         geraten zu werden. -->
+                    <div class="zert-ergebnis" id="zertErgebnis"></div>
+                    <div class="zert-warnung" id="zertWarnung" style="display: none;"></div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label id="positionSizeLabel">Position (€)</label>
+                        <input type="number" id="positionSize" placeholder="z.B. 1000" step="0.01" required>
+                    </div>
+                    <div class="form-group" id="leverageGruppe">
+                        <label>Hebel <span style="color: #94a3b8; font-size: 11px;">(Leer = Normal)</span></label>
+                        <input type="number" id="leverage" placeholder="z.B. 10 oder 3.2" step="0.01" min="1">
+                    </div>
+                    <div class="form-group">
+                        <label>Grund <span class="feld-zusatz">kannst du später ergänzen</span></label>
+                        <input type="text" id="reason" placeholder="z.B. Technisch, Breakout...">
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group" style="grid-column: 1 / -1;">
+                        <label>Setup-Typ (mehrfach wählbar)</label>
+                        <div style="display: flex; flex-wrap: wrap; gap: 16px; margin-top: 12px;">
+                            <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; font-weight: 500;">
+                                <input type="checkbox" class="setup-type-checkbox" value="Breakout"> Breakout
+                            </label>
+                            <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; font-weight: 500;">
+                                <input type="checkbox" class="setup-type-checkbox" value="Pullback"> Pullback
+                            </label>
+                            <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; font-weight: 500;">
+                                <input type="checkbox" class="setup-type-checkbox" value="Support"> Support
+                            </label>
+                            <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; font-weight: 500;">
+                                <input type="checkbox" class="setup-type-checkbox" value="Rebound"> Rebound
+                            </label>
+                            <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; font-weight: 500;">
+                                <input type="checkbox" class="setup-type-checkbox" value="Gap-Fill"> Gap-Fill
+                            </label>
+                            <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; font-weight: 500;">
+                                <input type="checkbox" class="setup-type-checkbox" value="Trend-Continuation"> Trend-Continuation
+                            </label>
+                            <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; font-weight: 500;">
+                                <input type="checkbox" class="setup-type-checkbox" value="Sonstiges"> Sonstiges
+                            </label>
+                        </div>
+                        <input type="hidden" id="setupType" value="">
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Fehlertyp</label>
+                        <div class="custom-select-wrapper">
+                            <input type="hidden" id="errorType" value="Kein Fehler">
+                            <div class="custom-select" data-select-id="errorType">
+                                <div class="custom-select-header">
+                                    <span class="custom-select-value">Kein Fehler</span>
+                                    <svg class="custom-select-arrow" viewBox="0 0 24 24" width="16" height="16">
+                                        <path fill="currentColor" d="M7 10l5 5 5-5z"/>
+                                    </svg>
+                                </div>
+                                <div class="custom-select-dropdown">
+                                    <div class="custom-option" data-value="Kein Fehler">Kein Fehler</div>
+                                    <div class="custom-option" data-value="Emotional">Emotional</div>
+                                    <div class="custom-option" data-value="Strategie">Strategie</div>
+                                    <div class="custom-option" data-value="Regelbruch">Regelbruch</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group" style="grid-column: 1 / -1;">
+                        <label>Chart Screenshot (Ctrl+V zum Einfügen)</label>
+                        <div id="screenshotPasteArea" class="screenshot-paste-area">
+                            📋 Hier Screenshot einfügen (Ctrl+V) oder klicken zum Datei wählen
+                            <input type="file" id="screenshot" accept="image/*" style="display: none;">
+                        </div>
+                        <div id="screenshotPreview" style="margin-top: 10px;"></div>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group" style="grid-column: 1 / -1;">
+                        <label>Notizen</label>
+                        <textarea id="notes" placeholder="Trade-Analyse, Gedanken..." rows="3"></textarea>
+                    </div>
+                </div>
+
+                <div class="form-buttons">
+                    <button type="submit" class="btn btn-primary">✨ Trade Hinzufügen</button>
+                    <button type="button" class="btn btn-secondary" id="tradeEditAbbrechen"
+                            onclick="bearbeitenAbbrechen()" style="display: none;">Bearbeiten abbrechen</button>
+                    <button type="reset" class="btn btn-secondary">Zurücksetzen</button>
+                </div>
+            </form>
+
+            <!-- ===== TRADES HEADER WITH STATS ===== -->
+            <div class="trades-header">
+                <h2>Meine Trades</h2>
+                <div class="trades-stats">
+                    <div class="trades-stat-item">
+                        <div class="trades-stat-label">Total P&L</div>
+                        <div id="tradesPnLDisplay" style="font-size: 28px; font-weight: 700; background: linear-gradient(135deg, #22c55e, #10b981); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;">€ 0.00</div>
+                    </div>
+                    <div class="trades-stat-item">
+                        <div class="trades-stat-label">Anzahl Trades</div>
+                        <div id="tradeCountDisplay" style="font-size: 28px; font-weight: 700; color: #f1f5f9;">0</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ===== FILTER BUTTONS ===== -->
+            <div class="trades-filter">
+                <button class="filter-btn active" data-filter="all">Alle Trades</button>
+                <button class="filter-btn" data-filter="leverage">Nur Hebel</button>
+                <button class="filter-btn" data-filter="normal">Nur Normal</button>
+            </div>
+
+            <!-- ===== TRADES CONTAINER ===== -->
+            <div class="trades-container" id="tradesContainer"></div>
+        </div>
+
+        <!-- ===== POSITIONEN TAB ===== -->
+        <div id="positions" class="tab-content">
+            <div style="margin-bottom: 20px;">
+                <h2 style="margin-bottom: 8px; font-size: 32px; font-weight: 700;">Portfolio Analyse</h2>
+                <p style="color: #94a3b8; font-size: 14px; margin: 0;">Offene & geschlossene Positionen mit Live-Gewichtung</p>
+            </div>
+
+            <!-- Offener Punkt: Positionen aus dem Import koennen faelschlich
+                 als offen stehen, wenn der Verkauf in einem anderen
+                 Exportzeitraum liegt. Wird behoben; bis dahin ein Hinweis,
+                 damit niemand die Zahlen fuer bare Muenze nimmt. -->
+            <div class="bereich-warnung">
+                <strong>Diese Zahlen können falsch sein.</strong>
+                Positionen aus einem Import stehen möglicherweise noch als offen,
+                obwohl sie längst verkauft sind — dann sind Exposure, Anzahl und
+                Gewichtung zu hoch. Wir arbeiten daran. Verlass dich bis dahin
+                auf dein Depot, nicht auf diese Seite.
+            </div>
+
+            <!-- ===== PORTFOLIO STATS ===== -->
+            <div class="stat-grid-4">
+                <!-- Euro in Positionen -->
+                <div class="dashboard-stat" style="background: linear-gradient(135deg, rgba(236, 72, 153, 0.1) 0%, rgba(236, 72, 153, 0.05) 100%); border: 1px solid rgba(236, 72, 153, 0.2); border-radius: 14px; padding: 20px; backdrop-filter: blur(10px);">
+                    <div style="color: #64748b; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600; margin-bottom: 12px;">Portfolio Exposure</div>
+                    <div id="portfolioTotalValue" style="font-size: 28px; font-weight: 800; color: #ec4899; line-height: 1;">€0.00</div>
+                </div>
+
+                <!-- Offene Positionen -->
+                <div class="dashboard-stat" style="background: linear-gradient(135deg, rgba(59, 130, 246, 0.1) 0%, rgba(59, 130, 246, 0.05) 100%); border: 1px solid rgba(59, 130, 246, 0.2); border-radius: 14px; padding: 20px; backdrop-filter: blur(10px);">
+                    <div style="color: #64748b; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600; margin-bottom: 12px;">Offene Positionen</div>
+                    <div id="portfolioOpenCount" style="font-size: 28px; font-weight: 800; color: #3b82f6; line-height: 1;">0</div>
+                </div>
+
+                <!-- Ø Position Size -->
+                <div class="dashboard-stat" style="background: linear-gradient(135deg, rgba(168, 85, 247, 0.1) 0%, rgba(168, 85, 247, 0.05) 100%); border: 1px solid rgba(168, 85, 247, 0.2); border-radius: 14px; padding: 20px; backdrop-filter: blur(10px);">
+                    <div style="color: #64748b; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600; margin-bottom: 12px;">Ø Position Size</div>
+                    <div id="portfolioAvgSize" style="font-size: 28px; font-weight: 800; color: #a855f7; line-height: 1;">€0.00</div>
+                </div>
+
+                <!-- Größte Position -->
+                <div class="dashboard-stat" style="background: linear-gradient(135deg, rgba(251, 146, 60, 0.1) 0%, rgba(251, 146, 60, 0.05) 100%); border: 1px solid rgba(251, 146, 60, 0.2); border-radius: 14px; padding: 20px; backdrop-filter: blur(10px);">
+                    <div style="color: #64748b; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600; margin-bottom: 12px;">Größte Position</div>
+                    <div id="portfolioMaxSize" style="font-size: 28px; font-weight: 800; color: #fb923c; line-height: 1;">€0.00</div>
+                </div>
+            </div>
+
+            <!-- ===== PORTFOLIO COMPOSITION ===== -->
+            <div style="margin-bottom: 40px;">
+                <h3 style="font-size: 18px; font-weight: 600; margin-bottom: 20px;">Portfolio Gewichtung</h3>
+                <div style="background: linear-gradient(135deg, rgba(168, 85, 247, 0.05) 0%, rgba(59, 130, 246, 0.05) 100%); border: 1px solid rgba(168, 85, 247, 0.1); border-radius: 16px; padding: 32px; backdrop-filter: blur(10px);">
+                    <!-- Stacked Bar Chart -->
+                    <div style="margin-bottom: 28px;">
+                        <div id="portfolioStackedBar" style="height: 50px; background: rgba(0,0,0,0.2); border-radius: 10px; overflow: hidden; display: flex; box-shadow: inset 0 2px 8px rgba(0,0,0,0.2);"></div>
+                    </div>
+                    <!-- Position Details -->
+                    <div id="portfolioCompositionLegend" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 16px;">
+                        <!-- Wird von JS generiert -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- ===== POSITIONEN FORM ===== -->
+            <div class="form-section" style="margin-bottom: 40px;">
+                <h3>Neue Position Öffnen</h3>
+                <form id="positionsForm" novalidate>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="positionsTicker">Ticker</label>
+                            <input type="text" id="positionsTicker" placeholder="z.B. AAPL" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Richtung</label>
+                            <div class="direction-toggle" data-target="positionsDirection">
+                                <button type="button" class="direction-btn active" data-direction="long">Long</button>
+                                <button type="button" class="direction-btn" data-direction="short">Short</button>
+                            </div>
+                            <input type="hidden" id="positionsDirection" value="long">
+                        </div>
+                        <div class="form-group">
+                            <label for="positionsEntry">Kaufpreis (€) <span class="feld-zusatz">je Stück bzw. je Schein</span></label>
+                            <input type="number" id="positionsEntry" step="any" placeholder="150.50" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="positionsSize">Einsatz (€)</label>
+                            <input type="number" id="positionsSize" step="any" placeholder="1000" required>
+                        </div>
+                    </div>
+
+                    <!-- Hebelprodukt: drei freiwillige Zahlen, alle beim Kauf
+                         auf dem Schirm. Wer sie eintraegt, sieht sofort sein
+                         Euro-Risiko; wer nicht, hat eine normale Position. -->
+                    <div class="zert-block" style="margin-bottom: 18px;">
+                        <div class="zert-gruppe-kopf" style="margin-bottom: 12px;">
+                            <span class="zert-nr grau">+</span>
+                            <span>Hebelprodukt? Dann diese drei Zahlen</span>
+                            <span class="zert-waehrung">freiwillig, alles in $</span>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="positionsKo">Knockout-Preis</label>
+                                <input type="number" id="positionsKo" step="any" placeholder="z.B. 165.00">
+                            </div>
+                            <div class="form-group">
+                                <label for="positionsHebel">Hebel <span class="feld-zusatz">wie TR ihn anzeigt</span></label>
+                                <input type="number" id="positionsHebel" step="any" placeholder="z.B. 12">
+                            </div>
+                            <div class="form-group">
+                                <label for="positionsStop">Dein Stop auf dem Basiswert</label>
+                                <input type="number" id="positionsStop" step="any" placeholder="z.B. 172.00">
+                            </div>
+                        </div>
+                        <div class="zert-ergebnis" id="positionsVorschau"></div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="positionsThesis">These / Begründung</label>
+                        <textarea id="positionsThesis" placeholder="Warum bin ich in dieser Position? Was ist der Plan? (kannst du später ergänzen)" rows="4"></textarea>
+                    </div>
+
+                    <!-- ===== SCREENSHOT PASTE AREA ===== -->
+                    <div class="form-group">
+                        <label>Screenshot (optional)</label>
+                        <div class="screenshot-paste-area" id="positionsScreenshotPasteArea">
+                            <p style="margin: 0; color: #cbd5e1;">📋 Strg+V zum Einfügen oder klicken zum Hochladen</p>
+                            <input type="file" accept="image/*" style="display: none;" id="positionsScreenshotInput">
+                        </div>
+                        <div id="positionsScreenshotPreview"></div>
+                    </div>
+
+                    <button type="submit" class="submit-btn">Position Öffnen</button>
+                </form>
+            </div>
+
+            <!-- ===== POSITIONEN CONTAINER ===== -->
+            <div class="positions-container" id="positionsContainer"></div>
+
+            <!-- ===== GESCHLOSSENE POSITIONEN ===== -->
+            <div style="margin-top: 60px; position: relative; min-height: 300px;">
+                <h3 style="font-size: 20px; font-weight: 600; color: #f1f5f9; margin-bottom: 30px;">Geschlossene Positionen</h3>
+                <div class="positions-container" id="closedPositionsContainer"></div>
+                <div id="noClosedPositions" style="text-align: center; padding: 40px 20px; color: #64748b;">
+                    <p style="font-size: 14px;">Noch keine Positionen geschlossen</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- ===== WATCHLIST TAB ===== -->
+        <div id="setups" class="tab-content">
+            <div style="margin-bottom: 20px;">
+                <h2 style="margin-bottom: 8px; font-size: 32px; font-weight: 700;">Setups</h2>
+                <p style="color: #94a3b8; font-size: 14px; margin: 0;">Setups planen, bevor du einsteigst</p>
+            </div>
+
+            <!-- ===== KENNZAHLEN ===== -->
+            <div class="stat-grid-4">
+                <div class="dashboard-stat" style="background: linear-gradient(135deg, rgba(168, 85, 247, 0.1) 0%, rgba(168, 85, 247, 0.05) 100%); border: 1px solid rgba(168, 85, 247, 0.2); border-radius: 14px; padding: 20px;">
+                    <div style="color: #64748b; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600; margin-bottom: 12px;">Aktive Setups</div>
+                    <div id="setupsActive" style="font-size: 28px; font-weight: 800; color: #a855f7; line-height: 1;">0</div>
+                </div>
+                <div class="dashboard-stat" style="background: linear-gradient(135deg, rgba(16, 185, 129, 0.1) 0%, rgba(16, 185, 129, 0.05) 100%); border: 1px solid rgba(16, 185, 129, 0.2); border-radius: 14px; padding: 20px;">
+                    <div style="color: #64748b; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600; margin-bottom: 12px;">Bereit</div>
+                    <div id="setupsReady" style="font-size: 28px; font-weight: 800; color: #10b981; line-height: 1;">0</div>
+                </div>
+                <div class="dashboard-stat" style="background: linear-gradient(135deg, rgba(59, 130, 246, 0.1) 0%, rgba(59, 130, 246, 0.05) 100%); border: 1px solid rgba(59, 130, 246, 0.2); border-radius: 14px; padding: 20px;">
+                    <div style="color: #64748b; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600; margin-bottom: 12px;">Ø Chance-Risiko</div>
+                    <div id="setupsAvgCrv" style="font-size: 28px; font-weight: 800; color: #3b82f6; line-height: 1;">–</div>
+                </div>
+                <div class="dashboard-stat" style="background: linear-gradient(135deg, rgba(251, 146, 60, 0.1) 0%, rgba(251, 146, 60, 0.05) 100%); border: 1px solid rgba(251, 146, 60, 0.2); border-radius: 14px; padding: 20px;">
+                    <div style="color: #64748b; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600; margin-bottom: 12px;">Verworfen</div>
+                    <div id="setupsDiscarded" style="font-size: 28px; font-weight: 800; color: #fb923c; line-height: 1;">0</div>
+                </div>
+            </div>
+
+            <!-- ===== FORMULAR ===== -->
+            <div class="form-section" style="margin-bottom: 40px;">
+                <h3>Setup erfassen</h3>
+                <form id="setupsForm" novalidate>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="setupsTicker">Ticker</label>
+                            <input type="text" id="setupsTicker" placeholder="z.B. NVDA" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Richtung</label>
+                            <div class="direction-toggle" data-target="setupsDirection">
+                                <button type="button" class="direction-btn active" data-direction="long">Long</button>
+                                <button type="button" class="direction-btn" data-direction="short">Short</button>
+                            </div>
+                            <input type="hidden" id="setupsDirection" value="long">
+                        </div>
+                        <div class="form-group">
+                            <label for="setupsKo">Knockout-Preis <span class="feld-zusatz">optional, rechnet den Hebel aus</span></label>
+                            <input type="number" id="setupsKo" step="any" placeholder="z.B. 165.00">
+                        </div>
+                        <div class="form-group">
+                            <label for="setupsLeverage">Hebel <span class="feld-zusatz">nur ohne Knockout-Preis</span></label>
+                            <input type="number" id="setupsLeverage" step="0.01" min="1" placeholder="z.B. 3 oder 3.2">
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="setupsEntryFrom">Einstieg von</label>
+                            <input type="number" id="setupsEntryFrom" step="0.01" placeholder="175.00">
+                        </div>
+                        <div class="form-group">
+                            <label for="setupsEntryTo">Einstieg bis</label>
+                            <input type="number" id="setupsEntryTo" step="0.01" placeholder="178.00">
+                        </div>
+                        <div class="form-group">
+                            <label for="setupsStop">Stop</label>
+                            <input type="number" id="setupsStop" step="0.01" placeholder="170.00">
+                        </div>
+                        <div class="form-group">
+                            <label for="setupsTarget">Kursziel</label>
+                            <input type="number" id="setupsTarget" step="0.01" placeholder="195.00">
+                        </div>
+                    </div>
+
+                    <div id="setupsCrvPreview" class="setups-crv-preview">Einstieg, Stop und Ziel eintragen, um das Chance-Risiko-Verhältnis zu sehen</div>
+
+                    <div class="form-group">
+                        <label for="setupsThesis">These</label>
+                        <textarea id="setupsThesis" rows="3" placeholder="Warum interessiert dich das Setup? Worauf wartest du?"></textarea>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Screenshot (optional)</label>
+                        <div class="screenshot-paste-area" id="setupsScreenshotArea">
+                            <p style="margin: 0; color: #cbd5e1;">📋 Strg+V zum Einfügen oder klicken zum Hochladen</p>
+                            <input type="file" accept="image/*" style="display: none;" id="setupsScreenshotInput">
+                        </div>
+                        <div id="setupsScreenshotPreview"></div>
+                    </div>
+
+                    <button type="submit" class="submit-btn">Setup speichern</button>
+                </form>
+            </div>
+
+            <!-- ===== LISTE ===== -->
+            <div class="trades-filter" id="setupsFilter" style="margin-bottom: 24px;">
+                <button class="filter-btn active" data-setupsfilter="active">Aktiv</button>
+                <button class="filter-btn" data-setupsfilter="entered">Eingestiegen</button>
+                <button class="filter-btn" data-setupsfilter="discarded">Verworfen</button>
+                <button class="filter-btn" data-setupsfilter="all">Alle</button>
+            </div>
+            <div id="setupsContainer" class="setups-grid"></div>
+        </div>
+
+        <!-- ===== TRANSACTIONS TAB ===== -->
+        <div id="transactions" class="tab-content">
+            <div style="margin-bottom: 20px;">
+                <h2 style="margin-bottom: 8px; font-size: 32px; font-weight: 700;">Transaktionen</h2>
+                <p style="color: #94a3b8; font-size: 14px; margin: 0;">Ein- und Auszahlungen – Grundlage für Kontostand und Rendite</p>
+            </div>
+
+            <!-- Vorübergehend gesperrt. Der Bereich wird umgebaut; solange
+                 ihn jemand benutzt, entstehen Daten, die danach nicht mehr
+                 passen. Zum Entsperren: die beiden Zeilen hier und in
+                 app.js (cfBereichGesperrt) entfernen. -->
+            <div class="bereich-sperre">
+                <div class="bereich-sperre-karte">
+                    <div class="bereich-sperre-titel">Wird gerade überarbeitet</div>
+                    <p>Hier ändert sich in den nächsten Tagen einiges. Bis dahin
+                    bitte nichts eintragen – was du jetzt anlegst, passt danach
+                    womöglich nicht mehr zusammen.</p>
+                </div>
+            </div>
+            <div class="bereich-verschwommen">
+
+            <!-- ===== KENNZAHLEN ===== -->
+            <div class="stat-grid-4">
+                <div class="dashboard-stat" style="background: linear-gradient(135deg, rgba(168, 85, 247, 0.1) 0%, rgba(168, 85, 247, 0.05) 100%); border: 1px solid rgba(168, 85, 247, 0.2); border-radius: 14px; padding: 20px; backdrop-filter: blur(10px);">
+                    <div style="color: #64748b; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600; margin-bottom: 12px;">Netto eingezahlt</div>
+                    <div id="txNetDeposit" style="font-size: 28px; font-weight: 800; color: #a855f7; line-height: 1;">€0.00</div>
+                </div>
+                <div class="dashboard-stat" style="background: linear-gradient(135deg, rgba(16, 185, 129, 0.1) 0%, rgba(16, 185, 129, 0.05) 100%); border: 1px solid rgba(16, 185, 129, 0.2); border-radius: 14px; padding: 20px; backdrop-filter: blur(10px);">
+                    <div style="color: #64748b; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600; margin-bottom: 12px;">Kontostand</div>
+                    <div id="txBalance" style="font-size: 28px; font-weight: 800; color: #10b981; line-height: 1;">€0.00</div>
+                </div>
+                <div class="dashboard-stat" style="background: linear-gradient(135deg, rgba(59, 130, 246, 0.1) 0%, rgba(59, 130, 246, 0.05) 100%); border: 1px solid rgba(59, 130, 246, 0.2); border-radius: 14px; padding: 20px; backdrop-filter: blur(10px);">
+                    <div style="color: #64748b; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600; margin-bottom: 12px;">Rendite</div>
+                    <div id="txReturn" style="font-size: 28px; font-weight: 800; color: #3b82f6; line-height: 1;">0.00%</div>
+                </div>
+                <div class="dashboard-stat" style="background: linear-gradient(135deg, rgba(251, 146, 60, 0.1) 0%, rgba(251, 146, 60, 0.05) 100%); border: 1px solid rgba(251, 146, 60, 0.2); border-radius: 14px; padding: 20px; backdrop-filter: blur(10px);">
+                    <div style="color: #64748b; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600; margin-bottom: 12px;">Buchungen</div>
+                    <div id="txCount" style="font-size: 28px; font-weight: 800; color: #fb923c; line-height: 1;">0</div>
+                </div>
+            </div>
+
+            <!-- ===== FORMULAR ===== -->
+            <div class="form-section" style="margin-bottom: 40px;">
+                <h3>Buchung erfassen</h3>
+                <form id="transactionForm" novalidate>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="txType">Art</label>
+                            <select id="txType" required>
+                                <option value="deposit">Einzahlung</option>
+                                <option value="withdrawal">Auszahlung</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="txAmount">Betrag (€)</label>
+                            <input type="number" id="txAmount" step="0.01" min="0" placeholder="1000" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="txDate">Datum</label>
+                            <input type="date" id="txDate" required>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="txNote">Notiz (optional)</label>
+                        <input type="text" id="txNote" placeholder="z.B. Sparplan, Gewinnentnahme">
+                    </div>
+                    <button type="submit" class="submit-btn">Buchung speichern</button>
+                </form>
+            </div>
+
+            <!-- ===== LISTE ===== -->
+            <div>
+                <h3 style="font-size: 20px; font-weight: 600; color: #f1f5f9; margin-bottom: 20px;">Verlauf</h3>
+                <div id="transactionsList"></div>
+            </div>
+        </div>
+        </div>
+
+        <!-- ===== CALENDAR TAB ===== -->
+        <div id="daten" class="tab-content">
+            <div style="margin-bottom: 20px;">
+                <h2 style="margin-bottom: 8px; font-size: 32px; font-weight: 700;">Daten</h2>
+                <p style="color: #94a3b8; font-size: 14px; margin: 0;">Trades importieren, sichern und löschen</p>
+            </div>
+
+            <!-- Zwei Spalten: links, was man oft macht (Import), rechts
+                 das Seltene. Auf dem Handy untereinander.
+                 Alle IDs und Aufrufe sind dieselben wie vorher im
+                 Fenster - nur die Huelle ist neu. -->
+            <div class="daten-oben">
+
+                <!-- ===================== Import ===================== -->
+                <section class="daten-karte">
+                    <h3 class="daten-titel">Trades aus Trade Republic holen</h3>
+                    <p class="daten-text">
+                        In der TR-App: <strong>Profil oben rechts → Kontoauszüge →
+                        Transaktionsexports</strong> → Zeitraum wählen → teilen.
+                        Die Datei hier auswählen.
+                    </p>
+                    <p class="daten-text">
+                        Käufe und Verkäufe werden je Wertpapier zu Trades zusammengefasst,
+                        Gebühren abgezogen, Doppelte übersprungen. Du siehst erst einen
+                        Bericht — gespeichert wird nichts, bevor du auf Übernehmen gehst.
+                    </p>
+                    <button onclick="cfTrImportWaehlen()" class="dtab-btn">Transaktionsexport wählen…</button>
+                    <input type="file" id="trImportInput" accept="text/csv,.csv" style="display: none;" onchange="cfTrImportGelesen(this)">
+                    <div id="trImportBericht" style="display: none; margin-top: 16px;"></div>
+                    <button id="trImportBtn" onclick="cfTrImportUebernehmen()" style="display: none;" class="dtab-btn dtab-btn-primaer">Übernehmen</button>
+                    <p id="trImportStatus" class="daten-status"></p>
+                </section>
+
+                </div>
+            <div class="daten-raster">
+
+                    <!-- ================== Sicherung ================== -->
+                    <section class="daten-karte">
+                        <h3 class="daten-titel">Sicherung</h3>
+                        <p class="daten-text">
+                            Eine Datei mit allen deinen Trades, Positionen, Setups und
+                            Buchungen. Zieh sie dir, bevor du etwas Größeres änderst.
+                        </p>
+                        <button onclick="cfExportieren()" class="dtab-btn dtab-btn-primaer">Sicherung herunterladen</button>
+                        <button onclick="cfImportWaehlen()" class="dtab-btn" style="margin-top: 10px;">Sicherung einspielen…</button>
+                        <input type="file" id="datenImportInput" accept="application/json,.json" style="display: none;" onchange="cfImportGelesen(this)">
+                        <div id="datenImportInfo" style="display: none; margin-top: 18px; background: rgba(168, 85, 247, 0.05); border: 1px solid rgba(168, 85, 247, 0.2); border-radius: 12px; padding: 16px 18px;"></div>
+                        <div id="datenImportAktionen" style="display: none; gap: 12px; margin-top: 14px;">
+                            <button onclick="cfImportAusfuehren('zusammenfuehren')" style="flex: 1; background: linear-gradient(135deg, #a855f7 0%, #ec4899 100%); border: none; color: white; padding: 13px 16px; border-radius: 12px; cursor: pointer; font-weight: 700; font-size: 13px; font-family: 'Inter', sans-serif;">Zusammenführen</button>
+                            <button onclick="cfImportAusfuehren('ersetzen')" style="flex: 1; background: rgba(239, 68, 68, 0.12); border: 1px solid rgba(239, 68, 68, 0.3); color: #fca5a5; padding: 13px 16px; border-radius: 12px; cursor: pointer; font-weight: 700; font-size: 13px; font-family: 'Inter', sans-serif;">Alles ersetzen</button>
+                        </div>
+                    </section>
+
+                    <!-- ============ In die Datenbank übertragen ============ -->
+                    <section class="daten-karte" id="migrationBlock" style="display: none;">
+                        <h3 class="daten-titel">In die Datenbank übertragen</h3>
+                        <p class="daten-text">
+                            Es liegen noch Daten nur in diesem Browser. Danach sind sie
+                            auf dem Server — auf jedem Gerät verfügbar und gegen einen
+                            geleerten Cache geschützt.
+                        </p>
+                        <div id="migrationBericht" style="display: none; background: rgba(168, 85, 247, 0.05); border: 1px solid rgba(168, 85, 247, 0.2); border-radius: 12px; padding: 14px 16px; margin-bottom: 14px;"></div>
+                        <button id="migrationBtn" onclick="cfMigrationStarten()" style="display: none;" class="dtab-btn dtab-btn-primaer">Daten übertragen</button>
+                        <p id="migrationStatus" class="daten-status"></p>
+                    </section>
+
+                    <!-- =================== Löschen =================== -->
+                    <section class="daten-karte daten-karte-gefahr" id="loeschBlock">
+                        <h3 class="daten-titel" style="color: #fca5a5;">Daten löschen</h3>
+                        <p class="daten-text">
+                            Lade vorher eine Sicherung herunter. Gelöschte Daten sind weg —
+                            es gibt keinen Papierkorb.
+                        </p>
+                        <button onclick="cfLoeschImporte()" class="btn-warnung">Nur importierte Trades löschen</button>
+                        <label style="display: block; color: #94a3b8; font-size: 11.5px; margin-bottom: 6px;">
+                            Für „alles löschen“ tippe <strong style="color:#fca5a5;">LÖSCHEN</strong> ein:
+                        </label>
+                        <input type="text" id="loeschBestaetigung" oninput="cfLoeschPruefen()" placeholder="LÖSCHEN" autocomplete="off" style="width: 100%; background: rgba(239, 68, 68, 0.06); border: 1px solid rgba(239, 68, 68, 0.25); border-radius: 10px; padding: 11px 14px; color: #f1f5f9; font-size: 13px; font-family: 'Inter', sans-serif; margin-bottom: 10px;">
+                        <button id="loeschAllesBtn" onclick="cfLoeschAlles()" disabled class="btn-gefahr">Alle meine Daten löschen</button>
+                        <p id="loeschStatus" class="daten-status"></p>
+                    </section>
+
+            </div>
+        </div>
+
+        <div id="calendar" class="tab-content">
+            <div style="margin-bottom: 32px;">
+                <h2 style="margin-bottom: 8px; font-size: 32px; font-weight: 700;">P&L-Kalender</h2>
+                <p style="color: #94a3b8; font-size: 14px; margin: 0;">Tägliche & monatliche Performance-Analyse mit historischen Daten</p>
+            </div>
+
+            <!-- PnL Calendar Stats Section -->
+            <div class="stat-grid">
+                <!-- Total P&L -->
+                <div class="dashboard-stat" style="background: linear-gradient(135deg, rgba(16, 185, 129, 0.1) 0%, rgba(16, 185, 129, 0.05) 100%); border: 1px solid rgba(16, 185, 129, 0.2); border-radius: 14px; padding: 20px; backdrop-filter: blur(10px);">
+                    <div style="color: #64748b; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600; margin-bottom: 12px;">Total P&L</div>
+                    <div id="totalPnLStat" style="font-size: 28px; font-weight: 800; color: #10b981; line-height: 1;">€0.00</div>
+                </div>
+
+                <!-- Best Day -->
+                <div class="dashboard-stat" style="background: linear-gradient(135deg, rgba(59, 130, 246, 0.1) 0%, rgba(59, 130, 246, 0.05) 100%); border: 1px solid rgba(59, 130, 246, 0.2); border-radius: 14px; padding: 20px; backdrop-filter: blur(10px);">
+                    <div style="color: #64748b; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600; margin-bottom: 12px;">Best Day</div>
+                    <div id="bestDayStat" style="font-size: 28px; font-weight: 800; color: #3b82f6; line-height: 1;">€0.00</div>
+                    <div id="bestDayDateStat" style="color: #94a3b8; font-size: 11px; margin-top: 6px;">—</div>
+                </div>
+
+                <!-- Worst Day -->
+                <div class="dashboard-stat" style="background: linear-gradient(135deg, rgba(239, 68, 68, 0.1) 0%, rgba(239, 68, 68, 0.05) 100%); border: 1px solid rgba(239, 68, 68, 0.2); border-radius: 14px; padding: 20px; backdrop-filter: blur(10px);">
+                    <div style="color: #64748b; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600; margin-bottom: 12px;">Worst Day</div>
+                    <div id="worstDayStat" style="font-size: 28px; font-weight: 800; color: #ef4444; line-height: 1;">€0.00</div>
+                    <div id="worstDayDateStat" style="color: #94a3b8; font-size: 11px; margin-top: 6px;">—</div>
+                </div>
+
+                <!-- Winning Days -->
+                <div class="dashboard-stat" style="background: linear-gradient(135deg, rgba(168, 85, 247, 0.1) 0%, rgba(168, 85, 247, 0.05) 100%); border: 1px solid rgba(168, 85, 247, 0.2); border-radius: 14px; padding: 20px; backdrop-filter: blur(10px);">
+                    <div style="color: #64748b; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600; margin-bottom: 12px;">Winning Days</div>
+                    <div id="winningDaysStat" style="font-size: 28px; font-weight: 800; color: #a855f7; line-height: 1;">0%</div>
+                </div>
+
+                <!-- Losing Days -->
+                <div class="dashboard-stat" style="background: linear-gradient(135deg, rgba(236, 72, 153, 0.1) 0%, rgba(236, 72, 153, 0.05) 100%); border: 1px solid rgba(236, 72, 153, 0.2); border-radius: 14px; padding: 20px; backdrop-filter: blur(10px);">
+                    <div style="color: #64748b; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600; margin-bottom: 12px;">Losing Days</div>
+                    <div id="losingDaysStat" style="font-size: 28px; font-weight: 800; color: #ec4899; line-height: 1;">0%</div>
+                </div>
+
+                <!-- Avg Daily P&L -->
+                <div class="dashboard-stat" style="background: linear-gradient(135deg, rgba(251, 146, 60, 0.1) 0%, rgba(251, 146, 60, 0.05) 100%); border: 1px solid rgba(251, 146, 60, 0.2); border-radius: 14px; padding: 20px; backdrop-filter: blur(10px);">
+                    <div style="color: #64748b; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600; margin-bottom: 12px;">Avg Daily P&L</div>
+                    <div id="avgDailyPnLStat" style="font-size: 28px; font-weight: 800; color: #fb923c; line-height: 1;">€0.00</div>
+                </div>
+            </div>
+
+            <!-- Calendar Controls -->
+            <div style="display: flex; gap: 12px; margin-bottom: 28px; align-items: center;">
+                <button class="calendar-btn filter-btn active" data-view="daily">📆 Täglich</button>
+                <button class="calendar-btn filter-btn" data-view="monthly">📊 Monatlich</button>
+                <div style="flex: 1;"></div>
+                <div style="color: #94a3b8; font-size: 12px; font-weight: 500; text-transform: uppercase;">
+                    <span id="calendarTradeCount">0</span> Trades • <span id="calendarTradingDays">0</span> Tage
+                </div>
+            </div>
+            
+            <div id="calendarContent"></div>
+        </div>
+
+        <!-- ===== DASHBOARD TAB ===== -->
+        <div id="dashboard" class="tab-content active">
+            <p>Loading...</p>
+        </div>
+
+        <!-- ===== ANALYTICS TAB ===== -->
+        <div id="analytics" class="tab-content">
+            <p>Loading...</p>
+        </div>
+
+        <!-- ===== ROADMAP TAB ===== -->
+        <!-- ===== ANLEITUNG =====
+             Die Bilder kommen aus der App selbst und werden mit
+             bilder_anleitung.mjs neu erzeugt. Nach einem Design-Update
+             einmal laufen lassen, sonst zeigt die Anleitung eine App,
+             die es nicht mehr gibt. -->
+        <div id="anleitung" class="tab-content">
+            <div style="margin-bottom: 32px;">
+                <h2 style="margin-bottom: 8px; font-size: 32px; font-weight: 700;">Anleitung</h2>
+                <p style="color: #94a3b8; font-size: 14px; margin: 0;">Von der Anmeldung bis zur ersten Auswertung</p>
+            </div>
+
+            <!-- ---------- 1 ---------- -->
+            <section class="hilfe-block">
+                <div class="hilfe-kopf">
+                    <span class="hilfe-nr">1</span>
+                    <h3 class="hilfe-titel">Reinkommen</h3>
+                </div>
+                <p class="hilfe-text">
+                    Erst <strong>mit Discord anmelden</strong>, danach erscheint das Feld
+                    für den Zugangsschlüssel. Vorher gibt es kein Konto, das
+                    freigeschaltet werden könnte — wer auf dem Login-Screen nach einem
+                    Schlüsselfeld sucht, sucht vergeblich.
+                </p>
+                <p class="hilfe-text">
+                    Groß- und Kleinschreibung, Bindestriche und Leerzeichen sind egal.
+                    Kopier ihn einfach so rein, wie du ihn bekommen hast.
+                </p>
+                <figure class="hilfe-bild" onclick="openScreenshotModal('img/anleitung/01-schluessel.webp')" title="Vergrößern">
+                    <img src="img/anleitung/01-schluessel.webp" alt="Das Feld für den Zugangsschlüssel nach der Discord-Anmeldung" loading="lazy">
+                    <figcaption>So sieht es aus, wenn du angemeldet, aber noch nicht freigeschaltet bist.</figcaption>
+                </figure>
+                <div class="hilfe-warn">
+                    Jeder Schlüssel gehört zu genau einem Discord-Konto. Einmal
+                    eingelöst, funktioniert er bei niemand anderem mehr.
+                </div>
+            </section>
+
+            <!-- ---------- 2 ---------- -->
+            <section class="hilfe-block">
+                <div class="hilfe-kopf">
+                    <span class="hilfe-nr">2</span>
+                    <h3 class="hilfe-titel">Deine Trades reinholen</h3>
+                </div>
+                <p class="hilfe-text">
+                    Du musst nichts abtippen. Trade Republic gibt dir eine Datei mit
+                    allem, was du gehandelt hast — die liest die App ein und baut daraus
+                    deine Trades.
+                </p>
+                <p class="hilfe-text"><strong>In der Trade-Republic-App</strong> (nur dort, im Browser geht es nicht):</p>
+                <ol class="hilfe-liste">
+                    <li>Auf dein <strong>Profilbild oben rechts</strong> tippen</li>
+                    <li><strong>Kontoauszüge</strong></li>
+                    <li><strong>Transaktionsexport</strong> — steht ganz unten in der Liste</li>
+                    <li>Zeitraum wählen, <strong>Erstellen</strong>, dann teilen oder speichern</li>
+                </ol>
+                <div class="hilfe-warn">
+                    Die Datei <strong>nicht vorher in Excel öffnen</strong>. Excel schreibt
+                    Datums- und Zahlenformate um, und danach liest die App sie falsch oder
+                    gar nicht.
+                </div>
+                <p class="hilfe-text">
+                    Danach hier in der App auf <strong>Daten</strong> und die Datei auswählen.
+                    Du bekommst erst einen Bericht zu sehen: wie viele Trades gefunden
+                    wurden, wie viele schon da sind, was übersprungen wird.
+                    <strong>Gespeichert wird nichts, bevor du auf Übernehmen gehst.</strong>
+                </p>
+                <figure class="hilfe-bild" onclick="openScreenshotModal('img/anleitung/02-import.webp')" title="Vergrößern">
+                    <img src="img/anleitung/02-import.webp" alt="Der Daten-Tab mit Import, Sicherung und Löschen" loading="lazy">
+                    <figcaption>Der Daten-Tab. Hier liegt auch die Sicherung — und der Weg, alles wieder loszuwerden.</figcaption>
+                </figure>
+                <p class="hilfe-text">
+                    Denselben Export kannst du jeden Monat neu einlesen. Was schon drin
+                    ist, wird erkannt und übersprungen — es entstehen keine Doppelten.
+                </p>
+            </section>
+
+            <!-- ---------- 3 ---------- -->
+            <section class="hilfe-block">
+                <div class="hilfe-kopf">
+                    <span class="hilfe-nr">3</span>
+                    <h3 class="hilfe-titel">Zwei Zahlen, die alles ändern</h3>
+                </div>
+                <p class="hilfe-text">
+                    Das hier ist der Teil, der CapitalFlow von einer Liste deiner Trades
+                    unterscheidet — und der einzige, den du von Hand eintragen musst.
+                </p>
+                <p class="hilfe-text">
+                    In der Export-Datei von Trade Republic steht nicht, wo der Basiswert
+                    stand, als du gekauft hast. Du siehst dort nur, was das Zertifikat
+                    gekostet hat. Damit lässt sich nicht sagen, wie nah du an der
+                    Knockout-Schwelle warst — und genau das ist die Zahl, die über deinen
+                    nächsten Totalverlust entscheidet.
+                </p>
+                <p class="hilfe-text">
+                    Trag beim Trade zwei Zahlen ein, die beim Schein in der TR-App stehen:
+                    <strong>Knockout-Preis</strong> und <strong>Hebel</strong>. Aus denen
+                    rechnet die App alles andere zurück.
+                </p>
+                <figure class="hilfe-bild" onclick="openScreenshotModal('img/anleitung/03-knockout.webp')" title="Vergrößern">
+                    <img src="img/anleitung/03-knockout.webp" alt="Das Knock-Out-Formular im Journal mit den Feldern für Knockout-Preis, Hebel und Stop" loading="lazy">
+                    <figcaption>Produktart oben auf <em>Knock-Out</em> stellen, dann erscheint dieser Block.</figcaption>
+                </figure>
+                <p class="hilfe-text">Daraus wird, ohne dass du sonst etwas tust:</p>
+                <figure class="hilfe-bild" onclick="openScreenshotModal('img/anleitung/04-kacheln.webp')" title="Vergrößern">
+                    <img src="img/anleitung/04-kacheln.webp" alt="Berechnete Kacheln: Kurs beim Kauf, echter Hebel, KO-Abstand, Risiko in Euro" loading="lazy">
+                                    <figcaption>Was die App aus zwei Zahlen rechnet</figcaption>
+                </figure>
+                <ul class="hilfe-punkte">
+                    <li><strong>Kurs beim Kauf</strong> — wo der Basiswert stand. Vergleich das kurz mit deinem Chart; passt es nicht, hast du dich bei einer der beiden Zahlen vertippt.</li>
+                    <li><strong>Echter Hebel</strong> — was du wirklich hattest.</li>
+                    <li><strong>KO-Abstand</strong> — wie weit der Kurs fallen durfte, bevor alles weg ist. Unter 5 % wird die Zahl rot.</li>
+                    <li><strong>Risiko bei deinem Stop</strong> — was dich dein Stop in Euro gekostet hätte. Liegt der Stop jenseits der Schwelle, steht dort der volle Einsatz, denn mehr als alles kannst du nicht verlieren.</li>
+                </ul>
+                <p class="hilfe-text">
+                    Alle Felder sind freiwillig. Ohne sie speichert der Trade ganz normal —
+                    du bekommst dann eben ein Journal wie jedes andere.
+                </p>
+            </section>
+
+            <!-- ---------- 4 ---------- -->
+            <section class="hilfe-block">
+                <div class="hilfe-kopf">
+                    <span class="hilfe-nr">4</span>
+                    <h3 class="hilfe-titel">Nachtragen, was der Import nicht wissen kann</h3>
+                </div>
+                <p class="hilfe-text">
+                    Importierte Trades haben keinen Stop, keinen Grund und keine
+                    Hebelzahlen — das steht in der TR-Datei schlicht nicht drin. Solche
+                    Trades sind im Journal markiert.
+                </p>
+                <figure class="hilfe-bild" onclick="openScreenshotModal('img/anleitung/05-nachtragen.webp')" title="Vergrößern">
+                    <img src="img/anleitung/05-nachtragen.webp" alt="Eine importierte Trade-Karte mit dem Hinweis, was noch fehlt" loading="lazy">
+                    <figcaption>Ein Klick auf <em>Jetzt nachtragen</em> öffnet den Trade im Formular oben.</figcaption>
+                </figure>
+                <p class="hilfe-text">
+                    Sobald Stop und Grund drin sind, verschwindet der Hinweis. Bearbeiten
+                    kannst du jeden Trade jederzeit, auch von Hand eingetragene — der
+                    Knopf sitzt unten auf jeder Karte.
+                </p>
+                <div class="hilfe-tipp">
+                    Nimm dir die fünf schlechtesten Trades vor und trag dort den Grund
+                    nach. Das ist mehr wert als alle vierzig, denn die Auswertung wird
+                    erst interessant, wenn sie deine Verlierer nach Ursache sortieren kann.
+                </div>
+            </section>
+
+            <!-- ---------- 5 ---------- -->
+            <section class="hilfe-block">
+                <div class="hilfe-kopf">
+                    <span class="hilfe-nr">5</span>
+                    <h3 class="hilfe-titel">Eine Trade-Karte lesen</h3>
+                </div>
+                <figure class="hilfe-bild" onclick="openScreenshotModal('img/anleitung/06-tradekarte.webp')" title="Vergrößern">
+                    <img src="img/anleitung/06-tradekarte.webp" alt="Eine vollständige Trade-Karte im Journal" loading="lazy">
+                                    <figcaption>Eine Trade-Karte im Journal</figcaption>
+                </figure>
+                <ul class="hilfe-punkte">
+                    <li><strong>LONG / SHORT</strong> — Richtung. Bei einem Short-Knockout steigt der Schein, wenn der Kurs fällt; die App rechnet das richtig herum.</li>
+                    <li><strong>12×</strong> — der Hebel. Steht dort <em>Hebel&nbsp;?</em>, fehlen die zwei Zahlen aus Schritt 3.</li>
+                    <li><strong>KO 8,3&nbsp;%</strong> — Abstand zur Schwelle beim Einstieg. Rot ab unter 5 %.</li>
+                    <li><strong>R:R</strong> — was du gewonnen hast, geteilt durch das, was du riskiert hast. Ohne Stop steht dort 0.</li>
+                </ul>
+            </section>
+
+            <!-- ---------- 6 ---------- -->
+            <section class="hilfe-block">
+                <div class="hilfe-kopf">
+                    <span class="hilfe-nr">6</span>
+                    <h3 class="hilfe-titel">Was die Zahlen bedeuten</h3>
+                </div>
+                <figure class="hilfe-bild" onclick="openScreenshotModal('img/anleitung/07-auswertung.webp')" title="Vergrößern">
+                    <img src="img/anleitung/07-auswertung.webp" alt="Der Analytics-Tab mit Trefferquote, Profit-Faktor und Erwartungswert" loading="lazy">
+                                    <figcaption>Die Kennzahlen im Analytics-Tab</figcaption>
+                </figure>
+                <ul class="hilfe-punkte">
+                    <li><strong>Win Rate</strong> — die Trefferquote: wie viele Trades im Plus waren. Sagt für sich genommen wenig. 70 % Treffer und trotzdem im Minus ist völlig normal, wenn die Verlierer größer sind als die Gewinner.</li>
+                    <li><strong>Profit Factor</strong> — alle Gewinne geteilt durch alle Verluste. Über 1 verdienst du, unter 1 zahlst du drauf.</li>
+                    <li><strong>Expectancy</strong> — was ein durchschnittlicher Trade dir einbringt. Die ehrlichste Zahl auf der Seite, weil Trefferquote und Größe darin zusammenkommen. Wenn du nur eine Zahl anschaust, dann diese.</li>
+                    <li><strong>Ø Chance : Risiko</strong> — wie viel du im Schnitt gewonnen hast, gemessen an dem, was du riskiert hast. Gerechnet wird das nur über Trades mit Stop; darunter steht, wie viele das sind.</li>
+                    <li><strong>Haltedauer</strong> — deine Trades nach Länge sortiert. Hier findest du am ehesten ein Muster, das dich Geld kostet.</li>
+                </ul>
+                <p class="hilfe-text">
+                    Die Kacheln heißen im Analytics-Tab noch englisch, der Rest der App
+                    deutsch. Das wird noch vereinheitlicht.
+                </p>
+                <div class="hilfe-warn">
+                    Unter etwa 30 Trades ist keine dieser Zahlen belastbar. Ein einzelner
+                    guter Trade verschiebt alles. Schau sie dir an, aber bau noch keine
+                    Regel darauf.
+                </div>
+            </section>
+
+            <!-- ---------- 7 ---------- -->
+            <section class="hilfe-block">
+                <div class="hilfe-kopf">
+                    <span class="hilfe-nr">7</span>
+                    <h3 class="hilfe-titel">Deine Daten</h3>
+                </div>
+                <ul class="hilfe-punkte">
+                    <li><strong>Sicherung</strong> — eine Datei mit allem, was dir gehört. Zieh sie dir, bevor du etwas Größeres änderst.</li>
+                    <li><strong>Nur Import löschen</strong> — nimmt alles zurück, was aus einer CSV kam. Von Hand eingetragene Trades bleiben.</li>
+                    <li><strong>Alles löschen</strong> — Neuanfang. Ist nicht rückgängig zu machen.</li>
+                </ul>
+                <p class="hilfe-text">
+                    Deine Trades sieht niemand außer dir — auch nicht die anderen
+                    Mitglieder. Die Datenbank gibt jedem Konto ausschließlich die eigenen
+                    Zeilen heraus.
+                </p>
+                <div class="hilfe-tipp">
+                    Etwas funktioniert nicht, eine Zahl sieht falsch aus, ein Wort ist
+                    unverständlich? Sag Bescheid. Die meisten Fehler dieser App wurden
+                    gefunden, weil jemand gesagt hat &bdquo;das kann so nicht stimmen&ldquo;.
+                </div>
+            </section>
+        </div>
+
+        <!-- ===== ZUGÄNGE (nur Admin) =====
+             Ersetzt den alten Ablauf über js/keys.js: Schlüssel erzeugen,
+             Zeile kopieren, committen, pushen. Hier wirkt alles sofort,
+             weil die Schlüssel in der Datenbank liegen. -->
+        <div id="admin" class="tab-content">
+            <div style="margin-bottom: 32px;">
+                <h2 style="margin-bottom: 8px; font-size: 32px; font-weight: 700;">Zugänge</h2>
+                <p style="color: #94a3b8; font-size: 14px; margin: 0;">Wer darf rein — und wer nicht mehr</p>
+            </div>
+
+            <div class="admin-karte">
+                <h3 class="admin-karte-titel">Neuen Zugang anlegen</h3>
+                <p class="admin-karte-text">
+                    Der Schlüssel wird hier im Browser erzeugt und nur als Prüfsumme
+                    gespeichert. Er ist genau einmal zu sehen — danach nirgends mehr,
+                    auch nicht für dich.
+                </p>
+                <div class="admin-formular">
+                    <input type="text" id="adminName" class="admin-feld"
+                           placeholder="Für wen? z.B. Marcel" autocomplete="off" spellcheck="false">
+                    <input type="text" id="adminNotiz" class="admin-feld"
+                           placeholder="Notiz (optional)" autocomplete="off">
+                    <button type="button" class="btn btn-primary" id="adminAnlegenBtn">Schlüssel erzeugen</button>
+                </div>
+                <div id="adminNeuerKey"></div>
+            </div>
+
+            <div class="admin-karte">
+                <div class="admin-karte-kopf">
+                    <h3 class="admin-karte-titel">Vergebene Schlüssel</h3>
+                    <span class="admin-zahl" id="adminZahl"></span>
+                </div>
+                <p class="admin-karte-text">
+                    Sperren wirkt sofort, auch mitten in einer laufenden Sitzung.
+                    Die Daten der Person bleiben dabei erhalten.
+                </p>
+                <div id="adminListe" class="admin-liste"></div>
+            </div>
+        </div>
+
+        <div id="roadmap" class="tab-content">
+            <div style="margin-bottom: 40px;">
+                <h2 style="margin-bottom: 8px; font-size: 32px; font-weight: 700;">Product Roadmap</h2>
+                <p style="color: #94a3b8; font-size: 14px; margin: 0;">CapitalFlow Development Phases • 11/16 Features Complete</p>
+            </div>
+
+</html>            <!-- ===== PHASE 1 ===== -->
+            <div style="margin-bottom: 56px;">
+                <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 28px;">
+                    <div>
+                        <h3 style="color: #10b981; font-size: 24px; font-weight: 700; margin: 0 0 8px 0;">Phase 1: Foundation</h3>
+                        <p style="color: #94a3b8; font-size: 13px; margin: 0;">Core trading infrastructure</p>
+                    </div>
+                    <div style="text-align: right;">
+                        <div style="font-size: 36px; font-weight: 700; color: #10b981;">5/5</div>
+                        <div style="font-size: 12px; color: #10b981; font-weight: 600;">✅ COMPLETED</div>
+                    </div>
+                </div>
+                
+                <div style="width: 100%; height: 8px; background: rgba(16, 185, 129, 0.1); border-radius: 4px; margin-bottom: 28px; overflow: hidden; border: 1px solid rgba(16, 185, 129, 0.2);">
+                    <div style="width: 100%; height: 100%; background: linear-gradient(90deg, #10b981 0%, #6ee7b7 100%); border-radius: 4px; box-shadow: 0 0 20px rgba(16, 185, 129, 0.5);"></div>
+                </div>
+                
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 16px;">
+                    <div class="roadmap-card-premium completed-card">
+                        <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 14px;">
+                            <div style="font-size: 36px; opacity: 0.95;">📊</div>
+                            <svg style="width: 20px; height: 20px; color: #10b981; stroke-width: 3;" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                <polyline points="20 6 9 17 4 12"></polyline>
+                            </svg>
+                        </div>
+                        <h4 style="font-size: 13px; font-weight: 700; color: #e2e8f0; margin: 0 0 6px 0; text-transform: uppercase; letter-spacing: 0.5px;">Dashboard</h4>
+                        <p style="font-size: 11px; color: #94a3b8; margin: 0; line-height: 1.5;">Live Stats, Radar, Heatmap</p>
+                    </div>
+                    
+                    <div class="roadmap-card-premium completed-card">
+                        <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 14px;">
+                            <div style="font-size: 36px; opacity: 0.95;">📔</div>
+                            <svg style="width: 20px; height: 20px; color: #10b981; stroke-width: 3;" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                <polyline points="20 6 9 17 4 12"></polyline>
+                            </svg>
+                        </div>
+                        <h4 style="font-size: 13px; font-weight: 700; color: #e2e8f0; margin: 0 0 6px 0; text-transform: uppercase; letter-spacing: 0.5px;">Journal</h4>
+                        <p style="font-size: 11px; color: #94a3b8; margin: 0; line-height: 1.5;">Entry, Exit, Setup</p>
+                    </div>
+                    
+                    <div class="roadmap-card-premium completed-card">
+                        <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 14px;">
+                            <div style="font-size: 36px; opacity: 0.95;">📈</div>
+                            <svg style="width: 20px; height: 20px; color: #10b981; stroke-width: 3;" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                <polyline points="20 6 9 17 4 12"></polyline>
+                            </svg>
+                        </div>
+                        <h4 style="font-size: 13px; font-weight: 700; color: #e2e8f0; margin: 0 0 6px 0; text-transform: uppercase; letter-spacing: 0.5px;">Analytics</h4>
+                        <p style="font-size: 11px; color: #94a3b8; margin: 0; line-height: 1.5;">Win Rate, Profit</p>
+                    </div>
+                    
+                    <div class="roadmap-card-premium completed-card">
+                        <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 14px;">
+                            <div style="font-size: 36px; opacity: 0.95;">📅</div>
+                            <svg style="width: 20px; height: 20px; color: #10b981; stroke-width: 3;" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                <polyline points="20 6 9 17 4 12"></polyline>
+                            </svg>
+                        </div>
+                        <h4 style="font-size: 13px; font-weight: 700; color: #e2e8f0; margin: 0 0 6px 0; text-transform: uppercase; letter-spacing: 0.5px;">Calendar</h4>
+                        <p style="font-size: 11px; color: #94a3b8; margin: 0; line-height: 1.5;">Day/Month View</p>
+                    </div>
+                    
+                    <div class="roadmap-card-premium completed-card">
+                        <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 14px;">
+                            <div style="font-size: 36px; opacity: 0.95;">🔐</div>
+                            <svg style="width: 20px; height: 20px; color: #10b981; stroke-width: 3;" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                <polyline points="20 6 9 17 4 12"></polyline>
+                            </svg>
+                        </div>
+                        <h4 style="font-size: 13px; font-weight: 700; color: #e2e8f0; margin: 0 0 6px 0; text-transform: uppercase; letter-spacing: 0.5px;">Auth</h4>
+                        <p style="font-size: 11px; color: #94a3b8; margin: 0; line-height: 1.5;">Admin, Security</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ===== PHASE 2 ===== -->
+            <div style="margin-bottom: 56px;">
+                <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 28px;">
+                    <div>
+                        <h3 style="color: #f59e0b; font-size: 24px; font-weight: 700; margin: 0 0 8px 0;">Phase 2: Advanced Features</h3>
+                        <p style="color: #94a3b8; font-size: 13px; margin: 0;">Cross-platform expansion & ecosystem</p>
+                    </div>
+                    <div style="text-align: right;">
+                        <div style="font-size: 36px; font-weight: 700; color: #f59e0b;">6/7</div>
+                        <div style="font-size: 12px; color: #f59e0b; font-weight: 600;">🔄 IN PROGRESS</div>
+                    </div>
+                </div>
+                
+                <div style="width: 100%; height: 8px; background: rgba(245, 158, 11, 0.1); border-radius: 4px; margin-bottom: 28px; overflow: hidden; border: 1px solid rgba(245, 158, 11, 0.2);">
+                    <div style="width: 86%; height: 100%; background: linear-gradient(90deg, #f59e0b 0%, #fbbf24 100%); border-radius: 4px; box-shadow: 0 0 20px rgba(245, 158, 11, 0.5);" transition="all 0.5s ease;"></div>
+                </div>
+                
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 16px;">
+                    <div class="roadmap-card-premium completed-card">
+                        <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 14px;">
+                            <div style="font-size: 32px;">👁️</div>
+                            <svg style="width: 20px; height: 20px; color: #10b981; stroke-width: 3;" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                <polyline points="20 6 9 17 4 12"></polyline>
+                            </svg>
+                        </div>
+                        <h4 style="font-size: 13px; font-weight: 700; color: #e2e8f0; margin: 0 0 6px 0; text-transform: uppercase; letter-spacing: 0.5px;">Setups</h4>
+                        <p style="font-size: 11px; color: #94a3b8; margin: 0; line-height: 1.5;">Setups & Planung</p>
+                    </div>
+                    
+                    <div class="roadmap-card-premium completed-card">
+                        <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 14px;">
+                            <div style="font-size: 32px;">💼</div>
+                            <svg style="width: 20px; height: 20px; color: #10b981; stroke-width: 3;" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                <polyline points="20 6 9 17 4 12"></polyline>
+                            </svg>
+                        </div>
+                        <h4 style="font-size: 13px; font-weight: 700; color: #e2e8f0; margin: 0 0 6px 0; text-transform: uppercase; letter-spacing: 0.5px;">Portfolio Analyse</h4>
+                        <p style="font-size: 11px; color: #94a3b8; margin: 0; line-height: 1.5;">Open & Closed Pos</p>
+                    </div>
+                    
+                    <div class="roadmap-card-premium completed-card">
+                        <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 14px;">
+                            <div style="font-size: 32px;">💳</div>
+                            <svg style="width: 20px; height: 20px; color: #10b981; stroke-width: 3;" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                <polyline points="20 6 9 17 4 12"></polyline>
+                            </svg>
+                        </div>
+                        <h4 style="font-size: 13px; font-weight: 700; color: #e2e8f0; margin: 0 0 6px 0; text-transform: uppercase; letter-spacing: 0.5px;">Transactions</h4>
+                        <p style="font-size: 11px; color: #94a3b8; margin: 0; line-height: 1.5;">Ein- & Auszahlungen</p>
+                    </div>
+                    
+                    <div class="roadmap-card-premium in-progress-card">
+                        <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 14px;">
+                            <div style="font-size: 32px;">🎨</div>
+                            <div style="background: rgba(245, 158, 11, 0.25); color: #f59e0b; padding: 3px 6px; border-radius: 3px; font-size: 10px; font-weight: 700;">SOON</div>
+                        </div>
+                        <h4 style="font-size: 13px; font-weight: 700; color: #e2e8f0; margin: 0 0 6px 0; text-transform: uppercase; letter-spacing: 0.5px;">Design Polish</h4>
+                        <p style="font-size: 11px; color: #94a3b8; margin: 0; line-height: 1.5;">UI Refinements</p>
+                    </div>
+                    
+                    <div class="roadmap-card-premium completed-card">
+                        <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 14px;">
+                            <div style="font-size: 32px;">📋</div>
+                            <svg style="width: 20px; height: 20px; color: #10b981; stroke-width: 3;" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                <polyline points="20 6 9 17 4 12"></polyline>
+                            </svg>
+                        </div>
+                        <h4 style="font-size: 13px; font-weight: 700; color: #e2e8f0; margin: 0 0 6px 0; text-transform: uppercase; letter-spacing: 0.5px;">Closed Pos</h4>
+                        <p style="font-size: 11px; color: #94a3b8; margin: 0; line-height: 1.5;">Exit Archive</p>
+                    </div>
+                    
+                    <div class="roadmap-card-premium completed-card">
+                        <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 14px;">
+                            <div style="font-size: 32px;">🖥️</div>
+                            <svg style="width: 20px; height: 20px; color: #10b981; stroke-width: 3;" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                <polyline points="20 6 9 17 4 12"></polyline>
+                            </svg>
+                        </div>
+                        <h4 style="font-size: 13px; font-weight: 700; color: #e2e8f0; margin: 0 0 6px 0; text-transform: uppercase; letter-spacing: 0.5px;">Desktop App</h4>
+                        <p style="font-size: 11px; color: #94a3b8; margin: 0; line-height: 1.5;">Installierbar, offline</p>
+                    </div>
+                    
+                    <div class="roadmap-card-premium in-progress-card">
+                        <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 14px;">
+                            <div style="font-size: 32px;">📱</div>
+                            <div style="background: rgba(245, 158, 11, 0.25); color: #f59e0b; padding: 3px 6px; border-radius: 3px; font-size: 10px; font-weight: 700;">SOON</div>
+                        </div>
+                        <h4 style="font-size: 13px; font-weight: 700; color: #e2e8f0; margin: 0 0 6px 0; text-transform: uppercase; letter-spacing: 0.5px;">Mobile App</h4>
+                        <p style="font-size: 11px; color: #94a3b8; margin: 0; line-height: 1.5;">iOS & Android</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ===== PHASE 3 ===== -->
+            <div>
+                <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 28px;">
+                    <div>
+                        <h3 style="color: #8b5cf6; font-size: 24px; font-weight: 700; margin: 0 0 8px 0;">Phase 3: Integration</h3>
+                        <p style="color: #94a3b8; font-size: 13px; margin: 0;">Enterprise & AI capabilities</p>
+                    </div>
+                    <div style="text-align: right;">
+                        <div style="font-size: 36px; font-weight: 700; color: #8b5cf6;">0/4</div>
+                        <div style="font-size: 12px; color: #8b5cf6; font-weight: 600;">📅 PLANNED</div>
+                    </div>
+                </div>
+                
+                <div style="width: 100%; height: 8px; background: rgba(139, 92, 246, 0.1); border-radius: 4px; margin-bottom: 28px; overflow: hidden; border: 1px solid rgba(139, 92, 246, 0.2);">
+                    <div style="width: 0%; height: 100%; background: linear-gradient(90deg, #8b5cf6 0%, #c4b5fd 100%); border-radius: 4px; box-shadow: 0 0 20px rgba(139, 92, 246, 0.5);"></div>
+                </div>
+                
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 16px;">
+                    <div class="roadmap-card-premium planned-card">
+                        <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 14px;">
+                            <div style="font-size: 36px; opacity: 0.7;">🔌</div>
+                            <div style="background: rgba(139, 92, 246, 0.25); color: #8b5cf6; padding: 3px 6px; border-radius: 3px; font-size: 10px; font-weight: 700;">Q1 2027</div>
+                        </div>
+                        <h4 style="font-size: 13px; font-weight: 700; color: #e2e8f0; margin: 0 0 6px 0; text-transform: uppercase; letter-spacing: 0.5px;">Broker API</h4>
+                        <p style="font-size: 11px; color: #94a3b8; margin: 0; line-height: 1.5;">IB, Degiro, Futu</p>
+                    </div>
+                    
+                    <div class="roadmap-card-premium planned-card">
+                        <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 14px;">
+                            <div style="font-size: 36px; opacity: 0.7;">💰</div>
+                            <div style="background: rgba(139, 92, 246, 0.25); color: #8b5cf6; padding: 3px 6px; border-radius: 3px; font-size: 10px; font-weight: 700;">Q1 2027</div>
+                        </div>
+                        <h4 style="font-size: 13px; font-weight: 700; color: #e2e8f0; margin: 0 0 6px 0; text-transform: uppercase; letter-spacing: 0.5px;">Tax Reports</h4>
+                        <p style="font-size: 11px; color: #94a3b8; margin: 0; line-height: 1.5;">Auto Calculation</p>
+                    </div>
+                    
+                    <div class="roadmap-card-premium planned-card">
+                        <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 14px;">
+                            <div style="font-size: 36px; opacity: 0.7;">👥</div>
+                            <div style="background: rgba(139, 92, 246, 0.25); color: #8b5cf6; padding: 3px 6px; border-radius: 3px; font-size: 10px; font-weight: 700;">Q1 2027</div>
+                        </div>
+                        <h4 style="font-size: 13px; font-weight: 700; color: #e2e8f0; margin: 0 0 6px 0; text-transform: uppercase; letter-spacing: 0.5px;">Community</h4>
+                        <p style="font-size: 11px; color: #94a3b8; margin: 0; line-height: 1.5;">Leaderboards</p>
+                    </div>
+                    
+                    <div class="roadmap-card-premium planned-card">
+                        <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 14px;">
+                            <div style="font-size: 36px; opacity: 0.7;">🤖</div>
+                            <div style="background: rgba(139, 92, 246, 0.25); color: #8b5cf6; padding: 3px 6px; border-radius: 3px; font-size: 10px; font-weight: 700;">Q1 2027</div>
+                        </div>
+                        <h4 style="font-size: 13px; font-weight: 700; color: #e2e8f0; margin: 0 0 6px 0; text-transform: uppercase; letter-spacing: 0.5px;">AI Insights</h4>
+                        <p style="font-size: 11px; color: #94a3b8; margin: 0; line-height: 1.5;">Pattern Recognition</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- ===== LOGOUT MODAL ===== -->
+    <div class="modal" id="logoutModal">
+        <div class="modal-content" style="max-width: 400px;">
+            <h3 style="margin-top: 0; color: #e2e8f0; font-size: 20px;">Logout?</h3>
+            <p style="color: #94a3b8; margin: 16px 0;">Bist du sicher, dass du dich abmelden möchtest?</p>
+            <div style="display: flex; gap: 12px; justify-content: flex-end;">
+                <button onclick="cancelLogout()" style="background: rgba(94, 109, 241, 0.1); border: 1px solid rgba(94, 109, 241, 0.3); color: #cbd5e1; padding: 10px 24px; border-radius: 8px; cursor: pointer; font-weight: 600;">Abbrechen</button>
+                <button onclick="confirmLogout()" style="background: linear-gradient(135deg, #f87171 0%, #fb7185 100%); border: none; color: white; padding: 10px 24px; border-radius: 8px; cursor: pointer; font-weight: 600;">Logout</button>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- ===== DELETE MODAL ===== -->
+    <!-- ===== ALTE DATEN UEBERNEHMEN ===== -->
+    <div class="modal" id="altdatenModal">
+        <div class="modal-content" style="max-width: 440px; background: linear-gradient(135deg, rgba(15, 15, 32, 0.95) 0%, rgba(20, 20, 45, 0.95) 100%); border: 1px solid rgba(168, 85, 247, 0.2); border-radius: 20px; backdrop-filter: blur(20px); padding: 40px; box-shadow: 0 25px 50px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.1);">
+            <div style="margin-bottom: 22px;">
+                <h2 style="margin: 0 0 8px 0; font-size: 26px; font-weight: 700; background: linear-gradient(135deg, #c084fc 0%, #f472b6 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;">Frühere Daten gefunden</h2>
+                <p style="margin: 0; color: #94a3b8; font-size: 13px; line-height: 1.6;">In diesem Browser liegen Trades aus mehreren früheren Zugängen. Welche gehören dir?</p>
+            </div>
+            <div id="altdatenListe"></div>
+            <button onclick="cfAltdatenSpaeter()" class="auth-link" style="margin-top: 18px;">Später entscheiden</button>
+        </div>
+    </div>
+
+    <!-- ===== DATEN SICHERN / EINSPIELEN ===== -->
+    <div class="modal" id="deleteModal">
+        <div class="modal-content" style="max-width: 420px; background: linear-gradient(135deg, rgba(15, 15, 32, 0.95) 0%, rgba(20, 20, 45, 0.95) 100%); border: 1px solid rgba(168, 85, 247, 0.2); border-radius: 20px; backdrop-filter: blur(20px); padding: 40px; box-shadow: 0 25px 50px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.1);">
+            <div style="margin-bottom: 28px;">
+                <h2 id="deleteModalTitle" style="margin: 0 0 8px 0; font-size: 28px; font-weight: 700; background: linear-gradient(135deg, #f87171 0%, #fb7185 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;">🗑️ Löschen?</h2>
+                <p id="deleteModalText" style="margin: 0; color: #94a3b8; font-size: 13px;">Diese Aktion kann nicht rückgängig gemacht werden</p>
+            </div>
+
+            <div style="background: rgba(239, 68, 68, 0.05); border: 1px solid rgba(239, 68, 68, 0.2); border-radius: 12px; padding: 16px; margin-bottom: 28px;">
+                <p style="margin: 0; color: #cbd5e1; font-size: 13px; line-height: 1.6;">Bitte bestätigen Sie, dass Sie diesen Eintrag permanent löschen möchten. Diese Aktion kann nicht rückgängig gemacht werden.</p>
+            </div>
+
+            <div style="display: flex; gap: 12px;">
+                <button onclick="cancelDelete()" style="flex: 1; background: rgba(100, 116, 139, 0.15); border: 1px solid rgba(100, 116, 139, 0.3); color: #cbd5e1; padding: 13px 20px; border-radius: 12px; cursor: pointer; font-weight: 600; font-size: 14px; transition: all 0.2s ease;" onmouseover="this.style.background='rgba(100, 116, 139, 0.25)'; this.style.borderColor='rgba(100, 116, 139, 0.5)'" onmouseout="this.style.background='rgba(100, 116, 139, 0.15)'; this.style.borderColor='rgba(100, 116, 139, 0.3)'">Abbrechen</button>
+                <button id="deleteConfirmBtn" style="flex: 1; background: linear-gradient(135deg, #f87171 0%, #fb7185 100%); border: none; color: white; padding: 13px 20px; border-radius: 12px; cursor: pointer; font-weight: 700; font-size: 14px; box-shadow: 0 4px 15px rgba(248, 113, 113, 0.3); transition: all 0.2s ease;" onmouseover="this.style.boxShadow='0 8px 25px rgba(248, 113, 113, 0.4)'; this.style.transform='translateY(-2px)'" onmouseout="this.style.boxShadow='0 4px 15px rgba(248, 113, 113, 0.3)'; this.style.transform='translateY(0)'">Ja, löschen</button>
+            </div>
+        </div>
+    </div>
+    <!-- ===== SCREENSHOT MODAL ===== -->
+    <div class="modal" id="screenshotModal">
+        <div class="modal-content screenshot-modal-content">
+            <img id="screenshotModalImg" src="" alt="Screenshot" style="max-width: 70vw; max-height: 70vh; border-radius: 8px;">
+            <button class="modal-close" onclick="closeScreenshotModal()">✕</button>
+        </div>
+    </div>
+
+    <!-- ===== CLOSE POSITION MODAL ===== -->
+    <div class="modal" id="closePositionModal">
+        <div class="modal-content" style="max-width: 520px; background: linear-gradient(135deg, rgba(15, 15, 32, 0.95) 0%, rgba(20, 20, 45, 0.95) 100%); border: 1px solid rgba(168, 85, 247, 0.2); border-radius: 20px; backdrop-filter: blur(20px); padding: 40px; box-shadow: 0 25px 50px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.1);">
+            <div style="margin-bottom: 28px;">
+                <h2 style="margin: 0 0 8px 0; font-size: 28px; font-weight: 700; background: linear-gradient(135deg, #a855f7 0%, #ec4899 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;">📊 Position Schließen</h2>
+                <p style="margin: 0; color: #94a3b8; font-size: 13px;">Geben Sie den Exit Price und den Grund ein</p>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 24px;">
+                <div class="form-group">
+                    <label for="modalExitPrice" style="display: block; font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: #94a3b8; margin-bottom: 10px;">Exit Price (€)</label>
+                    <input type="number" id="modalExitPrice" placeholder="z.B. 155.50" step="0.01" required style="width: 100%; background: rgba(168, 85, 247, 0.08); border: 1px solid rgba(168, 85, 247, 0.2); border-radius: 10px; padding: 12px 16px; color: #f1f5f9; font-size: 14px; font-weight: 500; font-family: 'Inter', sans-serif;">
+                </div>
+                <div class="form-group">
+                    <label for="modalPosition" style="display: block; font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: #94a3b8; margin-bottom: 10px;">Position Info</label>
+                    <div id="modalPositionInfo" style="background: rgba(168, 85, 247, 0.08); border: 1px solid rgba(168, 85, 247, 0.2); border-radius: 10px; padding: 12px 16px; color: #cbd5e1; font-size: 12px; font-weight: 600; display: flex; align-items: center; gap: 8px;">
+                        <span id="modalPositionTicker" style="color: #a855f7; font-weight: 700;">-</span>
+                        <span id="modalPositionSize" style="color: #94a3b8;">-</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-group" style="margin-bottom: 24px;">
+                <label for="modalExitReason" style="display: block; font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: #94a3b8; margin-bottom: 10px;">Grund zum Schließen</label>
+                <textarea id="modalExitReason" placeholder="Warum schließe ich diese Position? (optional)" rows="3" style="width: 100%; background: rgba(168, 85, 247, 0.08); border: 1px solid rgba(168, 85, 247, 0.2); border-radius: 10px; padding: 12px 16px; color: #f1f5f9; font-size: 14px; font-weight: 500; font-family: 'Inter', sans-serif; resize: none;"></textarea>
+            </div>
+
+            <div style="display: flex; gap: 12px;">
+                <button onclick="closeModal('closePositionModal')" style="flex: 1; background: rgba(100, 116, 139, 0.15); border: 1px solid rgba(100, 116, 139, 0.3); color: #cbd5e1; padding: 13px 20px; border-radius: 12px; cursor: pointer; font-weight: 600; font-size: 14px; transition: all 0.2s ease;" onmouseover="this.style.background='rgba(100, 116, 139, 0.25)'; this.style.borderColor='rgba(100, 116, 139, 0.5)'" onmouseout="this.style.background='rgba(100, 116, 139, 0.15)'; this.style.borderColor='rgba(100, 116, 139, 0.3)'">Abbrechen</button>
+                <button onclick="confirmClosePositionModal()" style="flex: 1; background: linear-gradient(135deg, #10b981 0%, #059669 100%); border: none; color: white; padding: 13px 20px; border-radius: 12px; cursor: pointer; font-weight: 700; font-size: 14px; box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3); transition: all 0.2s ease;" onmouseover="this.style.boxShadow='0 8px 25px rgba(16, 185, 129, 0.4)'; this.style.transform='translateY(-2px)'" onmouseout="this.style.boxShadow='0 4px 15px rgba(16, 185, 129, 0.3)'; this.style.transform='translateY(0)'">✨ Position Schließen</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Zugangsschluessel zuerst laden - app.js braucht die Liste -->
+    <script src="js/pwa.js"></script>
+    <script src="js/daten.js"></script>
+    <script src="js/keys.js"></script>
+    <!-- Datenbank: die Bibliothek zuerst, dann unsere Konfiguration -->
+    <script src="js/vendor/supabase.js"></script>
+    <script src="js/supabase.js"></script>
+    <script src="js/db.js"></script>
+    <script src="js/migration.js"></script>
+    <script src="js/laden.js"></script>
+    <script src="js/speichern.js"></script>
+    <script src="js/import.js"></script>
+    <script src="js/auswertung.js"></script>
+    <script src="js/auth.js"></script>
+    <!-- Rechenkern vor app.js: addTrade() greift beim Speichern darauf zu -->
+    <script src="js/zertifikate.js"></script>
+    <script src="js/app.js"></script>
+    <!-- Formular-Verdrahtung nach app.js, damit getAccountBalance steht -->
+    <script src="js/produkt.js"></script>
+    <!-- Zugangsverwaltung nach app.js: braucht generateUserKey und sha256Hex -->
+    <script src="js/admin.js"></script>
+</body>
+</html>

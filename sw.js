@@ -10,7 +10,7 @@
  * Bei jedem Release CACHE_VERSION hochzaehlen.
  */
 
-const CACHE_VERSION = 'cf-v40';
+const CACHE_VERSION = 'cf-v42';
 const CACHE_APP = CACHE_VERSION + '-app';
 const CACHE_ASSETS = CACHE_VERSION + '-assets';
 
@@ -19,6 +19,7 @@ const CACHE_ASSETS = CACHE_VERSION + '-assets';
 const PRECACHE = [
     './',
     './index.html',
+    './app.html',
     './css/style.css',
     './js/keys.js',
     './js/app.js',
@@ -127,8 +128,11 @@ self.addEventListener('fetch', (event) => {
             .catch(() => caches.match(req).then(
                 // Bei Navigation ohne Netz die Startseite aus dem Cache,
                 // sonst zeigt der Browser seine Dino-Seite
+                // Bei Navigation ohne Netz die APP aus dem Cache, nicht
+                // die Startseite: wer offline ist, will sein Journal
+                // sehen und keine Produktbeschreibung.
                 (hit) => hit || (req.mode === 'navigate'
-                    ? caches.match('./index.html')
+                    ? caches.match('./app.html')
                     : undefined)
             ))
     );

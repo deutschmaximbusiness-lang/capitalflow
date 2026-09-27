@@ -4984,16 +4984,29 @@ body.pwa-installed .pwa-install-btn { display: none !important; }
 .aus-tabelle { overflow: visible; }
 .aus-tabelle table {
     width: 100%;
-    table-layout: fixed;
+    /* Automatisch statt fest.
+       Vorher: table-layout: fixed mit 30% / 17.5% je Spalte. Das sieht
+       ordentlich aus, kann sich aber nicht an den Inhalt anpassen - und
+       genau das ist hier noetig. Bei einer 448 Pixel breiten Karte sind
+       17.5% gerade 71 Pixel; "−€1.504,84" braucht bei 12.5px aber 78.
+       Der Betrag schoss dann ueber seinen Rand und klebte am naechsten,
+       ohne dass die Tabelle selbst zu breit wurde - deshalb faellt es
+       bei einer Breitenpruefung nicht auf.
+       Automatisch verteilt der Browser den Platz nach Bedarf: die
+       Betraege bekommen, was sie brauchen, und die Beschriftung links
+       darf dafuer umbrechen. */
+    table-layout: auto;
     border-collapse: collapse;
     font-size: 12.5px;
 }
-.aus-tabelle th:first-child, .aus-tabelle td:first-child { width: 30%; }
 .aus-tabelle th:not(:first-child), .aus-tabelle td:not(:first-child) {
-    width: 17.5%;
     /* Abstand nach links, damit zwei Betraege nie aneinanderkleben.
        Ohne den stand in der Ueberschrift "GEBUEHRENNETTO". */
     padding-left: 12px;
+    /* Sonst waere die Zahlenspalte die, die umbricht - und ein
+       Betrag ueber zwei Zeilen ist unlesbar. */
+    white-space: nowrap;
+    width: 1%;
 }
 .aus-tabelle td:first-child, .aus-tabelle th:first-child {
     white-space: normal;
@@ -5458,4 +5471,19 @@ body.pwa-installed .pwa-install-btn { display: none !important; }
     /* Knöpfe im Leerstart-Kasten: als Flex-Element ist width:100%
        unzuverlässig, flex-basis ist der richtige Hebel. */
     .start-knoepfe .btn { flex: 1 1 100%; width: auto; }
+}
+
+/* ===== AUSWERTUNGS-TABELLEN AUF DEM HANDY =====
+   Auf 390px Breite braucht "−€900,00" bei 12.5px rund 72 Pixel, die
+   Spalte bietet aber nur 68 - die Zahl lief über ihren Rand und klebte
+   an der nächsten. Waagerechtes Schieben ist keine Lösung, das war
+   ausdrücklich nicht gewünscht. Also kleiner setzen und die erste
+   Spalte etwas beschneiden; die Beschriftung darf umbrechen, die
+   Beträge nicht. */
+@media (max-width: 560px) {
+    .aus-tabelle table { font-size: 11px; }
+    .aus-tabelle th { font-size: 9.5px; letter-spacing: 0.3px; }
+    .aus-tabelle th:not(:first-child),
+    .aus-tabelle td:not(:first-child) { padding-left: 6px; }
+    .aus-karte { padding: 18px 14px; }
 }
