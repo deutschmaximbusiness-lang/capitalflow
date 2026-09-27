@@ -5243,117 +5243,142 @@ body.pwa-installed .pwa-install-btn { display: none !important; }
 }
 
 /* ===== ANLEITUNG =====
-   Lesetext, kein Dashboard: begrenzte Zeilenlänge, großzügige
-   Zeilenhöhe. Über etwa 80 Zeichen pro Zeile verliert man beim
-   Zurückspringen die Zeile. */
-#anleitung { max-width: 780px; }
+   Gleiche Formensprache wie der Daten-Tab: lila getönte Karte, 16px
+   Titel, 12.5px Fließtext. Eine Anleitung, die anders aussieht als der
+   Rest der App, wirkt wie angeklebt.
+
+   Bilder sind klein. Wer Details sehen will, klickt drauf - das ist
+   dieselbe Lupe wie bei den Trade-Screenshots. Große Bilder in einem
+   Lesetext zwingen zum Scrollen an Stellen, an denen man lesen will. */
+/* Schmaler als die anderen Tabs, und eine halbe Stufe größer als der
+   Daten-Tab: dort stehen zwei Zeilen pro Karte, hier ganze Absätze. Bei
+   12.5px über die volle Breite landet man bei rund 100 Zeichen je Zeile
+   und verliert beim Zurückspringen die Zeile. Ziel sind 70 bis 80. */
+#anleitung { max-width: 600px; }
 
 .hilfe-block {
-    background: rgba(15, 15, 32, 0.6);
-    border: 1px solid rgba(168, 85, 247, 0.15);
+    background: rgba(168, 85, 247, 0.045);
+    border: 1px solid rgba(168, 85, 247, 0.18);
     border-radius: 16px;
-    padding: 26px 28px;
-    margin-bottom: 22px;
+    padding: 22px 24px;
+    margin-bottom: 16px;
 }
 
 .hilfe-kopf {
     display: flex;
     align-items: center;
-    gap: 12px;
-    margin-bottom: 16px;
+    gap: 10px;
+    margin-bottom: 12px;
 }
 
 .hilfe-nr {
     flex: 0 0 auto;
-    width: 28px;
-    height: 28px;
+    width: 22px;
+    height: 22px;
     display: flex;
     align-items: center;
     justify-content: center;
-    border-radius: 50%;
-    background: rgba(168, 85, 247, 0.15);
-    border: 1px solid rgba(168, 85, 247, 0.4);
+    border-radius: 6px;
+    background: rgba(168, 85, 247, 0.16);
     color: #c084fc;
-    font-size: 13px;
+    font-size: 11px;
     font-weight: 700;
 }
 
 .hilfe-titel {
     margin: 0;
-    font-size: 19px;
+    font-size: 16px;
     font-weight: 700;
-    color: #f1f5f9;
+    color: #e9d5ff;
 }
 
 .hilfe-text {
-    margin: 0 0 14px 0;
-    color: #cbd5e1;
-    font-size: 14px;
+    margin: 0 0 12px 0;
+    color: #94a3b8;
+    font-size: 13px;
     line-height: 1.75;
 }
 
-.hilfe-text strong { color: #f1f5f9; }
+.hilfe-text:last-child { margin-bottom: 0; }
+.hilfe-text strong { color: #cbd5e1; }
 .hilfe-text em { color: #c084fc; font-style: normal; }
 
 .hilfe-liste,
 .hilfe-punkte {
-    margin: 0 0 16px 0;
-    padding-left: 22px;
-    color: #cbd5e1;
-    font-size: 14px;
+    margin: 0 0 12px 0;
+    padding-left: 18px;
+    color: #94a3b8;
+    font-size: 13px;
     line-height: 1.75;
 }
 
 .hilfe-liste li,
-.hilfe-punkte li { margin-bottom: 8px; }
+.hilfe-punkte li { margin-bottom: 5px; }
 .hilfe-liste strong,
-.hilfe-punkte strong { color: #f1f5f9; }
+.hilfe-punkte strong { color: #cbd5e1; }
 .hilfe-punkte em { color: #c084fc; font-style: normal; }
 
+/* Kleines Vorschaubild. Klick öffnet dieselbe Lupe wie im Journal. */
 .hilfe-bild {
-    margin: 18px 0;
-    border-radius: 12px;
+    margin: 14px 0;
+    max-width: 320px;
+    border-radius: 10px;
     overflow: hidden;
-    border: 1px solid rgba(148, 163, 184, 0.14);
+    border: 1px solid rgba(168, 85, 247, 0.16);
     background: rgba(10, 10, 24, 0.5);
+    cursor: zoom-in;
+    transition: border-color 0.2s;
 }
+
+.hilfe-bild:hover { border-color: rgba(168, 85, 247, 0.45); }
 
 .hilfe-bild img {
     display: block;
     width: 100%;
     height: auto;
+    /* Sehr hohe Bilder oben abschneiden statt stauchen - der Kopf
+       eines Formulars sagt mehr als sein Fuß. Die Grenze liegt hoch
+       genug, dass die meisten Bilder ganz zu sehen sind: bei 200px
+       war beim Anmeldebild genau das Feld weg, um das es im Text
+       geht. */
+    max-height: 340px;
+    object-fit: cover;
+    object-position: top;
 }
 
-.hilfe-bild.schmal { max-width: 520px; }
-
 .hilfe-bild figcaption {
-    padding: 10px 14px;
+    padding: 7px 10px;
     color: #64748b;
-    font-size: 12px;
-    line-height: 1.6;
-    border-top: 1px solid rgba(148, 163, 184, 0.1);
+    font-size: 11px;
+    line-height: 1.5;
+    border-top: 1px solid rgba(148, 163, 184, 0.08);
+}
+
+.hilfe-bild figcaption::after {
+    content: ' · zum Vergrößern klicken';
+    color: #475569;
 }
 
 .hilfe-bild figcaption em { color: #94a3b8; font-style: normal; font-weight: 600; }
 
 .hilfe-warn,
 .hilfe-tipp {
-    margin: 16px 0 4px 0;
-    padding: 13px 16px;
-    border-radius: 10px;
-    font-size: 13px;
-    line-height: 1.7;
+    margin: 12px 0 0 0;
+    padding: 10px 13px;
+    border-radius: 9px;
+    font-size: 12px;
+    line-height: 1.65;
 }
 
 .hilfe-warn {
-    background: rgba(251, 191, 36, 0.07);
-    border: 1px solid rgba(251, 191, 36, 0.25);
+    background: rgba(251, 191, 36, 0.06);
+    border: 1px solid rgba(251, 191, 36, 0.22);
     color: #fcd34d;
 }
 
 .hilfe-tipp {
-    background: rgba(16, 185, 129, 0.07);
-    border: 1px solid rgba(16, 185, 129, 0.22);
+    background: rgba(16, 185, 129, 0.06);
+    border: 1px solid rgba(16, 185, 129, 0.2);
     color: #6ee7b7;
 }
 
@@ -5361,6 +5386,6 @@ body.pwa-installed .pwa-install-btn { display: none !important; }
 .hilfe-tipp strong { color: inherit; font-weight: 700; }
 
 @media (max-width: 640px) {
-    .hilfe-block { padding: 20px 18px; }
-    .hilfe-bild.schmal { max-width: 100%; }
+    .hilfe-block { padding: 18px 16px; }
+    .hilfe-bild { max-width: 100%; }
 }
