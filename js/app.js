@@ -1745,6 +1745,22 @@ function loadDashboard() {
         ? gehandelt.reduce((max, day) => day.pnl > max.pnl ? day : max)
         : { day: '—', rate: 0, total: 0, pnl: 0 };
     
+    // Ergebnis der laufenden Woche, ab Montag.
+    const jetzt = new Date();
+    const wochenStart = new Date(jetzt.getFullYear(), jetzt.getMonth(), jetzt.getDate());
+    // getDay(): Sonntag ist 0. Ohne die Korrektur begaenne die Woche
+    // am Sonntag und der Montag fiele in die vorige.
+    wochenStart.setDate(wochenStart.getDate() - ((jetzt.getDay() + 6) % 7));
+    const wocheTrades = trades.filter(t => {
+        const [d, m, j] = String(t.date || '').split('.');
+        const x = new Date(`${j}-${m}-${d}`);
+        return !isNaN(x.getTime()) && x >= wochenStart;
+    });
+    const wocheSumme = wocheTrades.reduce((s, t) => s + (parseFloat(t.pnl) || 0), 0);
+    const wocheQuote = wocheTrades.length
+        ? Math.round(100 * wocheTrades.filter(t => t.pnl > 0).length / wocheTrades.length)
+        : 0;
+
     const dashboardContent = document.getElementById('dashboard');
     dashboardContent.innerHTML = `
         ${buildDashboardGreeting(trades, stats)}
@@ -1759,22 +1775,29 @@ function loadDashboard() {
         <!-- TOP 3 BIG CARDS -->
         <div class="dashboard-top-cards" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin-bottom: 30px;">
             <div class="dashboard-big-card">
-                <div style="color: #94a3b8; font-size: 12px; margin-bottom: 8px;">Today</div>
-                <div style="font-size: 28px; font-weight: 700; color: ${stats.todayPnL >= 0 ? '#10b981' : '#f87171'};">€${stats.todayPnL.toFixed(2)}</div>
-                <div style="color: #94a3b8; font-size: 12px; margin-top: 8px;">${stats.todayTrades.length} trades • ${stats.todayWinRate}% win</div>
+                <div style="color: #94a3b8; font-size: 12px; margin-bottom: 8px;">Heute</div>
+                <div style="font-size: 28px; font-weight: 700; color: ${stats.todayPnL >= 0 ? '#10b981' : '#f87171'};">${eurMitVorzeichen(stats.todayPnL)}</div>
+                <div style="color: #94a3b8; font-size: 12px; margin-top: 8px;">${stats.todayTrades.length} Trades • ${stats.todayWinRate}% Treffer</div>
+            </div>
+            <!-- Hier stand der Kontostand.
+                 Raus, weil er mit Trade Republic konkurriert und
+                 verliert: offene Positionen und Kursbewegungen zaehlen
+                 hier nicht mit, also steht in der App immer ein anderer
+                 Betrag als im Depot. Zwei Zahlen, die dasselbe
+                 behaupten und sich unterscheiden, kosten das Vertrauen
+                 in beide.
+                 Stattdessen die laufende Woche - die schliesst die
+                 Luecke zwischen "heute" und "gesamt" und steht so
+                 nirgendwo sonst. -->
+            <div class="dashboard-big-card">
+                <div style="color: #94a3b8; font-size: 12px; margin-bottom: 8px;">Diese Woche</div>
+                <div style="font-size: 28px; font-weight: 700; color: ${wocheSumme >= 0 ? '#10b981' : '#f87171'};">${eurMitVorzeichen(wocheSumme)}</div>
+                <div style="color: #94a3b8; font-size: 12px; margin-top: 8px;">${wocheTrades.length} Trades${wocheTrades.length ? ' • ' + wocheQuote + '% Treffer' : ''}</div>
             </div>
             <div class="dashboard-big-card">
-                <div style="color: #94a3b8; font-size: 12px; margin-bottom: 8px;">Kontostand</div>
-                <div style="font-size: 28px; font-weight: 700; color: #cbd5e1;">€${getAccountBalance().toFixed(2)}</div>
-                <div style="color: #94a3b8; font-size: 12px; margin-top: 8px;">${
-                    getNetDeposits() > 0
-                        ? 'Netto eingezahlt €' + getNetDeposits().toFixed(2)
-                        : 'Noch keine Einzahlung erfasst'}</div>
-            </div>
-            <div class="dashboard-big-card">
-                <div style="color: #94a3b8; font-size: 12px; margin-bottom: 8px;">Total P&L</div>
-                <div style="font-size: 28px; font-weight: 700; color: ${stats.totalPnL >= 0 ? '#10b981' : '#f87171'};">€${stats.totalPnL.toFixed(2)}</div>
-                <div style="color: #94a3b8; font-size: 12px; margin-top: 8px;">${stats.trades.length} trades • ${stats.winRate}% win rate</div>
+                <div style="color: #94a3b8; font-size: 12px; margin-bottom: 8px;">Gesamt</div>
+                <div style="font-size: 28px; font-weight: 700; color: ${stats.totalPnL >= 0 ? '#10b981' : '#f87171'};">${eurMitVorzeichen(stats.totalPnL)}</div>
+                <div style="color: #94a3b8; font-size: 12px; margin-top: 8px;">${stats.trades.length} Trades • ${stats.winRate}% Treffer</div>
             </div>
         </div>
         
