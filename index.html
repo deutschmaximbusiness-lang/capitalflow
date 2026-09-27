@@ -56,40 +56,100 @@ body {
     overflow-x: hidden;
 }
 
-/* Zwei Lichtscheine, die sich langsam bewegen. Sehr langsam und sehr
-   schwach - Bewegung, die man bemerkt, lenkt vom Text ab. */
-body::before, body::after {
-    content: '';
+/* ===== HINTERGRUND =====
+   Drei Schichten, alle fest im Fenster, alle sehr schwach. Einzeln
+   faellt keine auf - zusammen geben sie der Seite Tiefe, statt dass
+   sie wie ein schwarzes Rechteck wirkt.
+
+     1. Ein feines Punktraster, das nach unten ausblendet. Gibt dem
+        Auge etwas, woran es Entfernung ablesen kann.
+     2. Drei farbige Scheine, die langsam atmen und wandern.
+     3. Eine dunkle Vignette an den Raendern, damit die Mitte traegt.
+
+   Alles sehr langsam: Bewegung, die man bewusst bemerkt, lenkt vom
+   Text ab. Wer Bewegung abgestellt hat, bekommt nur die Farben. */
+.hg {
     position: fixed;
-    border-radius: 50%;
-    pointer-events: none;
+    inset: 0;
     z-index: 0;
-    filter: blur(90px);
+    pointer-events: none;
+    overflow: hidden;
 }
-body::before {
-    top: -30vh; left: 50%;
-    width: 90vw; height: 70vh;
-    transform: translateX(-50%);
+
+/* 1. Punktraster */
+.hg-raster {
+    position: absolute;
+    inset: 0;
+    background-image: radial-gradient(rgba(168, 85, 247, 0.30) 1.1px, transparent 1.1px);
+    background-size: 28px 28px;
+    /* Nach unten und zu den Seiten ausblenden: ein Raster, das bis zum
+       Rand durchläuft, sieht nach Tapete aus statt nach Tiefe. */
+    -webkit-mask-image: radial-gradient(ellipse 90% 70% at 50% 24%,
+        rgba(0,0,0,0.95) 0%, rgba(0,0,0,0.4) 48%, transparent 78%);
+    mask-image: radial-gradient(ellipse 90% 70% at 50% 24%,
+        rgba(0,0,0,0.95) 0%, rgba(0,0,0,0.4) 48%, transparent 78%);
+}
+
+/* 2. Scheine */
+.hg-schein {
+    position: absolute;
+    border-radius: 50%;
+    filter: blur(80px);
+}
+.hg-1 {
+    top: -32vh; left: 50%;
+    width: 86vw; height: 72vh;
+    margin-left: -43vw;
     background: radial-gradient(ellipse at center,
-        rgba(168, 85, 247, 0.16) 0%, transparent 62%);
-    animation: atmen 16s ease-in-out infinite;
+        rgba(168, 85, 247, 0.28) 0%, transparent 64%);
+    animation: atmen 17s ease-in-out infinite;
 }
-body::after {
-    top: 34vh; right: -18vw;
-    width: 52vw; height: 52vh;
+.hg-2 {
+    top: 26vh; right: -20vw;
+    width: 58vw; height: 58vh;
     background: radial-gradient(circle at center,
-        rgba(236, 72, 153, 0.11) 0%, transparent 62%);
-    animation: atmen 21s ease-in-out infinite reverse;
+        rgba(236, 72, 153, 0.20) 0%, transparent 64%);
+    animation: wandern 26s ease-in-out infinite;
+}
+.hg-3 {
+    bottom: -26vh; left: -14vw;
+    width: 54vw; height: 54vh;
+    background: radial-gradient(circle at center,
+        rgba(99, 102, 241, 0.18) 0%, transparent 64%);
+    animation: wandern 33s ease-in-out infinite reverse;
 }
 
 @keyframes atmen {
-    0%, 100% { opacity: 0.75; transform: translateX(-50%) scale(1); }
-    50%      { opacity: 1;    transform: translateX(-50%) scale(1.12); }
+    0%, 100% { opacity: 0.7; transform: scale(1); }
+    50%      { opacity: 1;   transform: scale(1.14); }
 }
-body::after { animation-name: atmen2; }
-@keyframes atmen2 {
-    0%, 100% { opacity: 0.6; transform: scale(1); }
-    50%      { opacity: 1;   transform: scale(1.16); }
+@keyframes wandern {
+    0%, 100% { opacity: 0.6; transform: translate(0, 0) scale(1); }
+    33%      { opacity: 0.95; transform: translate(-5vw, 4vh) scale(1.14); }
+    66%      { opacity: 0.75; transform: translate(3vw, -3vh) scale(1.05); }
+}
+
+/* 3. Vignette */
+.hg-rand {
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(ellipse 120% 80% at 50% 40%,
+        transparent 40%, rgba(5, 5, 14, 0.55) 100%);
+}
+
+/* Ein Lichtband, das ganz langsam von links nach rechts zieht.
+   Bei zehn Prozent Deckkraft sieht man es nicht, man spuert nur, dass
+   die Seite nicht stillsteht. */
+.hg-band {
+    position: absolute;
+    top: 0; left: -40%;
+    width: 40%; height: 100%;
+    background: linear-gradient(100deg, transparent,
+        rgba(168, 85, 247, 0.07), transparent);
+    animation: ziehen 19s linear infinite;
+}
+@keyframes ziehen {
+    to { left: 140%; }
 }
 
 .huelle { position: relative; z-index: 1; max-width: 980px; margin: 0 auto; padding: 0 20px; }
@@ -478,6 +538,15 @@ footer a:hover { color: var(--hell); }
 </head>
 <body>
 
+<div class="hg" aria-hidden="true">
+    <div class="hg-schein hg-1"></div>
+    <div class="hg-schein hg-2"></div>
+    <div class="hg-schein hg-3"></div>
+    <div class="hg-band"></div>
+    <div class="hg-raster"></div>
+    <div class="hg-rand"></div>
+</div>
+
 <div class="huelle">
 
     <header>
@@ -516,7 +585,7 @@ footer a:hover { color: var(--hell); }
             ohne Store, ohne Setup-Datei. Läuft auf Windows, Mac, iPhone und Android.
         </p>
 
-        <figure class="vorschau" data-gross="img/start-vorschau.webp">
+        <figure class="vorschau" data-gross="img/start-vorschau@2x.webp">
             <img src="img/start-vorschau.webp" alt="Das Dashboard von CapitalFlow mit Tages-, Wochen- und Gesamtergebnis" width="1280" height="720">
         </figure>
     </div>
@@ -567,11 +636,11 @@ footer a:hover { color: var(--hell); }
             Denselben Export kannst du jeden Monat neu einlesen.
         </p>
         <div class="raster">
-            <figure class="bild-karte karte" data-gross="img/anleitung/02-import.webp">
+            <figure class="bild-karte karte" data-gross="img/anleitung/02-import@2x.webp">
                 <img src="img/anleitung/02-import.webp" alt="Der Daten-Tab mit CSV-Import" loading="lazy">
                 <figcaption>Import, Sicherung und Löschen an einer Stelle</figcaption>
             </figure>
-            <figure class="bild-karte karte" data-gross="img/anleitung/04-kacheln.webp">
+            <figure class="bild-karte karte" data-gross="img/anleitung/04-kacheln@2x.webp">
                 <img src="img/anleitung/04-kacheln.webp" alt="Berechnete Kennzahlen zu einem Knock-Out" loading="lazy">
                 <figcaption>Zwei Zahlen vom Schein — den Rest rechnet die App</figcaption>
             </figure>
@@ -590,7 +659,7 @@ footer a:hover { color: var(--hell); }
                 <img src="img/anleitung/06-tradekarte.webp" alt="Eine Trade-Karte im Journal" loading="lazy">
                 <figcaption>Eine Trade-Karte im Journal</figcaption>
             </figure>
-            <figure class="bild-karte karte" data-gross="img/anleitung/03-knockout.webp">
+            <figure class="bild-karte karte" data-gross="img/anleitung/03-knockout@2x.webp">
                 <img src="img/anleitung/03-knockout.webp" alt="Das Knock-Out-Formular im Journal" loading="lazy">
                 <figcaption>Das Formular für Knock-Outs</figcaption>
             </figure>
