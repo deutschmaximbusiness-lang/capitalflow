@@ -794,6 +794,16 @@ function handleTabChange(tabId) {
     if (tabId === 'setups') {
         setTimeout(() => loadSetups(), 100);
     }
+    if (tabId === 'daten') {
+        // Der Migrationsblock erscheint nur, wenn es lokal ueberhaupt
+        // etwas zu uebertragen gibt - sonst steht dort eine Aufgabe,
+        // die niemand hat.
+        setTimeout(() => {
+            if (typeof window.cfMigrationsblockPruefen === 'function') {
+                window.cfMigrationsblockPruefen();
+            }
+        }, 100);
+    }
 }
 
 function setupFilterButtons() {

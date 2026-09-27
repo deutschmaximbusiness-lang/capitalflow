@@ -226,6 +226,10 @@
                 <svg class="nav-icon" viewBox="0 0 24 24" width="20" height="20"><path fill="currentColor" d="M4 6h16v2H4zm0 5h16v2H4zm0 5h16v2H4z"/></svg>
                 <span>Transaktionen</span>
             </div>
+            <div class="nav-item" data-tab="daten">
+                <svg class="nav-icon" viewBox="0 0 24 24" width="20" height="20"><path fill="currentColor" d="M12 3C7.58 3 4 4.79 4 7s3.58 4 8 4 8-1.79 8-4-3.58-4-8-4zM4 9v3c0 2.21 3.58 4 8 4s8-1.79 8-4V9c0 2.21-3.58 4-8 4s-8-1.79-8-4zm0 5v3c0 2.21 3.58 4 8 4s8-1.79 8-4v-3c0 2.21-3.58 4-8 4s-8-1.79-8-4z"/></svg>
+                <span>Daten</span>
+            </div>
             <div class="nav-item" data-tab="roadmap">
                 <svg class="nav-icon" viewBox="0 0 24 24" width="20" height="20"><path fill="currentColor" d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>
                 <span>Roadmap</span>
@@ -897,6 +901,90 @@
         </div>
 
         <!-- ===== CALENDAR TAB ===== -->
+        <div id="daten" class="tab-content">
+            <div style="margin-bottom: 20px;">
+                <h2 style="margin-bottom: 8px; font-size: 32px; font-weight: 700;">Daten</h2>
+                <p style="color: #94a3b8; font-size: 14px; margin: 0;">Trades importieren, sichern und löschen</p>
+            </div>
+
+            <!-- Zwei Spalten: links, was man oft macht (Import), rechts
+                 das Seltene. Auf dem Handy untereinander.
+                 Alle IDs und Aufrufe sind dieselben wie vorher im
+                 Fenster - nur die Huelle ist neu. -->
+            <div class="daten-raster">
+
+                <!-- ===================== Import ===================== -->
+                <section class="daten-karte">
+                    <h3 class="daten-titel">Trades aus Trade Republic holen</h3>
+                    <p class="daten-text">
+                        In der TR-App: <strong>Profil oben rechts → Kontoauszüge →
+                        Transaktionsexports</strong> → Zeitraum wählen → teilen.
+                        Die Datei hier auswählen.
+                    </p>
+                    <p class="daten-text">
+                        Käufe und Verkäufe werden je Wertpapier zu Trades zusammengefasst,
+                        Gebühren abgezogen, Doppelte übersprungen. Du siehst erst einen
+                        Bericht — gespeichert wird nichts, bevor du auf Übernehmen gehst.
+                    </p>
+                    <button onclick="cfTrImportWaehlen()" class="daten-btn">Transaktionsexport wählen…</button>
+                    <input type="file" id="trImportInput" accept="text/csv,.csv" style="display: none;" onchange="cfTrImportGelesen(this)">
+                    <div id="trImportBericht" style="display: none; margin-top: 16px;"></div>
+                    <button id="trImportBtn" onclick="cfTrImportUebernehmen()" style="display: none;" class="daten-btn daten-btn-primaer">Übernehmen</button>
+                    <p id="trImportStatus" class="daten-status"></p>
+                </section>
+
+                <div style="display: grid; gap: 22px; align-content: start;">
+
+                    <!-- ================== Sicherung ================== -->
+                    <section class="daten-karte">
+                        <h3 class="daten-titel">Sicherung</h3>
+                        <p class="daten-text">
+                            Eine Datei mit allen deinen Trades, Positionen, Setups und
+                            Buchungen. Zieh sie dir, bevor du etwas Größeres änderst.
+                        </p>
+                        <button onclick="cfExportieren()" class="daten-btn daten-btn-primaer">Sicherung herunterladen</button>
+                        <button onclick="cfImportWaehlen()" class="daten-btn" style="margin-top: 10px;">Sicherung einspielen…</button>
+                        <input type="file" id="datenImportInput" accept="application/json,.json" style="display: none;" onchange="cfImportGelesen(this)">
+                        <div id="datenImportInfo" style="display: none; margin-top: 18px; background: rgba(168, 85, 247, 0.05); border: 1px solid rgba(168, 85, 247, 0.2); border-radius: 12px; padding: 16px 18px;"></div>
+                        <div id="datenImportAktionen" style="display: none; gap: 12px; margin-top: 14px;">
+                            <button onclick="cfImportAusfuehren('zusammenfuehren')" style="flex: 1; background: linear-gradient(135deg, #a855f7 0%, #ec4899 100%); border: none; color: white; padding: 13px 16px; border-radius: 12px; cursor: pointer; font-weight: 700; font-size: 13px; font-family: 'Inter', sans-serif;">Zusammenführen</button>
+                            <button onclick="cfImportAusfuehren('ersetzen')" style="flex: 1; background: rgba(239, 68, 68, 0.12); border: 1px solid rgba(239, 68, 68, 0.3); color: #fca5a5; padding: 13px 16px; border-radius: 12px; cursor: pointer; font-weight: 700; font-size: 13px; font-family: 'Inter', sans-serif;">Alles ersetzen</button>
+                        </div>
+                    </section>
+
+                    <!-- ============ In die Datenbank übertragen ============ -->
+                    <section class="daten-karte" id="migrationBlock" style="display: none;">
+                        <h3 class="daten-titel">In die Datenbank übertragen</h3>
+                        <p class="daten-text">
+                            Es liegen noch Daten nur in diesem Browser. Danach sind sie
+                            auf dem Server — auf jedem Gerät verfügbar und gegen einen
+                            geleerten Cache geschützt.
+                        </p>
+                        <div id="migrationBericht" style="display: none; background: rgba(168, 85, 247, 0.05); border: 1px solid rgba(168, 85, 247, 0.2); border-radius: 12px; padding: 14px 16px; margin-bottom: 14px;"></div>
+                        <button id="migrationBtn" onclick="cfMigrationStarten()" style="display: none;" class="daten-btn daten-btn-primaer">Daten übertragen</button>
+                        <p id="migrationStatus" class="daten-status"></p>
+                    </section>
+
+                    <!-- =================== Löschen =================== -->
+                    <section class="daten-karte daten-karte-gefahr" id="loeschBlock">
+                        <h3 class="daten-titel" style="color: #fca5a5;">Daten löschen</h3>
+                        <p class="daten-text">
+                            Lade vorher eine Sicherung herunter. Gelöschte Daten sind weg —
+                            es gibt keinen Papierkorb.
+                        </p>
+                        <button onclick="cfLoeschImporte()" class="btn-warnung">Nur importierte Trades löschen</button>
+                        <label style="display: block; color: #94a3b8; font-size: 11.5px; margin-bottom: 6px;">
+                            Für „alles löschen“ tippe <strong style="color:#fca5a5;">LÖSCHEN</strong> ein:
+                        </label>
+                        <input type="text" id="loeschBestaetigung" oninput="cfLoeschPruefen()" placeholder="LÖSCHEN" autocomplete="off" style="width: 100%; background: rgba(239, 68, 68, 0.06); border: 1px solid rgba(239, 68, 68, 0.25); border-radius: 10px; padding: 11px 14px; color: #f1f5f9; font-size: 13px; font-family: 'Inter', sans-serif; margin-bottom: 10px;">
+                        <button id="loeschAllesBtn" onclick="cfLoeschAlles()" disabled class="btn-gefahr">Alle meine Daten löschen</button>
+                        <p id="loeschStatus" class="daten-status"></p>
+                    </section>
+
+                </div>
+            </div>
+        </div>
+
         <div id="calendar" class="tab-content">
             <div style="margin-bottom: 32px;">
                 <h2 style="margin-bottom: 8px; font-size: 32px; font-weight: 700;">P&L-Kalender</h2>
@@ -1226,73 +1314,6 @@
     </div>
 
     <!-- ===== DATEN SICHERN / EINSPIELEN ===== -->
-    <div class="modal" id="datenModal">
-        <div class="modal-content" style="max-width: 620px; max-height: 88vh; overflow-y: auto; background: linear-gradient(135deg, rgba(15, 15, 32, 0.95) 0%, rgba(20, 20, 45, 0.95) 100%); border: 1px solid rgba(168, 85, 247, 0.2); border-radius: 20px; backdrop-filter: blur(20px); padding: 40px; box-shadow: 0 25px 50px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.1);">
-            <div style="margin-bottom: 26px;">
-                <h2 style="margin: 0 0 8px 0; font-size: 28px; font-weight: 700; background: linear-gradient(135deg, #c084fc 0%, #f472b6 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;">Deine Daten</h2>
-                <p style="margin: 0; color: #94a3b8; font-size: 13px;">Sicherung erstellen oder eine vorhandene einspielen</p>
-            </div>
-
-            <div style="background: rgba(251, 191, 36, 0.05); border: 1px solid rgba(251, 191, 36, 0.2); border-radius: 12px; padding: 14px 16px; margin-bottom: 24px;">
-                <p style="margin: 0; color: #cbd5e1; font-size: 12px; line-height: 1.6;">Alle Daten liegen aktuell nur in diesem Browser. Leerst du den Cache oder wechselst das Gerät, sind sie weg. Sichere regelmäßig.</p>
-            </div>
-
-            <button onclick="cfExportieren()" style="width: 100%; background: linear-gradient(135deg, #a855f7 0%, #ec4899 100%); border: none; color: white; padding: 14px 20px; border-radius: 12px; cursor: pointer; font-weight: 700; font-size: 14px; font-family: 'Inter', sans-serif; box-shadow: 0 4px 15px rgba(168, 85, 247, 0.3); transition: all 0.2s ease; margin-bottom: 12px;" onmouseover="this.style.boxShadow='0 8px 25px rgba(168, 85, 247, 0.45)'; this.style.transform='translateY(-2px)'" onmouseout="this.style.boxShadow='0 4px 15px rgba(168, 85, 247, 0.3)'; this.style.transform='translateY(0)'">Sicherung herunterladen</button>
-
-            <button onclick="cfImportWaehlen()" style="width: 100%; background: rgba(100, 116, 139, 0.15); border: 1px solid rgba(100, 116, 139, 0.3); color: #cbd5e1; padding: 14px 20px; border-radius: 12px; cursor: pointer; font-weight: 600; font-size: 14px; font-family: 'Inter', sans-serif; transition: all 0.2s ease;" onmouseover="this.style.background='rgba(100, 116, 139, 0.25)'; this.style.borderColor='rgba(100, 116, 139, 0.5)'" onmouseout="this.style.background='rgba(100, 116, 139, 0.15)'; this.style.borderColor='rgba(100, 116, 139, 0.3)'">Sicherung einspielen…</button>
-            <input type="file" id="datenImportInput" accept="application/json,.json" style="display: none;" onchange="cfImportGelesen(this)">
-
-            <div id="migrationBlock" style="display: none; margin-top: 26px; padding-top: 22px; border-top: 1px solid rgba(168, 85, 247, 0.15);">
-                <h3 style="margin: 0 0 6px 0; font-size: 15px; font-weight: 700; color: #e9d5ff;">In die Datenbank übertragen</h3>
-                <p style="margin: 0 0 14px 0; color: #94a3b8; font-size: 12px; line-height: 1.6;">Danach liegen deine Daten auf dem Server statt nur in diesem Browser – auf jedem Gerät verfügbar und gegen einen geleerten Cache geschützt.</p>
-                <div id="migrationBericht" style="display: none; background: rgba(168, 85, 247, 0.05); border: 1px solid rgba(168, 85, 247, 0.2); border-radius: 12px; padding: 14px 16px; margin-bottom: 14px;"></div>
-                <button id="migrationBtn" onclick="cfMigrationStarten()" style="display: none; width: 100%; background: linear-gradient(135deg, #a855f7 0%, #ec4899 100%); border: none; color: white; padding: 13px 20px; border-radius: 12px; cursor: pointer; font-weight: 700; font-size: 14px; font-family: 'Inter', sans-serif;">Daten übertragen</button>
-                <p id="migrationStatus" style="margin: 10px 0 0 0; color: #64748b; font-size: 11px; text-align: center; min-height: 14px;"></p>
-            </div>
-
-            <!-- ===== Trade-Republic-Import ===== -->
-            <div style="margin-top: 26px; padding-top: 22px; border-top: 1px solid rgba(168, 85, 247, 0.15);">
-                <h3 style="margin: 0 0 6px 0; font-size: 15px; font-weight: 700; color: #e9d5ff;">Trade Republic importieren</h3>
-                <p style="margin: 0 0 14px 0; color: #94a3b8; font-size: 12px; line-height: 1.6;">
-                    In der TR-App: Profil oben rechts → Kontoauszüge → Transaktionsexports → Zeitraum wählen → teilen.
-                    Käufe und Verkäufe werden zu Trades zusammengefasst, Gebühren abgezogen.
-                </p>
-                <button onclick="cfTrImportWaehlen()" style="width: 100%; background: rgba(100, 116, 139, 0.15); border: 1px solid rgba(100, 116, 139, 0.3); color: #cbd5e1; padding: 13px 20px; border-radius: 12px; cursor: pointer; font-weight: 600; font-size: 14px; font-family: 'Inter', sans-serif;">Transaktionsexport wählen…</button>
-                <input type="file" id="trImportInput" accept="text/csv,.csv" style="display: none;" onchange="cfTrImportGelesen(this)">
-                <div id="trImportBericht" style="display: none; margin-top: 16px;"></div>
-                <button id="trImportBtn" onclick="cfTrImportUebernehmen()" style="display: none; width: 100%; margin-top: 14px; background: linear-gradient(135deg, #a855f7 0%, #ec4899 100%); border: none; color: white; padding: 13px 20px; border-radius: 12px; cursor: pointer; font-weight: 700; font-size: 14px; font-family: 'Inter', sans-serif;">Übernehmen</button>
-                <p id="trImportStatus" style="margin: 10px 0 0 0; color: #64748b; font-size: 11px; text-align: center; min-height: 14px;"></p>
-            </div>
-
-            <div id="datenImportInfo" style="display: none; margin-top: 24px; background: rgba(168, 85, 247, 0.05); border: 1px solid rgba(168, 85, 247, 0.2); border-radius: 12px; padding: 16px 18px;"></div>
-
-            <div id="datenImportAktionen" style="display: none; gap: 12px; margin-top: 16px;">
-                <button onclick="cfImportAusfuehren('zusammenfuehren')" style="flex: 1; background: linear-gradient(135deg, #a855f7 0%, #ec4899 100%); border: none; color: white; padding: 13px 16px; border-radius: 12px; cursor: pointer; font-weight: 700; font-size: 13px; font-family: 'Inter', sans-serif;">Zusammenführen</button>
-                <button onclick="cfImportAusfuehren('ersetzen')" style="flex: 1; background: rgba(239, 68, 68, 0.12); border: 1px solid rgba(239, 68, 68, 0.3); color: #fca5a5; padding: 13px 16px; border-radius: 12px; cursor: pointer; font-weight: 700; font-size: 13px; font-family: 'Inter', sans-serif;">Alles ersetzen</button>
-            </div>
-
-            <!-- ===== Gefahrenzone ===== -->
-            <div id="loeschBlock" style="margin-top: 26px; padding-top: 22px; border-top: 1px solid rgba(239, 68, 68, 0.2);">
-                <h3 style="margin: 0 0 6px 0; font-size: 15px; font-weight: 700; color: #fca5a5;">Daten löschen</h3>
-                <p style="margin: 0 0 14px 0; color: #94a3b8; font-size: 12px; line-height: 1.6;">
-                    Lade vorher eine Sicherung herunter. Gelöschte Daten sind weg —
-                    es gibt keinen Papierkorb.
-                </p>
-
-                <button onclick="cfLoeschImporte()" class="btn-warnung">Nur importierte Trades löschen</button>
-
-                <label style="display: block; color: #94a3b8; font-size: 11.5px; margin-bottom: 6px;">
-                    Für „alles löschen“ tippe <strong style="color:#fca5a5;">LÖSCHEN</strong> ein:
-                </label>
-                <input type="text" id="loeschBestaetigung" oninput="cfLoeschPruefen()" placeholder="LÖSCHEN" autocomplete="off" style="width: 100%; background: rgba(239, 68, 68, 0.06); border: 1px solid rgba(239, 68, 68, 0.25); border-radius: 10px; padding: 11px 14px; color: #f1f5f9; font-size: 13px; font-family: 'Inter', sans-serif; margin-bottom: 10px;">
-                <button id="loeschAllesBtn" onclick="cfLoeschAlles()" disabled class="btn-gefahr">Alle meine Daten löschen</button>
-                <p id="loeschStatus" style="margin: 10px 0 0 0; color: #64748b; font-size: 11px; text-align: center; min-height: 14px;"></p>
-            </div>
-
-            <button onclick="cfDatenModalZu()" style="width: 100%; margin-top: 20px; background: none; border: none; color: #64748b; padding: 8px; cursor: pointer; font-weight: 600; font-size: 13px; font-family: 'Inter', sans-serif;">Schließen</button>
-        </div>
-    </div>
-
     <div class="modal" id="deleteModal">
         <div class="modal-content" style="max-width: 420px; background: linear-gradient(135deg, rgba(15, 15, 32, 0.95) 0%, rgba(20, 20, 45, 0.95) 100%); border: 1px solid rgba(168, 85, 247, 0.2); border-radius: 20px; backdrop-filter: blur(20px); padding: 40px; box-shadow: 0 25px 50px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.1);">
             <div style="margin-bottom: 28px;">

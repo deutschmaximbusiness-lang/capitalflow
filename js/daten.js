@@ -218,29 +218,46 @@
 
     // ----------------------------------------------------------------- Modal
 
+    /**
+     * "Daten" ist jetzt ein eigener Tab, kein Fenster mehr.
+     *
+     * Der Knopf oben rechts schaltet dorthin um. Die alten Namen bleiben
+     * bestehen, damit die Aufrufe im Markup weiter funktionieren - nur
+     * tun sie etwas anderes.
+     *
+     * Grund fuer den Umzug: in dem Fenster standen Sicherung,
+     * Wiederherstellung, Migration, der Import samt Kuerzeltabelle fuer
+     * 25 Basiswerte und das Loeschen. Ein Fenster, durch das man
+     * scrollen muss, findet niemand - und der Import ist das Erste, was
+     * ein neuer Nutzer braucht.
+     */
     window.cfDatenModalAuf = function () {
-        geladen = null;
-        document.getElementById('datenImportInfo').style.display = 'none';
-        document.getElementById('datenImportAktionen').style.display = 'none';
-        document.getElementById('datenModal').style.display = 'flex';
+        if (typeof handleTabChange === 'function') handleTabChange('daten');
+        const nav = document.querySelector('.nav-item[data-tab="daten"]');
+        if (nav) nav.scrollIntoView({ block: 'nearest' });
+    };
 
-        // Uebertragung nur zeigen, wenn es lokal etwas gibt UND eine
-        // Datenbankverbindung besteht - sonst ist der Knopf eine Sackgasse
+    window.cfDatenModalZu = function () {
+        if (typeof handleTabChange === 'function') handleTabChange('dashboard');
+    };
+
+    /**
+     * Zeigt den Migrationsblock nur, wenn es lokal ueberhaupt etwas zu
+     * uebertragen gibt. Stand vorher im Oeffnen des Fensters und ist
+     * beim Umzug in den Tab dort gelandet, wo der Tab aufgerufen wird.
+     */
+    window.cfMigrationsblockPruefen = function () {
         const block = document.getElementById('migrationBlock');
         if (!block) return;
-        const etwasDa = BEREICHE.some(function (b) { return lesen(b.key).length > 0; });
+        const etwasDa = ['trades', 'positions', 'closedPositions',
+                         'transactions', 'setups']
+            .some(function (k) { return lesen(k).length > 0; });
         if (window.cfDb && etwasDa && typeof window.cfMigrationBericht === 'function') {
             block.style.display = 'block';
-            document.getElementById('migrationStatus').textContent = '';
             window.cfMigrationBericht();
         } else {
             block.style.display = 'none';
         }
-    };
-
-    window.cfDatenModalZu = function () {
-        geladen = null;
-        document.getElementById('datenModal').style.display = 'none';
     };
 })();
 
