@@ -2430,7 +2430,32 @@ function loadAnalytics() {
         avgLoss = losses.reduce((sum, t) => sum + t.pnl, 0) / losses.length;
         largestLoss = Math.abs(Math.min(...losses.map(t => t.pnl)));
     }
-    
+
+    // Durchschnittliches Chance-Risiko-Verhaeltnis.
+    //
+    // Hier stand bisher stats.riskRewardRatio - eine Eigenschaft, die
+    // nirgends in dieser App berechnet wird. Der Ausdruck war also immer
+    // undefined, und die Kachel zeigte seit dem ersten Tag den
+    // fest eingetippten Ersatzwert "0.00:1". Eine Kachel, die eine
+    // Konstante anzeigt, ist schlimmer als gar keine: sie sieht aus wie
+    // eine Messung.
+    //
+    // Gerechnet wird nur ueber Trades MIT Stop. Ohne Stop ist das
+    // Risiko nicht bekannt; solche Trades mit 0 einzurechnen wuerde den
+    // Schnitt nach unten ziehen und damit genau die Zahl verfaelschen,
+    // wegen der man hinschaut. Nach einem CSV-Import ist das die
+    // Mehrheit - deshalb steht dabei, auf wie vielen Trades sie beruht.
+    const mitStop = trades.filter(t =>
+        Number.isFinite(parseFloat(t.riskReward)) && parseFloat(t.risk) > 0);
+    const avgRR = mitStop.length
+        ? mitStop.reduce((s, t) => s + parseFloat(t.riskReward), 0) / mitStop.length
+        : null;
+    const avgRRText = avgRR === null ? '—' : avgRR.toFixed(2) + ':1';
+    const avgRRZusatz = mitStop.length === 0
+        ? 'Kein Trade hat einen Stop'
+        : 'aus ' + mitStop.length + ' von ' + trades.length + ' Trades';
+
+
     // Calculate Sharpe Ratio (simplified)
     const returns = trades.map(t => t.pnlPercent);
     const avgReturn = returns.length > 0 ? returns.reduce((a,b) => a+b) / returns.length : 0;
@@ -2566,8 +2591,9 @@ function loadAnalytics() {
                 <div style="font-size: 24px; font-weight: 700; color: #f87171;">-€${largestLoss.toFixed(2)}</div>
             </div>
             <div class="analytics-metric-card-small">
-                <div style="font-size: 11px; text-transform: uppercase; color: #94a3b8; font-weight: 600; margin-bottom: 8px;">Avg R:R</div>
-                <div style="font-size: 24px; font-weight: 700; color: #cbd5e1;">${stats.riskRewardRatio || '0.00:1'}</div>
+                <div style="font-size: 11px; text-transform: uppercase; color: #94a3b8; font-weight: 600; margin-bottom: 8px;">Ø Chance : Risiko</div>
+                <div style="font-size: 24px; font-weight: 700; color: #cbd5e1;">${avgRRText}</div>
+                <div style="font-size: 11px; color: #64748b; margin-top: 4px;">${escapeHtml(avgRRZusatz)}</div>
             </div>
         </div>
         

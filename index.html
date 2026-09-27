@@ -230,6 +230,10 @@
                 <svg class="nav-icon" viewBox="0 0 24 24" width="20" height="20"><path fill="currentColor" d="M12 3C7.58 3 4 4.79 4 7s3.58 4 8 4 8-1.79 8-4-3.58-4-8-4zM4 9v3c0 2.21 3.58 4 8 4s8-1.79 8-4V9c0 2.21-3.58 4-8 4s-8-1.79-8-4zm0 5v3c0 2.21 3.58 4 8 4s8-1.79 8-4v-3c0 2.21-3.58 4-8 4s-8-1.79-8-4z"/></svg>
                 <span>Daten</span>
             </div>
+            <div class="nav-item" data-tab="anleitung">
+                <svg class="nav-icon" viewBox="0 0 24 24" width="20" height="20"><path fill="currentColor" d="M18 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zM8 5h8v2H8V5zm0 4h8v2H8V9zm0 4h5v2H8v-2z"/></svg>
+                <span>Anleitung</span>
+            </div>
             <div class="nav-item" data-tab="roadmap">
                 <svg class="nav-icon" viewBox="0 0 24 24" width="20" height="20"><path fill="currentColor" d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>
                 <span>Roadmap</span>
@@ -1071,6 +1075,219 @@
         </div>
 
         <!-- ===== ROADMAP TAB ===== -->
+        <!-- ===== ANLEITUNG =====
+             Die Bilder kommen aus der App selbst und werden mit
+             bilder_anleitung.mjs neu erzeugt. Nach einem Design-Update
+             einmal laufen lassen, sonst zeigt die Anleitung eine App,
+             die es nicht mehr gibt. -->
+        <div id="anleitung" class="tab-content">
+            <div style="margin-bottom: 32px;">
+                <h2 style="margin-bottom: 8px; font-size: 32px; font-weight: 700;">Anleitung</h2>
+                <p style="color: #94a3b8; font-size: 14px; margin: 0;">Von der Anmeldung bis zur ersten Auswertung</p>
+            </div>
+
+            <!-- ---------- 1 ---------- -->
+            <section class="hilfe-block">
+                <div class="hilfe-kopf">
+                    <span class="hilfe-nr">1</span>
+                    <h3 class="hilfe-titel">Reinkommen</h3>
+                </div>
+                <p class="hilfe-text">
+                    Erst <strong>mit Discord anmelden</strong>, danach erscheint das Feld
+                    für den Zugangsschlüssel. Vorher gibt es kein Konto, das
+                    freigeschaltet werden könnte — wer auf dem Login-Screen nach einem
+                    Schlüsselfeld sucht, sucht vergeblich.
+                </p>
+                <p class="hilfe-text">
+                    Groß- und Kleinschreibung, Bindestriche und Leerzeichen sind egal.
+                    Kopier ihn einfach so rein, wie du ihn bekommen hast.
+                </p>
+                <figure class="hilfe-bild schmal">
+                    <img src="img/anleitung/01-schluessel.webp" alt="Das Feld für den Zugangsschlüssel nach der Discord-Anmeldung" loading="lazy">
+                    <figcaption>So sieht es aus, wenn du angemeldet, aber noch nicht freigeschaltet bist.</figcaption>
+                </figure>
+                <div class="hilfe-warn">
+                    Jeder Schlüssel gehört zu genau einem Discord-Konto. Einmal
+                    eingelöst, funktioniert er bei niemand anderem mehr.
+                </div>
+            </section>
+
+            <!-- ---------- 2 ---------- -->
+            <section class="hilfe-block">
+                <div class="hilfe-kopf">
+                    <span class="hilfe-nr">2</span>
+                    <h3 class="hilfe-titel">Deine Trades reinholen</h3>
+                </div>
+                <p class="hilfe-text">
+                    Du musst nichts abtippen. Trade Republic gibt dir eine Datei mit
+                    allem, was du gehandelt hast — die liest die App ein und baut daraus
+                    deine Trades.
+                </p>
+                <p class="hilfe-text"><strong>In der Trade-Republic-App</strong> (nur dort, im Browser geht es nicht):</p>
+                <ol class="hilfe-liste">
+                    <li>Auf dein <strong>Profilbild oben rechts</strong> tippen</li>
+                    <li><strong>Kontoauszüge</strong></li>
+                    <li><strong>Transaktionsexport</strong> — steht ganz unten in der Liste</li>
+                    <li>Zeitraum wählen, <strong>Erstellen</strong>, dann teilen oder speichern</li>
+                </ol>
+                <div class="hilfe-warn">
+                    Die Datei <strong>nicht vorher in Excel öffnen</strong>. Excel schreibt
+                    Datums- und Zahlenformate um, und danach liest die App sie falsch oder
+                    gar nicht.
+                </div>
+                <p class="hilfe-text">
+                    Danach hier in der App auf <strong>Daten</strong> und die Datei auswählen.
+                    Du bekommst erst einen Bericht zu sehen: wie viele Trades gefunden
+                    wurden, wie viele schon da sind, was übersprungen wird.
+                    <strong>Gespeichert wird nichts, bevor du auf Übernehmen gehst.</strong>
+                </p>
+                <figure class="hilfe-bild">
+                    <img src="img/anleitung/02-import.webp" alt="Der Daten-Tab mit Import, Sicherung und Löschen" loading="lazy">
+                    <figcaption>Der Daten-Tab. Hier liegt auch die Sicherung — und der Weg, alles wieder loszuwerden.</figcaption>
+                </figure>
+                <p class="hilfe-text">
+                    Denselben Export kannst du jeden Monat neu einlesen. Was schon drin
+                    ist, wird erkannt und übersprungen — es entstehen keine Doppelten.
+                </p>
+            </section>
+
+            <!-- ---------- 3 ---------- -->
+            <section class="hilfe-block">
+                <div class="hilfe-kopf">
+                    <span class="hilfe-nr">3</span>
+                    <h3 class="hilfe-titel">Zwei Zahlen, die alles ändern</h3>
+                </div>
+                <p class="hilfe-text">
+                    Das hier ist der Teil, der CapitalFlow von einer Liste deiner Trades
+                    unterscheidet — und der einzige, den du von Hand eintragen musst.
+                </p>
+                <p class="hilfe-text">
+                    In der Export-Datei von Trade Republic steht nicht, wo der Basiswert
+                    stand, als du gekauft hast. Du siehst dort nur, was das Zertifikat
+                    gekostet hat. Damit lässt sich nicht sagen, wie nah du an der
+                    Knockout-Schwelle warst — und genau das ist die Zahl, die über deinen
+                    nächsten Totalverlust entscheidet.
+                </p>
+                <p class="hilfe-text">
+                    Trag beim Trade zwei Zahlen ein, die beim Schein in der TR-App stehen:
+                    <strong>Knockout-Preis</strong> und <strong>Hebel</strong>. Aus denen
+                    rechnet die App alles andere zurück.
+                </p>
+                <figure class="hilfe-bild">
+                    <img src="img/anleitung/03-knockout.webp" alt="Das Knock-Out-Formular im Journal mit den Feldern für Knockout-Preis, Hebel und Stop" loading="lazy">
+                    <figcaption>Produktart oben auf <em>Knock-Out</em> stellen, dann erscheint dieser Block.</figcaption>
+                </figure>
+                <p class="hilfe-text">Daraus wird, ohne dass du sonst etwas tust:</p>
+                <figure class="hilfe-bild schmal">
+                    <img src="img/anleitung/04-kacheln.webp" alt="Berechnete Kacheln: Kurs beim Kauf, echter Hebel, KO-Abstand, Risiko in Euro" loading="lazy">
+                </figure>
+                <ul class="hilfe-punkte">
+                    <li><strong>Kurs beim Kauf</strong> — wo der Basiswert stand. Vergleich das kurz mit deinem Chart; passt es nicht, hast du dich bei einer der beiden Zahlen vertippt.</li>
+                    <li><strong>Echter Hebel</strong> — was du wirklich hattest.</li>
+                    <li><strong>KO-Abstand</strong> — wie weit der Kurs fallen durfte, bevor alles weg ist. Unter 5 % wird die Zahl rot.</li>
+                    <li><strong>Risiko bei deinem Stop</strong> — was dich dein Stop in Euro gekostet hätte. Liegt der Stop jenseits der Schwelle, steht dort der volle Einsatz, denn mehr als alles kannst du nicht verlieren.</li>
+                </ul>
+                <p class="hilfe-text">
+                    Alle Felder sind freiwillig. Ohne sie speichert der Trade ganz normal —
+                    du bekommst dann eben ein Journal wie jedes andere.
+                </p>
+            </section>
+
+            <!-- ---------- 4 ---------- -->
+            <section class="hilfe-block">
+                <div class="hilfe-kopf">
+                    <span class="hilfe-nr">4</span>
+                    <h3 class="hilfe-titel">Nachtragen, was der Import nicht wissen kann</h3>
+                </div>
+                <p class="hilfe-text">
+                    Importierte Trades haben keinen Stop, keinen Grund und keine
+                    Hebelzahlen — das steht in der TR-Datei schlicht nicht drin. Solche
+                    Trades sind im Journal markiert.
+                </p>
+                <figure class="hilfe-bild">
+                    <img src="img/anleitung/05-nachtragen.webp" alt="Eine importierte Trade-Karte mit dem Hinweis, was noch fehlt" loading="lazy">
+                    <figcaption>Ein Klick auf <em>Jetzt nachtragen</em> öffnet den Trade im Formular oben.</figcaption>
+                </figure>
+                <p class="hilfe-text">
+                    Sobald Stop und Grund drin sind, verschwindet der Hinweis. Bearbeiten
+                    kannst du jeden Trade jederzeit, auch von Hand eingetragene — der
+                    Knopf sitzt unten auf jeder Karte.
+                </p>
+                <div class="hilfe-tipp">
+                    Nimm dir die fünf schlechtesten Trades vor und trag dort den Grund
+                    nach. Das ist mehr wert als alle vierzig, denn die Auswertung wird
+                    erst interessant, wenn sie deine Verlierer nach Ursache sortieren kann.
+                </div>
+            </section>
+
+            <!-- ---------- 5 ---------- -->
+            <section class="hilfe-block">
+                <div class="hilfe-kopf">
+                    <span class="hilfe-nr">5</span>
+                    <h3 class="hilfe-titel">Eine Trade-Karte lesen</h3>
+                </div>
+                <figure class="hilfe-bild">
+                    <img src="img/anleitung/06-tradekarte.webp" alt="Eine vollständige Trade-Karte im Journal" loading="lazy">
+                </figure>
+                <ul class="hilfe-punkte">
+                    <li><strong>LONG / SHORT</strong> — Richtung. Bei einem Short-Knockout steigt der Schein, wenn der Kurs fällt; die App rechnet das richtig herum.</li>
+                    <li><strong>12×</strong> — der Hebel. Steht dort <em>Hebel&nbsp;?</em>, fehlen die zwei Zahlen aus Schritt 3.</li>
+                    <li><strong>KO 8,3&nbsp;%</strong> — Abstand zur Schwelle beim Einstieg. Rot ab unter 5 %.</li>
+                    <li><strong>R:R</strong> — was du gewonnen hast, geteilt durch das, was du riskiert hast. Ohne Stop steht dort 0.</li>
+                </ul>
+            </section>
+
+            <!-- ---------- 6 ---------- -->
+            <section class="hilfe-block">
+                <div class="hilfe-kopf">
+                    <span class="hilfe-nr">6</span>
+                    <h3 class="hilfe-titel">Was die Zahlen bedeuten</h3>
+                </div>
+                <figure class="hilfe-bild">
+                    <img src="img/anleitung/07-auswertung.webp" alt="Der Analytics-Tab mit Trefferquote, Profit-Faktor und Erwartungswert" loading="lazy">
+                </figure>
+                <ul class="hilfe-punkte">
+                    <li><strong>Win Rate</strong> — die Trefferquote: wie viele Trades im Plus waren. Sagt für sich genommen wenig. 70 % Treffer und trotzdem im Minus ist völlig normal, wenn die Verlierer größer sind als die Gewinner.</li>
+                    <li><strong>Profit Factor</strong> — alle Gewinne geteilt durch alle Verluste. Über 1 verdienst du, unter 1 zahlst du drauf.</li>
+                    <li><strong>Expectancy</strong> — was ein durchschnittlicher Trade dir einbringt. Die ehrlichste Zahl auf der Seite, weil Trefferquote und Größe darin zusammenkommen. Wenn du nur eine Zahl anschaust, dann diese.</li>
+                    <li><strong>Ø Chance : Risiko</strong> — wie viel du im Schnitt gewonnen hast, gemessen an dem, was du riskiert hast. Gerechnet wird das nur über Trades mit Stop; darunter steht, wie viele das sind.</li>
+                    <li><strong>Haltedauer</strong> — deine Trades nach Länge sortiert. Hier findest du am ehesten ein Muster, das dich Geld kostet.</li>
+                </ul>
+                <p class="hilfe-text">
+                    Die Kacheln heißen im Analytics-Tab noch englisch, der Rest der App
+                    deutsch. Das wird noch vereinheitlicht.
+                </p>
+                <div class="hilfe-warn">
+                    Unter etwa 30 Trades ist keine dieser Zahlen belastbar. Ein einzelner
+                    guter Trade verschiebt alles. Schau sie dir an, aber bau noch keine
+                    Regel darauf.
+                </div>
+            </section>
+
+            <!-- ---------- 7 ---------- -->
+            <section class="hilfe-block">
+                <div class="hilfe-kopf">
+                    <span class="hilfe-nr">7</span>
+                    <h3 class="hilfe-titel">Deine Daten</h3>
+                </div>
+                <ul class="hilfe-punkte">
+                    <li><strong>Sicherung</strong> — eine Datei mit allem, was dir gehört. Zieh sie dir, bevor du etwas Größeres änderst.</li>
+                    <li><strong>Nur Import löschen</strong> — nimmt alles zurück, was aus einer CSV kam. Von Hand eingetragene Trades bleiben.</li>
+                    <li><strong>Alles löschen</strong> — Neuanfang. Ist nicht rückgängig zu machen.</li>
+                </ul>
+                <p class="hilfe-text">
+                    Deine Trades sieht niemand außer dir — auch nicht die anderen
+                    Mitglieder. Die Datenbank gibt jedem Konto ausschließlich die eigenen
+                    Zeilen heraus.
+                </p>
+                <div class="hilfe-tipp">
+                    Etwas funktioniert nicht, eine Zahl sieht falsch aus, ein Wort ist
+                    unverständlich? Sag Bescheid. Die meisten Fehler dieser App wurden
+                    gefunden, weil jemand gesagt hat &bdquo;das kann so nicht stimmen&ldquo;.
+                </div>
+            </section>
+        </div>
+
         <!-- ===== ZUGÄNGE (nur Admin) =====
              Ersetzt den alten Ablauf über js/keys.js: Schlüssel erzeugen,
              Zeile kopieren, committen, pushen. Hier wirkt alles sofort,
