@@ -1,0 +1,1949 @@
+// ===== TRADING JOURNAL APP =====
+
+const tradeForm = document.getElementById('tradeForm');
+const tradesContainer = document.getElementById('tradesContainer');
+const calendarContent = document.getElementById('calendarContent');
+const deleteModal = document.getElementById('deleteModal');
+let tradeToDelete = null;
+let currentFilter = 'all'; // 'all', 'leverage', 'normal'
+let currentSetupTypeFilter = 'all'; // Setup-Type Filter
+let screenshotData = null;
+let currentTab = 'dashboard'; // Tracke aktuellen Tab
+
+// Positionen Management
+let positionsScreenshotData = null;
+let positionToDelete = null;
+let positionToClose = null; // Für Close Position Modal
+
+function displayScreenshot(base64Data) {
+    screenshotData = base64Data;
+    const pasteArea = document.getElementById('screenshotPasteArea');
+    const preview = document.getElementById('screenshotPreview');
+    pasteArea.classList.add('has-image');
+    pasteArea.textContent = '';
+    pasteArea.style.display = 'none';
+    preview.innerHTML = `
+        <img src="${base64Data}" alt="Trade Setup" style="max-width: 100%; height: auto; border-radius: 8px; border: 1px solid rgba(168, 85, 247, 0.3); display: block;">
+        <button type="button" onclick="document.getElementById('screenshot').click()" style="margin-top: 10px; padding: 8px 16px; background: rgba(168, 85, 247, 0.2); border: 1px solid rgba(168, 85, 247, 0.4); color: #cbd5e1; border-radius: 6px; cursor: pointer; font-size: 12px; font-weight: 600;">Bild ändern</button>
+    `;
+}
+
+function clearScreenshot() {
+    screenshotData = null;
+    const pasteArea = document.getElementById('screenshotPasteArea');
+    const preview = document.getElementById('screenshotPreview');
+    pasteArea.classList.remove('has-image');
+    pasteArea.textContent = '📋 Hier Screenshot einfügen (Ctrl+V) oder klicken zum Datei wählen';
+    pasteArea.style.display = 'block';
+    preview.innerHTML = '';
+}
+
+function openScreenshotModal(imageSrc) {
+    const modal = document.getElementById('screenshotModal');
+    const img = document.getElementById('screenshotModalImg');
+    img.src = imageSrc;
+    modal.classList.add('active');
+    document.body.style.overflow = 'hidden';
+}
+
+function closeScreenshotModal() {
+    const modal = document.getElementById('screenshotModal');
+    modal.classList.remove('active');
+    document.body.style.overflow = 'auto';
+}
+
+// ESC-Taste zum Schließen
+document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') {
+        closeScreenshotModal();
+    }
+});
+
+// ===== INITIALIZATION =====
+document.addEventListener('DOMContentLoaded', () => {
+    // Logo Click Effekt
+    const logoElement = document.querySelector('.navbar h1');
+    if (logoElement) {
+        logoElement.addEventListener('click', (e) => {
+            const ripple = document.createElement('span');
+            ripple.style.position = 'absolute';
+            ripple.style.borderRadius = '50%';
+            ripple.style.background = 'radial-gradient(circle, rgba(168, 85, 247, 0.6) 0%, transparent 70%)';
+            ripple.style.width = '100px';
+            ripple.style.height = '100px';
+            ripple.style.pointerEvents = 'none';
+            ripple.style.animation = 'logoRipple 0.6s ease-out forwards';
+            
+            const rect = logoElement.getBoundingClientRect();
+            ripple.style.left = (e.clientX - rect.left - 50) + 'px';
+            ripple.style.top = (e.clientY - rect.top - 50) + 'px';
+            
+            logoElement.appendChild(ripple);
+            setTimeout(() => ripple.remove(), 600);
+            
+            showToast('💜 unemployment center journal');
+        });
+    }
+    
+    setupTabs();
+    initCustomDropdowns();
+    setupFilterButtons();
+    loadTrades();
+    loadDashboard();
+    tradeForm.addEventListener('submit', addTrade);
+    
+    // Screenshot Paste & Click Handler
+    const pasteArea = document.getElementById('screenshotPasteArea');
+    const screenshotInput = document.getElementById('screenshot');
+    
+    // Click = File-Input öffnen
+    if (pasteArea) {
+        pasteArea.addEventListener('click', () => {
+            if (!screenshotData) {
+                screenshotInput.click();
+            }
+        });
+    }
+    
+    // File-Input Handler
+    if (screenshotInput) {
+        screenshotInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = (event) => {
+                    displayScreenshot(event.target.result);
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+    }
+    
+    // Paste-Handler (Global - funktioniert überall auf der Seite)
+    document.addEventListener('paste', (e) => {
+        const items = e.clipboardData?.items || [];
+        for (let item of items) {
+            if (item.type.indexOf('image') !== -1) {
+                const blob = item.getAsFile();
+                const reader = new FileReader();
+                reader.onload = (event) => {
+                    // Nutze currentTab Variable um zu wissen welcher Tab aktiv ist
+                    if (currentTab === 'journal') {
+                        displayScreenshot(event.target.result);
+                    } else if (currentTab === 'positions') {
+                        displayPositionsScreenshot(event.target.result);
+                    }
+                };
+                reader.readAsDataURL(blob);
+                break;
+            }
+        }
+    });
+    
+    // ===== POSITIONEN FORM =====
+    const positionsForm = document.getElementById('positionsForm');
+    if (positionsForm) {
+        positionsForm.addEventListener('submit', addPosition);
+    }
+    
+    // Positionen Screenshot Paste & Click Handler
+    const positionsPasteArea = document.getElementById('positionsScreenshotPasteArea');
+    const positionsScreenshotInput = document.getElementById('positionsScreenshotInput');
+    
+    if (positionsPasteArea) {
+        positionsPasteArea.addEventListener('click', () => {
+            positionsScreenshotInput.click();
+        });
+    }
+    
+    if (positionsScreenshotInput) {
+        positionsScreenshotInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = (event) => {
+                    displayPositionsScreenshot(event.target.result);
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+    }
+    
+    // Positionen Modal Close
+    const deleteModal = document.getElementById('deleteModal');
+    const confirmBtn = deleteModal?.querySelector('.confirm-btn');
+    if (confirmBtn) {
+        confirmBtn.addEventListener('click', () => {
+            // Check if it's a position delete or trade delete
+            if (positionToDelete !== null) {
+                confirmDeletePosition();
+            } else if (tradeToDelete !== null) {
+                confirmDeleteTrade();
+            }
+        });
+    }
+    
+    // Load Positionen
+    loadPositions();
+});
+
+// ===== TABS =====
+function setupTabs() {
+    // Alt Tab Buttons (versteckt)
+    const tabButtons = document.querySelectorAll('.tab-button');
+    tabButtons.forEach(button => {
+        button.addEventListener('click', (e) => {
+            e.preventDefault();
+            handleTabChange(button.getAttribute('data-tab'));
+        });
+    });
+    
+    // Neue Sidebar Nav Items
+    const navItems = document.querySelectorAll('.nav-item');
+    navItems.forEach(item => {
+        item.addEventListener('click', () => {
+            const tabId = item.getAttribute('data-tab');
+            handleTabChange(tabId);
+        });
+    });
+}
+
+function handleTabChange(tabId) {
+    currentTab = tabId; // Aktualisiere globalen Tab-State
+    
+    // Entferne active von allen Nav Items
+    const navItems = document.querySelectorAll('.nav-item');
+    navItems.forEach(item => item.classList.remove('active'));
+    
+    // Entferne active von allen Tab Buttons (old)
+    const tabButtons = document.querySelectorAll('.tab-button');
+    tabButtons.forEach(b => b.classList.remove('active'));
+    
+    // Entferne active von allen Tab-Contents
+    const tabContents = document.querySelectorAll('.tab-content');
+    tabContents.forEach(c => c.classList.remove('active'));
+    
+    // Füge active zum aktuellen Nav Item hinzu
+    const activeNavItem = document.querySelector(`.nav-item[data-tab="${tabId}"]`);
+    if (activeNavItem) activeNavItem.classList.add('active');
+    
+    // Füge active zum alten Button hinzu (falls vorhanden)
+    const activeButton = document.querySelector(`.tab-button[data-tab="${tabId}"]`);
+    if (activeButton) activeButton.classList.add('active');
+    
+    // Füge active zum entsprechenden Tab-Content hinzu
+    const tabContent = document.getElementById(tabId);
+    if (tabContent) {
+        tabContent.classList.add('active');
+    }
+    
+    // Coming Soon Overlays managen
+    const positionsOverlay = document.getElementById('positionsComingSoonOverlay');
+    const watchlistOverlay = document.getElementById('watchlistComingSoonOverlay');
+    const portfolioOverlay = document.getElementById('portfolioComingSoonOverlay');
+    
+    if (positionsOverlay) {
+        if (tabId === 'positions') {
+            positionsOverlay.classList.add('visible');
+        } else {
+            positionsOverlay.classList.remove('visible');
+        }
+    }
+    
+    if (watchlistOverlay) {
+        if (tabId === 'watchlist') {
+            watchlistOverlay.classList.add('visible');
+        } else {
+            watchlistOverlay.classList.remove('visible');
+        }
+    }
+    
+    if (portfolioOverlay) {
+        if (tabId === 'portfolio') {
+            portfolioOverlay.classList.add('visible');
+        } else {
+            portfolioOverlay.classList.remove('visible');
+        }
+    }
+    
+    // Lade spezielle Inhalte
+    if (tabId === 'calendar') {
+        setTimeout(() => loadCalendar(), 100);
+    }
+    if (tabId === 'dashboard') {
+        setTimeout(() => loadDashboard(), 100);
+    }
+    if (tabId === 'analytics') {
+        setTimeout(() => loadAnalytics(), 100);
+    }
+}
+
+function setupFilterButtons() {
+    // Event Delegation: funktioniert auch für dynamisch hinzugefügte Buttons
+    document.addEventListener('click', (e) => {
+        if (e.target.classList.contains('filter-btn')) {
+            // Entferne active von allen Buttons
+            document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+            // Setze current Filter und add active
+            currentFilter = e.target.getAttribute('data-filter');
+            e.target.classList.add('active');
+            // Reload Trades und Dashboard mit neuem Filter
+            loadTrades();
+            loadDashboard();
+        }
+        
+        if (e.target.classList.contains('setup-type-filter-btn')) {
+            // Entferne active von allen Setup-Type Buttons
+            document.querySelectorAll('.setup-type-filter-btn').forEach(b => b.classList.remove('active'));
+            // Setze Setup-Type Filter und add active
+            currentSetupTypeFilter = e.target.getAttribute('data-setup-type');
+            e.target.classList.add('active');
+            // Reload Trades und Dashboard mit neuem Filter
+            loadTrades();
+            loadDashboard();
+        }
+    });
+}
+
+function getFilteredTrades(trades) {
+    let filtered = trades;
+    
+    // Hebel Filter
+    if (currentFilter === 'leverage') {
+        filtered = filtered.filter(t => t.leverage && t.leverage > 1);
+    } else if (currentFilter === 'normal') {
+        filtered = filtered.filter(t => !t.leverage || t.leverage === 1);
+    }
+    
+    // Setup-Type Filter
+    if (currentSetupTypeFilter !== 'all') {
+        filtered = filtered.filter(t => t.setupType === currentSetupTypeFilter);
+    }
+    
+    return filtered;
+}
+
+// ===== TRADES =====
+function addTrade(e) {
+    e.preventDefault();
+    
+    try {
+        const ticker = document.getElementById('ticker').value.toUpperCase();
+        const entryPrice = parseFloat(document.getElementById('entryPrice').value);
+        const exitPrice = parseFloat(document.getElementById('exitPrice').value);
+        const stopLossValue = document.getElementById('stopLoss').value;
+        const stopLoss = stopLossValue ? parseFloat(stopLossValue) : entryPrice;
+        const positionSize = parseFloat(document.getElementById('positionSize').value);
+        const leverageValue = document.getElementById('leverage').value;
+        const leverage = leverageValue ? parseFloat(leverageValue) : 1;
+        const reason = document.getElementById('reason').value;
+        const setupType = document.getElementById('setupType').value;
+        const errorType = document.getElementById('errorType').value;
+        const notes = document.getElementById('notes').value;
+        
+        // P&L Berechnung
+        const shares = positionSize / entryPrice;
+        const pnl = (exitPrice - entryPrice) * shares * leverage;
+        const pnlPercent = ((exitPrice - entryPrice) / entryPrice) * 100 * leverage;
+        const risk = stopLoss ? (entryPrice - stopLoss) * shares * leverage : 0;
+        const reward = (exitPrice - entryPrice) * shares * leverage;
+        const riskReward = risk !== 0 ? reward / risk : 0;
+        
+        const date = new Date().toLocaleDateString('de-DE', { year: 'numeric', month: '2-digit', day: '2-digit' });
+        
+        // Trade Object erstellen
+        const trade = {
+            id: Date.now(),
+            ticker,
+            entryPrice,
+            exitPrice,
+            stopLoss: stopLoss || 0,
+            positionSize,
+            leverage,
+            pnl: Math.round(pnl * 100) / 100,
+            pnlPercent: Math.round(pnlPercent * 100) / 100,
+            risk: Math.round(risk * 100) / 100,
+            reward: Math.round(reward * 100) / 100,
+            riskReward: Math.round(riskReward * 100) / 100,
+            reason,
+            setupType,
+            errorType,
+            notes,
+            screenshot: screenshotData || null,
+            date
+        };
+        
+        // In localStorage speichern
+        const trades = JSON.parse(localStorage.getItem('trades')) || [];
+        trades.push(trade);
+        localStorage.setItem('trades', JSON.stringify(trades));
+        
+        // UI Update
+        showToast(`Trade hinzugefügt: ${ticker} (P&L: €${trade.pnl.toFixed(2)})`);
+        tradeForm.reset();
+        document.getElementById('screenshotPreview').innerHTML = '';
+        clearScreenshot();
+        loadTrades();
+        
+    } catch (error) {
+        console.error('Error adding trade:', error);
+        showToast('Fehler beim Hinzufügen des Trades!', 'error');
+    }
+}
+
+function getSetupTypeBadgeClass(setupType) {
+    const typeMap = {
+        'Breakout': 'breakout',
+        'Pullback': 'pullback',
+        'Support': 'support',
+        'Rebound': 'rebound',
+        'Gap-Fill': 'gap-fill',
+        'Trend-Continuation': 'trend-continuation',
+        'Sonstiges': 'sonstiges'
+    };
+    return typeMap[setupType] || 'sonstiges';
+}
+
+function loadTrades() {
+    let trades = JSON.parse(localStorage.getItem('trades')) || [];
+    
+    // CLEANUP: Remove empty/whitespace screenshots
+    trades = trades.map(trade => ({
+        ...trade,
+        screenshot: trade.screenshot && trade.screenshot.trim() ? trade.screenshot : null
+    }));
+    localStorage.setItem('trades', JSON.stringify(trades));
+    
+    const filteredTrades = getFilteredTrades(trades);
+    
+    // Update Display Stats oben (ALLE Trades, nicht gefiltert)
+    const totalPnL = trades.reduce((sum, t) => sum + t.pnl, 0);
+    const filteredPnL = filteredTrades.reduce((sum, t) => sum + t.pnl, 0);
+    const tradesPnLDisplay = document.getElementById('tradesPnLDisplay');
+    const tradeCountDisplay = document.getElementById('tradeCountDisplay');
+    
+    if (tradesPnLDisplay) {
+        tradesPnLDisplay.textContent = `€ ${filteredPnL.toFixed(2)}`;
+        tradesPnLDisplay.style.color = filteredPnL >= 0 ? '' : '#f87171';
+    }
+    
+    if (tradeCountDisplay) {
+        tradeCountDisplay.textContent = filteredTrades.length;
+    }
+    
+    if (filteredTrades.length === 0) {
+        tradesContainer.innerHTML = '<div style="text-align: center; padding: 40px; color: #94a3b8;">Keine Trades in dieser Kategorie</div>';
+        return;
+    }
+    
+    tradesContainer.innerHTML = filteredTrades.map(trade => `
+        <div class="trade-card">
+            <div class="trade-header">
+                <div class="trade-ticker">
+                    ${trade.ticker}
+                    ${trade.leverage > 1 ? `<span class="trade-leverage-badge">${trade.leverage.toFixed(0)}x</span>` : ''}
+                </div>
+                <div class="trade-pnl ${trade.pnl > 0 ? 'profit' : 'loss'}">
+                    <div>€${trade.pnl > 0 ? '+' : ''}${trade.pnl.toFixed(2)}</div>
+                    <div class="trade-pnl-percent">${trade.pnlPercent > 0 ? '+' : ''}${trade.pnlPercent.toFixed(1)}%</div>
+                </div>
+            </div>
+            <div style="margin-bottom: 15px; margin-top: 10px;">
+                <span class="setup-type-badge ${getSetupTypeBadgeClass(trade.setupType)}">${trade.setupType}</span>
+            </div>
+            <div class="trade-detail">
+                <span class="trade-detail-label">Entry / Exit</span>
+                <span class="trade-detail-value">$${trade.entryPrice.toFixed(2)} / $${trade.exitPrice.toFixed(2)}</span>
+            </div>
+            <div class="trade-detail">
+                <span class="trade-detail-label">Position Größe</span>
+                <span class="trade-detail-value">€${trade.positionSize.toFixed(2)}</span>
+            </div>
+            <div class="trade-detail">
+                <span class="trade-detail-label">R:R Ratio</span>
+                <span class="trade-detail-value">${trade.riskReward.toFixed(2)} : 1</span>
+            </div>
+            <div class="trade-detail">
+                <span class="trade-detail-label">Fehler</span>
+                <span class="trade-detail-value">${trade.errorType || 'Keine'}</span>
+            </div>
+            <div class="trade-detail">
+                <span class="trade-detail-label">Datum</span>
+                <span class="trade-detail-value">${trade.date}</span>
+            </div>
+            ${trade.notes ? `<div class="trade-detail"><span class="trade-detail-label">Notes</span><span class="trade-detail-value">${trade.notes}</span></div>` : ''}
+            ${trade.screenshot && trade.screenshot.trim() ? `<div class="trade-screenshot"><img src="${trade.screenshot}" alt="Trade Setup" onclick="openScreenshotModal('${trade.screenshot}')" style="cursor: pointer;"></div>` : ''}
+            <button class="trade-delete" onclick="confirmDelete(${trade.id})">🗑️ Löschen</button>
+        </div>
+    `).join('');
+}
+
+function confirmDelete(id) {
+    tradeToDelete = id;
+    const modal = document.getElementById('deleteModal');
+    if (modal) {
+        modal.classList.add('active');
+    }
+}
+
+function cancelDelete() {
+    tradeToDelete = null;
+    const modal = document.getElementById('deleteModal');
+    if (modal) {
+        modal.classList.remove('active');
+    }
+}
+
+function confirmDeleteTrade() {
+    const trades = JSON.parse(localStorage.getItem('trades')) || [];
+    const filtered = trades.filter(t => t.id !== tradeToDelete);
+    localStorage.setItem('trades', JSON.stringify(filtered));
+    
+    // Modal schließen
+    const modal = document.getElementById('deleteModal');
+    if (modal) {
+        modal.classList.remove('active');
+    }
+    tradeToDelete = null;
+    
+    loadTrades();
+    showToast('Trade gelöscht');
+}
+
+// ===== CALENDAR =====
+let currentCalendarView = 'daily';
+
+function loadCalendar() {
+    const calendarContent = document.getElementById('calendarContent');
+    const trades = JSON.parse(localStorage.getItem('trades')) || [];
+    
+    // Setup event listeners für Buttons
+    const calendarBtns = document.querySelectorAll('.calendar-btn');
+    calendarBtns.forEach(btn => {
+        btn.addEventListener('click', () => {
+            const view = btn.getAttribute('data-view');
+            currentCalendarView = view;
+            
+            // Update active state
+            calendarBtns.forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            
+            // Render new calendar
+            if (view === 'daily') renderDailyCalendar(trades, calendarContent);
+            else if (view === 'weekly') renderWeeklyCalendar(trades, calendarContent);
+            else if (view === 'monthly') renderMonthlyCalendar(trades, calendarContent);
+        });
+    });
+    
+    // Render initial (daily)
+    renderDailyCalendar(trades, calendarContent);
+}
+
+function renderDailyCalendar(trades, container) {
+    const groupedByDate = {};
+    trades.forEach(t => {
+        groupedByDate[t.date] = (groupedByDate[t.date] || []).concat(t);
+    });
+    
+    let allDates = [];
+    const today = new Date();
+    
+    if (Object.keys(groupedByDate).length > 0) {
+        const dates = Object.keys(groupedByDate).map(d => new Date(d.split('.').reverse().join('-')));
+        const maxDate = new Date(Math.max(...dates));
+        
+        const startDate = new Date(maxDate.getFullYear(), maxDate.getMonth(), 1);
+        const endDate = new Date(maxDate.getFullYear(), maxDate.getMonth() + 1, 0);
+        
+        for (let d = new Date(startDate); d <= endDate; d.setDate(d.getDate() + 1)) {
+            const day = String(d.getDate()).padStart(2, '0');
+            const month = String(d.getMonth() + 1).padStart(2, '0');
+            const year = d.getFullYear();
+            allDates.push(`${day}.${month}.${year}`);
+        }
+    } else {
+        const startDate = new Date(today.getFullYear(), today.getMonth(), 1);
+        const endDate = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+        
+        for (let d = new Date(startDate); d <= endDate; d.setDate(d.getDate() + 1)) {
+            const day = String(d.getDate()).padStart(2, '0');
+            const month = String(d.getMonth() + 1).padStart(2, '0');
+            const year = d.getFullYear();
+            allDates.push(`${day}.${month}.${year}`);
+        }
+    }
+    
+    const sortedDates = allDates.sort((a, b) => new Date(b.split('.').reverse().join('-')) - new Date(a.split('.').reverse().join('-')));
+    
+    container.className = 'calendar-grid-daily';
+    container.innerHTML = sortedDates.map(date => {
+        const dayTrades = groupedByDate[date] || [];
+        const dayPnL = dayTrades.reduce((sum, t) => sum + t.pnl, 0);
+        const status = dayTrades.length === 0 ? 'neutral' : (dayPnL > 0 ? 'profit' : 'loss');
+        
+        return `
+            <div class="calendar-day ${status}">
+                <div class="calendar-day-header">${date}</div>
+                <div class="calendar-day-pnl">${dayTrades.length > 0 ? `€${Math.abs(dayPnL).toFixed(0)}` : '—'}</div>
+                <div class="calendar-day-trades">${dayTrades.length} T.</div>
+            </div>
+        `;
+    }).join('');
+}
+
+function renderWeeklyCalendar(trades, container) {
+    const groupedByWeek = {};
+    
+    trades.forEach(t => {
+        const date = new Date(t.date.split('.').reverse().join('-'));
+        const weekNum = getWeekNumber(date);
+        const year = date.getFullYear();
+        const weekKey = `${year}-W${String(weekNum).padStart(2, '0')}`;
+        groupedByWeek[weekKey] = (groupedByWeek[weekKey] || []).concat(t);
+    });
+    
+    const allWeeks = new Set();
+    
+    if (Object.keys(groupedByWeek).length > 0) {
+        const today = new Date();
+        const currentYear = today.getFullYear();
+        const currentWeek = getWeekNumber(today);
+        
+        const years = Object.keys(groupedByWeek).map(k => parseInt(k.split('-')[0]));
+        const minYear = Math.min(...years);
+        
+        for (let year = minYear; year <= currentYear; year++) {
+            const maxWeek = year === currentYear ? currentWeek : 52;
+            for (let week = 1; week <= maxWeek; week++) {
+                const weekKey = `${year}-W${String(week).padStart(2, '0')}`;
+                allWeeks.add(weekKey);
+            }
+        }
+    }
+    
+    const sortedWeeks = Array.from(allWeeks).sort().reverse();
+    
+    container.className = 'calendar-grid-weekly';
+    container.innerHTML = sortedWeeks.map(weekKey => {
+        const weekTrades = groupedByWeek[weekKey] || [];
+        const weekPnL = weekTrades.reduce((sum, t) => sum + t.pnl, 0);
+        const status = weekTrades.length === 0 ? 'neutral' : (weekPnL > 0 ? 'profit' : 'loss');
+        
+        return `
+            <div class="calendar-day ${status}">
+                <div class="calendar-day-header">${weekKey}</div>
+                <div class="calendar-day-pnl">${weekTrades.length > 0 ? `€${Math.abs(weekPnL).toFixed(0)}` : '—'}</div>
+                <div class="calendar-day-trades">${weekTrades.length} T.</div>
+            </div>
+        `;
+    }).join('');
+}
+
+function renderMonthlyCalendar(trades, container) {
+    const groupedByMonth = {};
+    
+    // Gruppiere Trades nach Monat
+    trades.forEach(t => {
+        const [day, month, year] = t.date.split('.');
+        const monthKey = `${year}-${String(month).padStart(2, '0')}`;
+        groupedByMonth[monthKey] = (groupedByMonth[monthKey] || []).concat(t);
+    });
+    
+    const today = new Date();
+    const currentYear = today.getFullYear();
+    
+    // Generiere ALLE 12 Monate des aktuellen Jahres (Jan - Dez)
+    const allMonths = [];
+    for (let month = 1; month <= 12; month++) {
+        const monthKey = `${currentYear}-${String(month).padStart(2, '0')}`;
+        allMonths.push(monthKey);
+    }
+    
+    // Sortiere absteigend (Dez zuerst, dann Nov, etc.)
+    allMonths.reverse();
+    
+    // Render
+    container.className = 'calendar-grid-monthly';
+    container.innerHTML = allMonths.map(monthKey => {
+        const monthTrades = groupedByMonth[monthKey] || [];
+        const monthPnL = monthTrades.reduce((sum, t) => sum + t.pnl, 0);
+        const status = monthTrades.length === 0 ? 'neutral' : (monthPnL > 0 ? 'profit' : 'loss');
+        
+        const monthNames = ['Jan', 'Feb', 'Mär', 'Apr', 'Mai', 'Jun', 'Jul', 'Aug', 'Sep', 'Okt', 'Nov', 'Dez'];
+        const [y, m] = monthKey.split('-');
+        const monthName = monthNames[parseInt(m) - 1];
+        
+        return `
+            <div class="calendar-day ${status}">
+                <div class="calendar-day-header">${monthName} ${y}</div>
+                <div class="calendar-day-pnl">${monthTrades.length > 0 ? `€${Math.abs(monthPnL).toFixed(0)}` : '—'}</div>
+                <div class="calendar-day-trades">${monthTrades.length} T.</div>
+            </div>
+        `;
+    }).join('');
+}
+
+function getWeekNumber(d) {
+    d = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
+    d.setUTCDate(d.getUTCDate() + 4 - (d.getUTCDay() || 7));
+    const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
+    const weekNum = Math.ceil((((d - yearStart) / 86400000) + 1) / 7);
+    return weekNum;
+}
+
+// ===== DASHBOARD =====
+// Helper: Calculate all dashboard stats once
+function calculateDashboardStats(trades) {
+    const totalPnL = trades.reduce((sum, t) => sum + t.pnl, 0);
+    const wins = trades.filter(t => t.pnl > 0).length;
+    const losses = trades.filter(t => t.pnl < 0).length;
+    const winRate = trades.length > 0 ? ((wins / trades.length) * 100).toFixed(1) : 0;
+    const avgWin = wins > 0 ? (trades.filter(t => t.pnl > 0).reduce((sum, t) => sum + t.pnl, 0) / wins).toFixed(2) : 0;
+    const avgLoss = losses > 0 ? (trades.filter(t => t.pnl < 0).reduce((sum, t) => sum + t.pnl, 0) / losses).toFixed(2) : 0;
+    const profitFactor = losses > 0 ? (trades.filter(t => t.pnl > 0).reduce((sum, t) => sum + t.pnl, 0) / Math.abs(trades.filter(t => t.pnl < 0).reduce((sum, t) => sum + t.pnl, 0))).toFixed(2) : 0;
+    const expectancy = trades.length > 0 ? (totalPnL / trades.length).toFixed(2) : 0;
+    
+    const today = new Date().toLocaleDateString('de-DE', { year: 'numeric', month: '2-digit', day: '2-digit' });
+    const todayTrades = trades.filter(t => t.date === today);
+    const todayPnL = todayTrades.reduce((sum, t) => sum + t.pnl, 0);
+    const todayWins = todayTrades.filter(t => t.pnl > 0).length;
+    const todayWinRate = todayTrades.length > 0 ? ((todayWins / todayTrades.length) * 100).toFixed(1) : 0;
+    
+    let tradeScore = 0;
+    if (trades.length > 0) {
+        const winRateScore = Math.min(winRate / 0.6 * 20, 20);
+        const profitFactorScore = Math.min((profitFactor / 2) * 25, 25);
+        const consistencyScore = Math.min((Math.abs(avgWin) / (Math.abs(avgWin) + Math.abs(avgLoss))) * 25, 25);
+        const tradeCountScore = Math.min((trades.length / 100) * 30, 30);
+        tradeScore = Math.round(winRateScore + profitFactorScore + consistencyScore + tradeCountScore);
+        tradeScore = Math.min(100, Math.max(0, tradeScore));
+    }
+    
+    return {
+        totalPnL, wins, losses, winRate, avgWin, avgLoss, profitFactor, expectancy,
+        todayPnL, todayTrades, todayWins, todayWinRate, tradeScore,
+        trades
+    };
+}
+
+function loadDashboard() {
+    const allTrades = JSON.parse(localStorage.getItem('trades')) || [];
+    const trades = getFilteredTrades(allTrades);
+    const stats = calculateDashboardStats(trades);
+    
+    const totalPnL = trades.reduce((sum, t) => sum + t.pnl, 0);
+    const wins = trades.filter(t => t.pnl > 0).length;
+    const losses = trades.filter(t => t.pnl < 0).length;
+    const winRate = trades.length > 0 ? ((wins / trades.length) * 100).toFixed(1) : 0;
+    const avgWin = wins > 0 ? (trades.filter(t => t.pnl > 0).reduce((sum, t) => sum + t.pnl, 0) / wins).toFixed(2) : 0;
+    const avgLoss = losses > 0 ? (trades.filter(t => t.pnl < 0).reduce((sum, t) => sum + t.pnl, 0) / losses).toFixed(2) : 0;
+    const bestTrade = trades.length > 0 ? Math.max(...trades.map(t => t.pnl)).toFixed(2) : 0;
+    const worstTrade = trades.length > 0 ? Math.min(...trades.map(t => t.pnl)).toFixed(2) : 0;
+    const profitFactor = losses > 0 ? (trades.filter(t => t.pnl > 0).reduce((sum, t) => sum + t.pnl, 0) / Math.abs(trades.filter(t => t.pnl < 0).reduce((sum, t) => sum + t.pnl, 0))).toFixed(2) : 0;
+    
+    // Expectancy Value berechnen (erwarteter Gewinn pro Trade)
+    const expectancy = trades.length > 0 ? (totalPnL / trades.length).toFixed(2) : 0;
+    
+    // Heute's Trades
+    const today = new Date().toLocaleDateString('de-DE', { year: 'numeric', month: '2-digit', day: '2-digit' });
+    const todayTrades = trades.filter(t => t.date === today);
+    const todayPnL = todayTrades.reduce((sum, t) => sum + t.pnl, 0);
+    const todayWins = todayTrades.filter(t => t.pnl > 0).length;
+    const todayWinRate = todayTrades.length > 0 ? ((todayWins / todayTrades.length) * 100).toFixed(1) : 0;
+    
+    // Best & Worst Trade mit Datum
+    let bestTradeData = { pnl: 0, date: '-', ticker: '-' };
+    let worstTradeData = { pnl: 0, date: '-', ticker: '-' };
+    if (trades.length > 0) {
+        bestTradeData = trades.reduce((prev, current) => (prev.pnl > current.pnl) ? prev : current);
+        worstTradeData = trades.reduce((prev, current) => (prev.pnl < current.pnl) ? prev : current);
+    }
+    
+    // Largest Drawdown berechnen
+    let largestDrawdown = 0;
+    let cumulativePnL = 0;
+    let peak = 0;
+    trades.forEach(t => {
+        cumulativePnL += t.pnl;
+        if (cumulativePnL > peak) peak = cumulativePnL;
+        const drawdown = peak - cumulativePnL;
+        if (drawdown > largestDrawdown) largestDrawdown = drawdown;
+    });
+    
+    // Consecutive Wins/Losses
+    let maxConsecutiveWins = 0;
+    let maxConsecutiveLosses = 0;
+    let currentWins = 0;
+    let currentLosses = 0;
+    
+    trades.forEach(t => {
+        if (t.pnl > 0) {
+            currentWins++;
+            currentLosses = 0;
+            maxConsecutiveWins = Math.max(maxConsecutiveWins, currentWins);
+        } else if (t.pnl < 0) {
+            currentLosses++;
+            currentWins = 0;
+            maxConsecutiveLosses = Math.max(maxConsecutiveLosses, currentLosses);
+        }
+    });
+    
+    // Aktuelle Streaks
+    let currentStreak = 0;
+    let isStreakWin = false;
+    for (let i = trades.length - 1; i >= 0; i--) {
+        if (trades[i].pnl > 0) {
+            if (currentStreak === 0 || isStreakWin) {
+                currentStreak++;
+                isStreakWin = true;
+            } else break;
+        } else if (trades[i].pnl < 0) {
+            if (currentStreak === 0 || !isStreakWin) {
+                currentStreak++;
+                isStreakWin = false;
+            } else break;
+        }
+    }
+    
+    // Win Rate by Day of Week
+    const winsByDay = { Mon: 0, Tue: 0, Wed: 0, Thu: 0, Fri: 0, Sat: 0, Sun: 0 };
+    const totalByDay = { Mon: 0, Tue: 0, Wed: 0, Thu: 0, Fri: 0, Sat: 0, Sun: 0 };
+    const dayMap = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+    
+    trades.forEach(t => {
+        const [day, month, year] = t.date.split('.');
+        const d = new Date(`${year}-${month}-${day}`);
+        const dayName = dayMap[d.getDay()];
+        totalByDay[dayName]++;
+        if (t.pnl > 0) winsByDay[dayName]++;
+    });
+    
+    const winRateByDay = Object.keys(winsByDay).map(day => ({
+        day,
+        rate: totalByDay[day] > 0 ? ((winsByDay[day] / totalByDay[day]) * 100).toFixed(0) : 0,
+        total: totalByDay[day]
+    }));
+    
+    // Recent Trades (letzte 5)
+    const recentTrades = trades.slice(-5).reverse();
+    
+    // Trade Score Berechnung (0-100)
+    let tradeScore = 0;
+    if (trades.length > 0) {
+        const winRateScore = Math.min(winRate / 0.6 * 20, 20); // Max 20 Punkte
+        const profitFactorScore = Math.min((profitFactor / 2) * 25, 25); // Max 25 Punkte
+        const consistencyScore = Math.min((Math.abs(avgWin) / (Math.abs(avgWin) + Math.abs(avgLoss))) * 25, 25); // Max 25 Punkte
+        const tradeCountScore = Math.min((trades.length / 100) * 30, 30); // Max 30 Punkte
+        tradeScore = Math.round(winRateScore + profitFactorScore + consistencyScore + tradeCountScore);
+        tradeScore = Math.min(100, Math.max(0, tradeScore));
+    }
+    
+    const dashboardContent = document.getElementById('dashboard');
+    dashboardContent.innerHTML = `
+        <h2>Dashboard</h2>
+        
+        <!-- ===== FILTER BUTTONS ===== -->
+        <div class="trades-filter">
+            <button class="filter-btn ${currentFilter === 'all' ? 'active' : ''}" data-filter="all">Alle Trades</button>
+            <button class="filter-btn ${currentFilter === 'leverage' ? 'active' : ''}" data-filter="leverage">Nur Hebel</button>
+            <button class="filter-btn ${currentFilter === 'normal' ? 'active' : ''}" data-filter="normal">Nur Normal</button>
+        </div>
+        
+        <!-- DAILY SUMMARY -->
+        <div class="daily-summary-card">
+            <div class="summary-item">
+                <div class="summary-label">Today</div>
+                <div class="summary-value ${todayPnL >= 0 ? 'positive' : todayPnL === 0 ? '' : 'negative'}">€${todayPnL.toFixed(2)}</div>
+                <div class="summary-detail">${todayTrades.length} trades • ${todayWinRate}% win</div>
+            </div>
+            <div class="summary-divider"></div>
+            <div class="summary-item">
+                <div class="summary-label">Expectancy</div>
+                <div class="summary-value ${expectancy >= 0 ? 'positive' : 'negative'}">€${expectancy}</div>
+                <div class="summary-detail">per trade avg</div>
+            </div>
+            <div class="summary-divider"></div>
+            <div class="summary-item">
+                <div class="summary-label">Win Rate Trend</div>
+                <div class="summary-value">${winRate}%</div>
+                <div class="summary-detail">${trades.length > 0 ? (wins > losses ? '📈 up' : wins < losses ? '📉 down' : '➡️ flat') : '-'}</div>
+            </div>
+        </div>
+        
+        <div class="dashboard-top">
+            <div class="trade-score-card">
+                <div class="trade-score-label">Trade Score</div>
+                <div class="trade-score-value">${tradeScore}</div>
+                <div class="trade-score-status">${tradeScore >= 75 ? 'Excellent' : tradeScore >= 50 ? 'Good' : tradeScore >= 25 ? 'Fair' : 'Improving'}</div>
+                <canvas id="tradeScoreChart"></canvas>
+            </div>
+            
+            <div class="top-stats">
+                <div class="top-stat">
+                    <svg class="stat-icon-svg" viewBox="0 0 24 24" width="24" height="24"><path fill="currentColor" d="M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z"/></svg>
+                    <div class="stat-label">Total P&L</div>
+                    <div class="stat-value ${totalPnL >= 0 ? 'positive' : 'negative'}">€${totalPnL.toFixed(2)}</div>
+                </div>
+                <div class="top-stat">
+                    <svg class="stat-icon-svg" viewBox="0 0 24 24" width="24" height="24"><path fill="currentColor" d="M5 9.2h3V19H5zM10.6 5h2.8v14h-2.8zm5.6 8H19v6h-2.8z"/></svg>
+                    <div class="stat-label">Trades</div>
+                    <div class="stat-value">${trades.length}</div>
+                </div>
+                <div class="top-stat">
+                    <svg class="stat-icon-svg" viewBox="0 0 24 24" width="24" height="24"><path fill="currentColor" d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm3.5-9c0 1.93-1.57 3.5-3.5 3.5S8.5 12.93 8.5 11 10.07 7.5 12 7.5s3.5 1.57 3.5 3.5z"/></svg>
+                    <div class="stat-label">Win Rate</div>
+                    <div class="stat-value">${winRate}%</div>
+                </div>
+                <div class="top-stat">
+                    <svg class="stat-icon-svg" viewBox="0 0 24 24" width="24" height="24"><path fill="currentColor" d="M16 6l2.29 2.29-4.88 4.88-4-4L2 16.59 3.41 18 10 11.41l4 4 6.3-6.29L22 12v-6z"/></svg>
+                    <div class="stat-label">Profit Factor</div>
+                    <div class="stat-value">${profitFactor}</div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="dashboard-stats">
+            <div class="dashboard-stat">
+                <div class="dashboard-stat-label">
+                    <svg class="stat-icon-svg-small" viewBox="0 0 24 24" width="18" height="18"><path fill="currentColor" d="M16 6l2.29 2.29-4.88 4.88-4-4L2 16.59 3.41 18 10 11.41l4 4 6.3-6.29L22 12v-6z"/></svg>
+                    Avg Win
+                </div>
+                <div class="dashboard-stat-value positive">€${avgWin}</div>
+            </div>
+            <div class="dashboard-stat">
+                <div class="dashboard-stat-label">
+                    <svg class="stat-icon-svg-small" viewBox="0 0 24 24" width="18" height="18" style="transform: scaleY(-1);"><path fill="currentColor" d="M16 6l2.29 2.29-4.88 4.88-4-4L2 16.59 3.41 18 10 11.41l4 4 6.3-6.29L22 12v-6z"/></svg>
+                    Avg Loss
+                </div>
+                <div class="dashboard-stat-value negative">€${avgLoss}</div>
+            </div>
+            <div class="dashboard-stat">
+                <div class="dashboard-stat-label">
+                    <svg class="stat-icon-svg-small" viewBox="0 0 24 24" width="18" height="18"><path fill="currentColor" d="M12 2c5.33 4.55 8 8.48 8 11.8 0 4.98-2.67 9.21-8 9.21s-8-4.23-8-9.21C4 10.48 6.67 6.55 12 2z"/></svg>
+                    Best Trade
+                </div>
+                <div class="dashboard-stat-value positive">€${bestTrade}</div>
+                <div class="dashboard-stat-detail">${bestTradeData.ticker} • ${bestTradeData.date}</div>
+            </div>
+            <div class="dashboard-stat">
+                <div class="dashboard-stat-label">
+                    <svg class="stat-icon-svg-small" viewBox="0 0 24 24" width="18" height="18"><path fill="currentColor" d="M12 2c5.33 4.55 8 8.48 8 11.8 0 4.98-2.67 9.21-8 9.21s-8-4.23-8-9.21C4 10.48 6.67 6.55 12 2z" style="opacity: 0.6;"/></svg>
+                    Worst Trade
+                </div>
+                <div class="dashboard-stat-value negative">€${worstTrade}</div>
+                <div class="dashboard-stat-detail">${worstTradeData.ticker} • ${worstTradeData.date}</div>
+            </div>
+        </div>
+        
+        <!-- ADVANCED ANALYTICS -->
+        <div class="analytics-grid">
+            <div class="dashboard-section">
+                <h3 class="section-title">
+                    <svg class="section-icon" viewBox="0 0 24 24" width="24" height="24"><path fill="currentColor" d="M16 6l2.29 2.29-4.88 4.88-4-4L2 16.59 3.41 18 10 11.41l4 4 6.3-6.29L22 12v-6z"/></svg>
+                    Largest Drawdown
+                </h3>
+                <div class="analytics-value negative">-€${largestDrawdown.toFixed(2)}</div>
+                <div class="analytics-detail">Maximum equity drop from peak</div>
+            </div>
+            
+            <div class="dashboard-section">
+                <h3 class="section-title">
+                    <svg class="section-icon" viewBox="0 0 24 24" width="24" height="24"><path fill="currentColor" d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm0-13c-2.76 0-5 2.24-5 5s2.24 5 5 5 5-2.24 5-5-2.24-5-5-5z"/></svg>
+                    Consecutive Streaks
+                </h3>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 12px;">
+                    <div>
+                        <div class="analytics-value positive">${maxConsecutiveWins}W</div>
+                        <div class="analytics-detail">Max wins</div>
+                    </div>
+                    <div>
+                        <div class="analytics-value negative">${maxConsecutiveLosses}L</div>
+                        <div class="analytics-detail">Max losses</div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="dashboard-section">
+                <h3 class="section-title">
+                    <svg class="section-icon" viewBox="0 0 24 24" width="24" height="24"><path fill="currentColor" d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V5h14v14zm-5.04-6.71l-2.75 3.54-2.16-2.66c-.23-.29-.62-.29-.85 0-.29.23-.29.62 0 .85l2.59 3.2c.23.29.62.29.85 0l3.54-4.29c.29-.23.29-.62 0-.85-.23-.29-.62-.29-.85 0z"/></svg>
+                    Win Rate by Day
+                </h3>
+                <div id="dayWinRateContainer" style="margin-top: 12px;"></div>
+            </div>
+        </div>
+        <!-- ===== SETUP-TYPE PERFORMANCE ===== -->
+        <div class="dashboard-section" style="margin-top: 40px;">
+            <div class="section-header">
+                <div>
+                    <h3 class="section-title">
+                        <svg class="section-icon" viewBox="0 0 24 24" width="24" height="24"><path fill="currentColor" d="M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z"/></svg>
+                        Setup-Type Performance
+                    </h3>
+                    <p class="section-description">Total P&L pro Setup-Type mit Win-Rate Visualisierung</p>
+                </div>
+            </div>
+            <canvas id="setupTypeChart" style="margin-top: 20px;"></canvas>
+        </div>
+        
+            <div class="section-header">
+                <div>
+                    <h3 class="section-title">
+                        <svg class="section-icon" viewBox="0 0 24 24" width="24" height="24"><path fill="currentColor" d="M16 6l2.29 2.29-4.88 4.88-4-4L2 16.59 3.41 18 10 11.41l4 4 6.3-6.29L22 12v-6z"/></svg>
+                        Equity Curve
+                    </h3>
+                    <p class="section-description">Track your growth with live-updating equity curves that reveal your true edge over time.</p>
+                </div>
+                <div class="equity-current-value" id="equityCurrentValue">€0.00</div>
+            </div>
+            <canvas id="equityChart" style="margin-top: 20px;"></canvas>
+        </div>
+        
+        <div class="dashboard-section" style="display: grid; grid-template-columns: 1fr; gap: 30px;">
+            <div>
+                <h3 class="section-title">
+                    <svg class="section-icon" viewBox="0 0 24 24" width="24" height="24"><path fill="currentColor" d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm3.5-9c0 1.93-1.57 3.5-3.5 3.5S8.5 12.93 8.5 11 10.07 7.5 12 7.5s3.5 1.57 3.5 3.5z"/></svg>
+                    Win / Loss Ratio
+                </h3>
+                <canvas id="winLossChart"></canvas>
+            </div>
+        </div>
+        
+        <div class="dashboard-section">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                <h3>📊 P&L Analyse</h3>
+                <div class="pnl-controls">
+                    <button class="pnl-btn active" data-period="month">Month</button>
+                    <button class="pnl-btn" data-period="week">Week</button>
+                    <button class="pnl-btn" data-period="year">Year</button>
+                    <button class="pnl-nav-btn" id="pnlPrev">‹</button>
+                    <span id="pnlPeriodLabel" style="min-width: 150px; text-align: center; color: #cbd5e1; font-weight: 600;">März 2026</span>
+                    <button class="pnl-nav-btn" id="pnlNext">›</button>
+                </div>
+            </div>
+            <canvas id="pnlChart"></canvas>
+        </div>
+        
+        <div class="dashboard-section">
+            <h3 class="section-title">
+                <svg class="section-icon" viewBox="0 0 24 24" width="24" height="24"><path fill="currentColor" d="M9 11H7v2h2v-2zm4 0h-2v2h2v-2zm4 0h-2v2h2v-2zm2-7h-1V2h-2v2H8V2H6v2H5c-1.11 0-1.99.9-1.99 2L3 20c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 16H5V9h14v11z"/></svg>
+                Recent Trades
+            </h3>
+            <div id="recentTradesContainer"></div>
+        </div>
+        
+        <div class="dashboard-section">
+            <h3 class="section-title">
+                <svg class="section-icon" viewBox="0 0 24 24" width="24" height="24"><path fill="currentColor" d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg>
+                Fehleranalyse
+            </h3>
+            <div id="errorAnalysis"></div>
+        </div>
+    `;
+    
+    renderSetupTypeChart(trades);
+    renderEquityChart(trades);
+    renderWinLossChart(trades);
+    renderErrorAnalysis(trades);
+    renderRecentTrades(recentTrades);
+    renderWinRateByDay(winRateByDay);
+    renderTradeScoreChart(tradeScore, trades);
+    
+    // Setup P&L Chart Controls
+    setupPnLControls(trades);
+}
+
+function renderTradeScoreChart(score, trades) {
+    const ctx = document.getElementById('tradeScoreChart');
+    if (!ctx) return;
+    
+    if (window.tradeScoreChartInstance) {
+        window.tradeScoreChartInstance.destroy();
+    }
+    
+    const wins = trades.filter(t => t.pnl > 0).length;
+    const losses = trades.filter(t => t.pnl < 0).length;
+    const winRate = trades.length > 0 ? (wins / trades.length) * 100 : 0;
+    const avgWin = wins > 0 ? trades.filter(t => t.pnl > 0).reduce((sum, t) => sum + t.pnl, 0) / wins : 0;
+    const avgLoss = losses > 0 ? trades.filter(t => t.pnl < 0).reduce((sum, t) => sum + t.pnl, 0) / losses : 0;
+    const consistency = Math.abs(avgWin) / (Math.abs(avgWin) + Math.abs(avgLoss)) * 100 || 0;
+    const profitFactor = losses > 0 ? (trades.filter(t => t.pnl > 0).reduce((sum, t) => sum + t.pnl, 0) / Math.abs(trades.filter(t => t.pnl < 0).reduce((sum, t) => sum + t.pnl, 0))) : 0;
+    
+    window.tradeScoreChartInstance = new Chart(ctx, {
+        type: 'radar',
+        data: {
+            labels: ['Win Rate', 'Consistency', 'Profit Factor', 'Trade Count', 'Risk/Reward'],
+            datasets: [{
+                label: 'Trading Performance',
+                data: [
+                    Math.min(winRate, 100),
+                    Math.min(consistency, 100),
+                    Math.min(profitFactor * 50, 100),
+                    Math.min((trades.length / 100) * 100, 100),
+                    Math.min(Math.abs(avgWin / (Math.abs(avgLoss) || 1)) * 50, 100)
+                ],
+                borderColor: '#a855f7',
+                backgroundColor: 'rgba(168, 85, 247, 0.1)',
+                borderWidth: 2.5,
+                pointBackgroundColor: '#a855f7',
+                pointBorderColor: '#fff',
+                pointBorderWidth: 2,
+                pointRadius: 5,
+                pointHoverRadius: 6,
+                fill: true,
+                tension: 0.3
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: true,
+            plugins: {
+                legend: {
+                    display: false
+                }
+            },
+            scales: {
+                r: {
+                    beginAtZero: true,
+                    max: 100,
+                    grid: {
+                        color: 'rgba(255, 255, 255, 0.02)',
+                        drawBorder: false
+                    },
+                    ticks: {
+                        color: 'rgba(255, 255, 255, 0.15)',
+                        stepSize: 25,
+                        font: {
+                            size: 9
+                        },
+                        backdropColor: 'transparent'
+                    },
+                    pointLabels: {
+                        color: 'rgba(255, 255, 255, 0.4)',
+                        font: {
+                            size: 11,
+                            weight: '600'
+                        },
+                        padding: 12
+                    }
+                }
+            }
+        }
+    });
+}
+
+function renderEquityChart(trades) {
+    const ctx = document.getElementById('equityChart');
+    if (!ctx) return;
+    
+    let cumulative = 0;
+    const data = trades.map((t, idx) => {
+        cumulative += t.pnl;
+        return cumulative;
+    });
+    
+    // Update current value
+    const currentValueEl = document.getElementById('equityCurrentValue');
+    if (currentValueEl && data.length > 0) {
+        currentValueEl.textContent = `€${data[data.length - 1].toFixed(2)}`;
+    }
+    
+    if (window.equityChartInstance) {
+        window.equityChartInstance.destroy();
+    }
+    
+    window.equityChartInstance = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: trades.map((_, idx) => `Trade ${idx + 1}`),
+            datasets: [{
+                label: 'Kumulatives P&L (€)',
+                data: data,
+                borderColor: '#a855f7',
+                backgroundColor: 'rgba(168, 85, 247, 0.08)',
+                tension: 0.4,
+                fill: true,
+                pointBackgroundColor: '#a855f7',
+                pointBorderColor: '#fff',
+                pointBorderWidth: 2,
+                pointRadius: 4,
+                pointHoverRadius: 6,
+                borderWidth: 2.5
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: true,
+            plugins: {
+                legend: {
+                    labels: { 
+                        color: '#e2e8f0',
+                        font: { family: "'Space Grotesk', sans-serif", size: 13, weight: '600' },
+                        padding: 20
+                    }
+                }
+            },
+            scales: {
+                y: { 
+                    ticks: { color: '#94a3b8', font: { size: 11 } }, 
+                    grid: { color: 'rgba(168, 85, 247, 0.05)', drawBorder: false } 
+                },
+                x: { 
+                    ticks: { color: '#94a3b8', font: { size: 10 } }, 
+                    grid: { color: 'rgba(168, 85, 247, 0.05)', drawBorder: false } 
+                }
+            }
+        }
+    });
+}
+
+function renderWinLossChart(trades) {
+    const ctx = document.getElementById('winLossChart');
+    if (!ctx) return;
+    
+    const wins = trades.filter(t => t.pnl > 0).length;
+    const losses = trades.filter(t => t.pnl < 0).length;
+    
+    if (window.winLossChartInstance) {
+        window.winLossChartInstance.destroy();
+    }
+    
+    window.winLossChartInstance = new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+            labels: ['Wins', 'Losses'],
+            datasets: [{
+                data: [wins, losses],
+                backgroundColor: ['#10b981', '#f87171'],
+                borderColor: ['rgba(15, 15, 30, 0.8)', 'rgba(15, 15, 30, 0.8)'],
+                borderWidth: 4,
+                borderRadius: 10
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: true,
+            plugins: {
+                legend: {
+                    labels: { 
+                        color: '#e2e8f0',
+                        font: { family: "'Space Grotesk', sans-serif", size: 13, weight: '600' },
+                        padding: 25
+                    },
+                    position: 'bottom'
+                }
+            }
+        }
+    });
+}
+
+function renderErrorAnalysis(trades) {
+    const errorCount = {};
+    trades.forEach(t => {
+        errorCount[t.errorType] = (errorCount[t.errorType] || 0) + 1;
+    });
+    
+    const errorHtml = Object.entries(errorCount).map(([error, count]) => `
+        <div class="trade-detail">
+            <span class="trade-detail-label">${error}</span>
+            <span class="trade-detail-value">${count} (${((count / trades.length) * 100).toFixed(1)}%)</span>
+        </div>
+    `).join('');
+    
+    document.getElementById('errorAnalysis').innerHTML = errorHtml;
+}
+
+function renderRecentTrades(recentTrades) {
+    if (recentTrades.length === 0) {
+        document.getElementById('recentTradesContainer').innerHTML = '<div style="color: #94a3b8; text-align: center; padding: 20px;">Noch keine Trades vorhanden</div>';
+        return;
+    }
+    
+    const html = recentTrades.map(t => `
+        <div class="recent-trade-item">
+            <div class="recent-trade-left">
+                <div class="trade-ticker">${t.ticker}</div>
+                <div class="trade-date">${t.date}</div>
+            </div>
+            <div class="recent-trade-middle">
+                <div class="trade-entry-exit">
+                    <span style="font-size: 11px; color: #94a3b8;">Entry ${t.entryPrice} → Exit ${t.exitPrice}</span>
+                </div>
+                <div class="trade-result">${t.errorType}</div>
+            </div>
+            <div class="recent-trade-right">
+                <div class="recent-trade-pnl ${t.pnl >= 0 ? 'positive' : 'negative'}">
+                    ${t.pnl >= 0 ? '+' : ''}€${t.pnl.toFixed(2)}
+                </div>
+            </div>
+        </div>
+    `).join('');
+    
+    document.getElementById('recentTradesContainer').innerHTML = html;
+}
+
+function renderWinRateByDay(winRateByDay) {
+    const container = document.getElementById('dayWinRateContainer');
+    if (!container) return;
+    
+    const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+    const dayData = days.map(day => 
+        winRateByDay.find(d => d.day === day) || { day, rate: 0, total: 0 }
+    );
+    
+    const html = dayData.map(d => `
+        <div class="day-win-rate">
+            <div class="day-label">${d.day}</div>
+            <div class="day-progress">
+                <div class="day-progress-bar" style="width: ${d.total > 0 ? d.rate : 0}%; background: ${d.rate >= 50 ? '#10b981' : '#f87171'};"></div>
+            </div>
+            <div class="day-stat">${d.rate}% (${d.total})</div>
+        </div>
+    `).join('');
+    
+    container.innerHTML = html;
+}
+
+// ===== P&L CHART =====
+let currentPnLPeriod = 'month';
+let currentPnLDate = new Date();
+
+function setupPnLControls(trades) {
+    const pnlBtns = document.querySelectorAll('.pnl-btn');
+    const pnlPrevBtn = document.getElementById('pnlPrev');
+    const pnlNextBtn = document.getElementById('pnlNext');
+    
+    pnlBtns.forEach(btn => {
+        btn.addEventListener('click', () => {
+            const period = btn.getAttribute('data-period');
+            currentPnLPeriod = period;
+            currentPnLDate = new Date();
+            
+            pnlBtns.forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            
+            renderPnLChart(trades);
+        });
+    });
+    
+    pnlPrevBtn.addEventListener('click', () => {
+        if (currentPnLPeriod === 'month') currentPnLDate.setMonth(currentPnLDate.getMonth() - 1);
+        else if (currentPnLPeriod === 'week') currentPnLDate.setDate(currentPnLDate.getDate() - 7);
+        else if (currentPnLPeriod === 'year') currentPnLDate.setFullYear(currentPnLDate.getFullYear() - 1);
+        renderPnLChart(trades);
+    });
+    
+    pnlNextBtn.addEventListener('click', () => {
+        if (currentPnLPeriod === 'month') currentPnLDate.setMonth(currentPnLDate.getMonth() + 1);
+        else if (currentPnLPeriod === 'week') currentPnLDate.setDate(currentPnLDate.getDate() + 7);
+        else if (currentPnLPeriod === 'year') currentPnLDate.setFullYear(currentPnLDate.getFullYear() + 1);
+        renderPnLChart(trades);
+    });
+    
+    renderPnLChart(trades);
+}
+
+function renderPnLChart(trades) {
+    const ctx = document.getElementById('pnlChart');
+    if (!ctx) return;
+    
+    let labels, data;
+    let periodLabel = '';
+    
+    if (currentPnLPeriod === 'month') {
+        // Alle Tage des Monats
+        const year = currentPnLDate.getFullYear();
+        const month = currentPnLDate.getMonth();
+        const daysInMonth = new Date(year, month + 1, 0).getDate();
+        
+        labels = Array.from({length: daysInMonth}, (_, i) => i + 1);
+        data = [];
+        
+        labels.forEach(day => {
+            const dateStr = `${String(day).padStart(2, '0')}.${String(month + 1).padStart(2, '0')}.${year}`;
+            const dayTrades = trades.filter(t => t.date === dateStr);
+            const wins = dayTrades.filter(t => t.pnl > 0).reduce((sum, t) => sum + t.pnl, 0);
+            const losses = Math.abs(dayTrades.filter(t => t.pnl < 0).reduce((sum, t) => sum + t.pnl, 0));
+            data.push({ wins, losses });
+        });
+        
+        periodLabel = `${['Jan', 'Feb', 'Mär', 'Apr', 'Mai', 'Jun', 'Jul', 'Aug', 'Sep', 'Okt', 'Nov', 'Dez'][month]} ${year}`;
+    } else if (currentPnLPeriod === 'week') {
+        // 7 Tage
+        labels = [];
+        data = [];
+        const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+        
+        for (let i = 0; i < 7; i++) {
+            const d = new Date(currentPnLDate);
+            d.setDate(d.getDate() - 3 + i);
+            const dateStr = d.toLocaleDateString('de-DE', { year: 'numeric', month: '2-digit', day: '2-digit' });
+            labels.push(dayNames[d.getDay()]);
+            
+            const dayTrades = trades.filter(t => t.date === dateStr);
+            const wins = dayTrades.filter(t => t.pnl > 0).reduce((sum, t) => sum + t.pnl, 0);
+            const losses = Math.abs(dayTrades.filter(t => t.pnl < 0).reduce((sum, t) => sum + t.pnl, 0));
+            data.push({ wins, losses });
+        }
+        
+        periodLabel = `Week of ${currentPnLDate.toLocaleDateString('de-DE')}`;
+    } else if (currentPnLPeriod === 'year') {
+        // 12 Monate
+        labels = ['Jan', 'Feb', 'Mär', 'Apr', 'Mai', 'Jun', 'Jul', 'Aug', 'Sep', 'Okt', 'Nov', 'Dez'];
+        data = [];
+        const year = currentPnLDate.getFullYear();
+        
+        for (let month = 0; month < 12; month++) {
+            let monthWins = 0, monthLosses = 0;
+            trades.forEach(t => {
+                const [day, m, y] = t.date.split('.');
+                if (parseInt(m) === month + 1 && parseInt(y) === year) {
+                    if (t.pnl > 0) monthWins += t.pnl;
+                    else monthLosses += Math.abs(t.pnl);
+                }
+            });
+            data.push({ wins: monthWins, losses: monthLosses });
+        }
+        
+        periodLabel = `Year ${year}`;
+    }
+    
+    document.getElementById('pnlPeriodLabel').textContent = periodLabel;
+    
+    if (window.pnlChartInstance) {
+        window.pnlChartInstance.destroy();
+    }
+    
+    window.pnlChartInstance = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: labels,
+            datasets: [
+                {
+                    label: 'Wins',
+                    data: data.map(d => d.wins),
+                    backgroundColor: '#10b981',
+                    borderRadius: 6,
+                    borderSkipped: false
+                },
+                {
+                    label: 'Losses',
+                    data: data.map(d => -d.losses),
+                    backgroundColor: '#f87171',
+                    borderRadius: 6,
+                    borderSkipped: false
+                }
+            ]
+        },
+        options: {
+            indexAxis: 'x',
+            responsive: true,
+            maintainAspectRatio: true,
+            plugins: {
+                legend: {
+                    labels: {
+                        color: '#e2e8f0',
+                        font: { family: "'Space Grotesk', sans-serif", size: 13, weight: '600' },
+                        padding: 25
+                    },
+                    position: 'bottom'
+                }
+            },
+            scales: {
+                y: {
+                    ticks: { color: '#94a3b8', font: { size: 11 } },
+                    grid: { color: 'rgba(168, 85, 247, 0.05)', drawBorder: false }
+                },
+                x: {
+                    ticks: { color: '#94a3b8', font: { size: 11 } },
+                    grid: { color: 'rgba(168, 85, 247, 0.05)', drawBorder: false }
+                }
+            }
+        }
+    });
+}
+
+// ===== POSITIONEN MANAGEMENT =====
+function updatePortfolioSummary() {
+    const positions = JSON.parse(localStorage.getItem('positions')) || [];
+    
+    // Berechne Statistiken
+    const openCount = positions.length;
+    const totalValue = positions.reduce((sum, pos) => sum + parseFloat(pos.size), 0);
+    const avgSize = openCount > 0 ? totalValue / openCount : 0;
+    const maxSize = openCount > 0 ? Math.max(...positions.map(p => parseFloat(p.size))) : 0;
+    
+    // Update DOM
+    document.getElementById('portfolioOpenCount').textContent = openCount;
+    document.getElementById('portfolioTotalValue').textContent = `€${totalValue.toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+    document.getElementById('portfolioAvgSize').textContent = `€${avgSize.toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+    document.getElementById('portfolioMaxSize').textContent = `€${maxSize.toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+}
+
+function loadPositions() {
+    const positions = JSON.parse(localStorage.getItem('positions')) || [];
+    const container = document.getElementById('positionsContainer');
+    
+    if (positions.length === 0) {
+        container.innerHTML = `
+            <div style="grid-column: 1/-1; text-align: center; padding: 40px; color: #94a3b8;">
+                <p style="font-size: 14px;">Noch keine offenen Positionen. 🚀</p>
+            </div>
+        `;
+        updatePortfolioSummary();
+        return;
+    }
+    
+    container.innerHTML = positions.map((pos, idx) => {
+        const dateOpened = new Date(pos.dateOpened).toLocaleDateString('de-DE');
+        return `
+            <div class="position-card" data-position-id="${idx}">
+                <div class="position-header">
+                    <div>
+                        <div class="position-ticker">${pos.ticker}</div>
+                        <div class="position-entry">Entry: €${parseFloat(pos.entry).toFixed(2)}</div>
+                    </div>
+                </div>
+                
+                <div class="position-details">
+                    <div class="position-detail-row">
+                        <span class="position-detail-label">Position:</span>
+                        <span class="position-detail-value">€${parseFloat(pos.size).toFixed(2)}</span>
+                    </div>
+                    <div class="position-detail-row">
+                        <span class="position-detail-label">Geöffnet:</span>
+                        <span class="position-detail-value">${dateOpened}</span>
+                    </div>
+                </div>
+                
+                <div class="position-thesis">
+                    <strong>These:</strong> ${pos.thesis}
+                </div>
+                
+                ${pos.screenshot ? `
+                    <div class="position-screenshot">
+                        <img src="${pos.screenshot}" alt="Position Setup" onclick="openScreenshotModal(this.src)">
+                    </div>
+                ` : ''}
+                
+                <div class="position-actions">
+                    <button class="position-close-btn" onclick="closePosition(${idx})">Position Schließen</button>
+                    <button class="position-delete-btn" onclick="deletePosition(${idx})">Löschen</button>
+                </div>
+            </div>
+        `;
+    }).join('');
+    
+    updatePortfolioSummary();
+    displayClosedPositions();
+}
+
+function addPosition(event) {
+    event.preventDefault();
+    
+    try {
+        const ticker = document.getElementById('positionsTicker').value.trim();
+        const entry = document.getElementById('positionsEntry').value;
+        const size = document.getElementById('positionsSize').value;
+        const thesis = document.getElementById('positionsThesis').value.trim();
+        
+        if (!ticker || !entry || !size || !thesis) {
+            showToast('❌ Alle Felder ausfüllen!');
+            return;
+        }
+        
+        const position = {
+            ticker: ticker.toUpperCase(),
+            entry: parseFloat(entry),
+            size: parseFloat(size),
+            thesis,
+            screenshot: positionsScreenshotData,
+            dateOpened: new Date().toISOString()
+        };
+        
+        const positions = JSON.parse(localStorage.getItem('positions')) || [];
+        positions.push(position);
+        localStorage.setItem('positions', JSON.stringify(positions));
+        
+        // Form zurücksetzen
+        document.getElementById('positionsForm').reset();
+        document.getElementById('positionsScreenshotPreview').innerHTML = '';
+        positionsScreenshotData = null;
+        
+        loadPositions();
+        showToast(`✅ Position ${ticker} geöffnet!`);
+    } catch (error) {
+        console.error('Fehler beim Öffnen der Position:', error);
+        showToast('❌ Fehler beim Öffnen der Position!');
+    }
+}
+
+function deletePosition(idx) {
+    positionToDelete = idx;
+    const deleteModal = document.getElementById('deleteModal');
+    const modalText = deleteModal.querySelector('p');
+    modalText.textContent = 'Diese offene Position wirklich löschen?';
+    deleteModal.style.display = 'flex';
+}
+
+function confirmDeletePosition() {
+    if (positionToDelete !== null) {
+        const positions = JSON.parse(localStorage.getItem('positions')) || [];
+        const removedTicker = positions[positionToDelete].ticker;
+        positions.splice(positionToDelete, 1);
+        localStorage.setItem('positions', JSON.stringify(positions));
+        
+        document.getElementById('deleteModal').style.display = 'none';
+        loadPositions();
+        showToast(`✅ Position ${removedTicker} gelöscht!`);
+        positionToDelete = null;
+    }
+}
+
+function closePosition(idx) {
+    showToast('🚀 Position Schließen - Coming Soon in Phase 2!');
+}
+
+function confirmClosePositionModal() {
+    console.log('confirmClosePositionModal called, positionToClose:', positionToClose);
+    
+    if (positionToClose === null) return;
+    
+    const exitPriceInput = document.getElementById('modalExitPrice').value.trim();
+    const exitReason = document.getElementById('modalExitReason').value;
+    
+    console.log('exitPrice input:', exitPriceInput);
+    console.log('exitReason:', exitReason);
+    
+    // Validierung
+    if (!exitPriceInput || exitPriceInput === '') {
+        showToast('❌ Exit Price erforderlich!');
+        return;
+    }
+    
+    const exitPrice = parseFloat(exitPriceInput);
+    if (isNaN(exitPrice) || exitPrice <= 0) {
+        showToast('❌ Exit Price muss eine Zahl > 0 sein!');
+        return;
+    }
+    
+    try {
+        const positions = JSON.parse(localStorage.getItem('positions')) || [];
+        const closedPositions = JSON.parse(localStorage.getItem('closedPositions')) || [];
+        const position = positions[positionToClose];
+        
+        console.log('position to close:', position);
+        
+        // Berechne P&L
+        const shares = position.size / position.entry;
+        const pnl = (exitPrice - position.entry) * shares;
+        const pnlPercent = ((exitPrice - position.entry) / position.entry) * 100;
+        
+        // Erstelle geschlossene Position
+        const closedPosition = {
+            ...position,
+            exitPrice,
+            exitReason,
+            pnl: Math.round(pnl * 100) / 100,
+            pnlPercent: Math.round(pnlPercent * 100) / 100,
+            dateClosed: new Date().toISOString()
+        };
+        
+        console.log('closedPosition to save:', closedPosition);
+        
+        // Speichere geschlossene Position
+        closedPositions.push(closedPosition);
+        localStorage.setItem('closedPositions', JSON.stringify(closedPositions));
+        
+        console.log('closedPositions after save:', JSON.parse(localStorage.getItem('closedPositions')));
+        
+        // Lösche offene Position
+        positions.splice(positionToClose, 1);
+        localStorage.setItem('positions', JSON.stringify(positions));
+        
+        // Schließe Modal
+        closeModal('closePositionModal');
+        positionToClose = null;
+        
+        // Reload UI
+        loadPositions();
+        showToast(`✅ Position ${position.ticker} geschlossen! P&L: €${closedPosition.pnl.toFixed(2)}`);
+    } catch (error) {
+        console.error('Fehler:', error);
+        showToast('❌ Fehler beim Schließen der Position!');
+    }
+}
+
+function closeModal(modalId) {
+    document.getElementById(modalId).style.display = 'none';
+}
+
+
+function displayPositionsScreenshot(base64Data) {
+    positionsScreenshotData = base64Data;
+    const preview = document.getElementById('positionsScreenshotPreview');
+    preview.innerHTML = `
+        <img src="${base64Data}" alt="Position Setup" style="max-width: 100%; height: auto; border-radius: 8px; border: 1px solid rgba(168, 85, 247, 0.3); display: block; margin-top: 10px;">
+        <button type="button" onclick="document.getElementById('positionsScreenshotInput').click()" style="margin-top: 10px; padding: 8px 16px; background: rgba(168, 85, 247, 0.2); border: 1px solid rgba(168, 85, 247, 0.4); color: #cbd5e1; border-radius: 6px; cursor: pointer; font-size: 12px; font-weight: 600;">Bild ändern</button>
+    `;
+}
+
+function clearPositionsScreenshot() {
+    positionsScreenshotData = null;
+    document.getElementById('positionsScreenshotPreview').innerHTML = '';
+}
+
+function displayClosedPositions() {
+    const container = document.getElementById('closedPositionsContainer');
+    
+    if (!container) return;
+    
+    container.innerHTML = `
+        <div style="grid-column: 1/-1; text-align: center; padding: 60px 20px; color: #94a3b8;">
+            <p style="font-size: 16px; font-weight: 500;">Geschlossene Positionen</p>
+            <p style="font-size: 14px; margin-top: 8px;">Coming Soon 🚀</p>
+        </div>
+    `;
+}
+
+function deleteClosedPosition(idx) {
+    if (confirm('Geschlossene Position wirklich löschen?')) {
+        const closedPositions = JSON.parse(localStorage.getItem('closedPositions')) || [];
+        closedPositions.splice(idx, 1);
+        localStorage.setItem('closedPositions', JSON.stringify(closedPositions));
+        displayClosedPositions();
+        showToast('✅ Geschlossene Position gelöscht!');
+    }
+}
+
+function renderSetupTypeChart(trades) {
+    const setupTypeStats = calculateSetupTypeStats(trades);
+    const canvasEl = document.getElementById('setupTypeChart');
+    
+    if (!canvasEl) return;
+    
+    // Daten vorbereiten (nur Types mit Trades)
+    const labels = [];
+    const pnlData = [];
+    const pnlColors = [];
+    const winRateData = [];
+    const winRateColors = [];
+    
+    Object.entries(setupTypeStats).forEach(([type, stats]) => {
+        if (stats.count > 0) {
+            labels.push(type);
+            
+            // P&L Daten
+            const pnl = parseFloat(stats.totalPnL);
+            pnlData.push(pnl);
+            pnlColors.push(pnl >= 0 ? 'rgba(16,185,129,0.7)' : 'rgba(248,113,113,0.7)'); // Grün/Rot
+            
+            // Win-Rate Daten
+            const winRate = parseFloat(stats.winRate);
+            winRateData.push(winRate);
+            winRateColors.push(winRate >= 50 ? 'rgba(168,85,247,0.7)' : 'rgba(248,113,113,0.7)'); // Purple/Rot
+        }
+    });
+    
+    // Zerstöre altes Chart wenn es existiert
+    if (window.setupTypeChartInstance) {
+        window.setupTypeChartInstance.destroy();
+    }
+    
+    // Side-by-Side Bar Chart
+    const ctx = canvasEl.getContext('2d');
+    window.setupTypeChartInstance = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels,
+            datasets: [
+                {
+                    label: 'Total P&L (€)',
+                    data: pnlData,
+                    backgroundColor: pnlColors,
+                    borderColor: pnlColors.map(c => c.replace('0.7', '1')),
+                    borderWidth: 2,
+                    borderRadius: 8,
+                    barPercentage: 0.6,
+                    categoryPercentage: 0.7,
+                    hoverBackgroundColor: pnlColors.map(c => c.replace('0.7', '0.9')),
+                    hoverBorderWidth: 3
+                },
+                {
+                    label: 'Win-Rate (%)',
+                    data: winRateData,
+                    backgroundColor: winRateColors,
+                    borderColor: winRateColors.map(c => c.replace('0.7', '1')),
+                    borderWidth: 2,
+                    borderRadius: 8,
+                    barPercentage: 0.6,
+                    categoryPercentage: 0.7,
+                    hoverBackgroundColor: winRateColors.map(c => c.replace('0.7', '0.9')),
+                    hoverBorderWidth: 3
+                }
+            ]
+        },
+        options: {
+            indexAxis: 'y', // Horizontal bars für bessere Lesbarkeit
+            responsive: true,
+            plugins: {
+                legend: {
+                    labels: {
+                        color: '#cbd5e1',
+                        font: { size: 13, weight: '600' },
+                        padding: 20,
+                        usePointStyle: true,
+                        pointStyle: 'rect'
+                    }
+                },
+                tooltip: {
+                    backgroundColor: 'rgba(15, 15, 30, 0.95)',
+                    borderColor: 'rgba(168,85,247,0.4)',
+                    borderWidth: 1,
+                    titleColor: '#d8b4fe',
+                    bodyColor: '#cbd5e1',
+                    padding: 12,
+                    titleFont: { size: 13, weight: '600' },
+                    bodyFont: { size: 12 },
+                    cornerRadius: 8,
+                    callbacks: {
+                        label: function(context) {
+                            if (context.datasetIndex === 0) {
+                                return 'P&L: €' + context.parsed.x.toFixed(2);
+                            } else {
+                                return 'Win-Rate: ' + context.parsed.x.toFixed(1) + '%';
+                            }
+                        }
+                    }
+                }
+            },
+            scales: {
+                x: {
+                    stacked: false,
+                    ticks: {
+                        color: '#94a3b8',
+                        font: { size: 11 },
+                        callback: (value, index) => {
+                            if (index % 2 === 0 || value === 0) return value;
+                            return '';
+                        }
+                    },
+                    grid: {
+                        color: 'rgba(168,85,247,0.05)',
+                        drawBorder: false
+                    }
+                },
+                y: {
+                    ticks: {
+                        color: '#cbd5e1',
+                        font: { size: 12, weight: '600' }
+                    },
+                    grid: {
+                        color: 'rgba(168,85,247,0.05)',
+                        drawBorder: false
+                    }
+                }
+            }
+        }
+    });
+}
+
+// ===== UTILITIES =====
+function calculateSetupTypeStats(trades) {
+    const setupTypes = ['Breakout', 'Pullback', 'Support', 'Rebound', 'Gap-Fill', 'Trend-Continuation', 'Sonstiges'];
+    const stats = {};
+    
+    setupTypes.forEach(type => {
+        const typeTrades = trades.filter(t => t.setupType === type);
+        const wins = typeTrades.filter(t => t.pnl > 0).length;
+        const losses = typeTrades.filter(t => t.pnl < 0).length;
+        const totalPnL = typeTrades.reduce((sum, t) => sum + t.pnl, 0);
+        const avgPnL = typeTrades.length > 0 ? (totalPnL / typeTrades.length).toFixed(2) : 0;
+        const winRate = typeTrades.length > 0 ? ((wins / typeTrades.length) * 100).toFixed(1) : 0;
+        
+        stats[type] = {
+            count: typeTrades.length,
+            wins,
+            losses,
+            totalPnL: totalPnL.toFixed(2),
+            avgPnL,
+            winRate
+        };
+    });
+    
+    return stats;
+}
+
+// ===== UTILITIES =====
+function showToast(message) {
+    const toast = document.createElement('div');
+    toast.className = 'toast';
+    toast.textContent = message;
+    document.body.appendChild(toast);
+    
+    setTimeout(() => {
+        toast.remove();
+    }, 3000);
+}
+
+// ===== CUSTOM DROPDOWN SYSTEM =====
+function initCustomDropdowns() {
+    const customSelects = document.querySelectorAll('.custom-select');
+    
+    customSelects.forEach(selectEl => {
+        const header = selectEl.querySelector('.custom-select-header');
+        const options = selectEl.querySelectorAll('.custom-option');
+        const selectId = selectEl.getAttribute('data-select-id');
+        const hiddenInput = document.getElementById(selectId);
+        
+        // Click auf Header -> Dropdown öffnen/schließen
+        header.addEventListener('click', (e) => {
+            e.stopPropagation();
+            
+            // Schließe alle anderen Dropdowns
+            document.querySelectorAll('.custom-select.open').forEach(el => {
+                if (el !== selectEl) {
+                    el.classList.remove('open');
+                }
+            });
+            
+            // Toggle aktuelles Dropdown
+            selectEl.classList.toggle('open');
+        });
+        
+        // Click auf Option
+        options.forEach(option => {
+            option.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const value = option.getAttribute('data-value');
+                
+                // Update Hidden Input
+                hiddenInput.value = value;
+                
+                // Update Display Text
+                header.querySelector('.custom-select-value').textContent = value;
+                
+                // Update Selected State
+                options.forEach(opt => opt.classList.remove('selected'));
+                option.classList.add('selected');
+                
+                // Close Dropdown
+                selectEl.classList.remove('open');
+            });
+        });
+        
+        // Keyboard Navigation
+        header.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                selectEl.classList.toggle('open');
+            }
+        });
+    });
+    
+    // Click außerhalb -> Dropdown schließen
+    document.addEventListener('click', () => {
+        document.querySelectorAll('.custom-select.open').forEach(el => {
+            el.classList.remove('open');
+        });
+    });
+}
