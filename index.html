@@ -102,31 +102,18 @@ body {
     margin-left: -43vw;
     background: radial-gradient(ellipse at center,
         rgba(168, 85, 247, 0.28) 0%, transparent 64%);
-    animation: atmen 17s ease-in-out infinite;
 }
 .hg-2 {
     top: 26vh; right: -20vw;
     width: 58vw; height: 58vh;
     background: radial-gradient(circle at center,
         rgba(236, 72, 153, 0.20) 0%, transparent 64%);
-    animation: wandern 26s ease-in-out infinite;
 }
 .hg-3 {
     bottom: -26vh; left: -14vw;
     width: 54vw; height: 54vh;
     background: radial-gradient(circle at center,
         rgba(99, 102, 241, 0.18) 0%, transparent 64%);
-    animation: wandern 33s ease-in-out infinite reverse;
-}
-
-@keyframes atmen {
-    0%, 100% { opacity: 0.7; transform: scale(1); }
-    50%      { opacity: 1;   transform: scale(1.14); }
-}
-@keyframes wandern {
-    0%, 100% { opacity: 0.6; transform: translate(0, 0) scale(1); }
-    33%      { opacity: 0.95; transform: translate(-5vw, 4vh) scale(1.14); }
-    66%      { opacity: 0.75; transform: translate(3vw, -3vh) scale(1.05); }
 }
 
 /* 3. Vignette */
@@ -137,20 +124,12 @@ body {
         transparent 40%, rgba(5, 5, 14, 0.55) 100%);
 }
 
-/* Ein Lichtband, das ganz langsam von links nach rechts zieht.
-   Bei zehn Prozent Deckkraft sieht man es nicht, man spuert nur, dass
-   die Seite nicht stillsteht. */
-.hg-band {
-    position: absolute;
-    top: 0; left: -40%;
-    width: 40%; height: 100%;
-    background: linear-gradient(100deg, transparent,
-        rgba(168, 85, 247, 0.07), transparent);
-    animation: ziehen 19s linear infinite;
-}
-@keyframes ziehen {
-    to { left: 140%; }
-}
+/* Hier lief ein Lichtband von links nach rechts durch. Raus:
+   Bewegung im Hintergrund, die man bemerkt, wirkt billig - und
+   bemerkt wird sie immer, weil das Auge auf Bewegung anspringt,
+   bevor es liest. Tiefe kommt jetzt allein aus den Farben, dem
+   Raster und der Vignette. Bewegung gibt es nur noch dort, wo der
+   Nutzer sie ausloest: beim Ueberfahren einer Karte. */
 
 .huelle { position: relative; z-index: 1; max-width: 980px; margin: 0 auto; padding: 0 20px; }
 
@@ -171,16 +150,16 @@ header {
     /* Der Schein unter dem Logo ist der Markenfarbe entnommen und
        atmet mit - das ist der lebendigste Punkt der Seite und er
        sitzt genau dort, wo der Name steht. */
-    box-shadow: 0 0 0 1px rgba(168, 85, 247, 0.25),
-                0 10px 34px rgba(168, 85, 247, 0.34);
-    animation: logoschein 5.5s ease-in-out infinite;
+    /* Fester Schein statt Pulsieren. Ein Logo, das atmet, zieht den
+       Blick staendig auf sich und liest sich als Effekt statt als
+       Marke. */
+    box-shadow: 0 0 0 1px rgba(168, 85, 247, 0.3),
+                0 12px 40px rgba(168, 85, 247, 0.4);
+    transition: box-shadow 0.4s ease;
 }
-
-@keyframes logoschein {
-    0%, 100% { box-shadow: 0 0 0 1px rgba(168, 85, 247, 0.25),
-                           0 10px 34px rgba(168, 85, 247, 0.30); }
-    50%      { box-shadow: 0 0 0 1px rgba(236, 72, 153, 0.35),
-                           0 14px 46px rgba(236, 72, 153, 0.42); }
+.marke:hover .marke-logo {
+    box-shadow: 0 0 0 1px rgba(236, 72, 153, 0.4),
+                0 16px 50px rgba(236, 72, 153, 0.45);
 }
 
 .marke-text {
@@ -190,14 +169,11 @@ header {
     line-height: 1.1;
 }
 .marke-text span {
-    background: linear-gradient(120deg, var(--lila), var(--pink), var(--lila));
-    background-size: 220% auto;
+    /* Fester Verlauf. Ein wanderndes Farbband im Schriftzug sieht
+       nach Vorlage aus, nicht nach Marke. */
+    background: linear-gradient(120deg, var(--lila), var(--pink));
     -webkit-background-clip: text; background-clip: text;
     -webkit-text-fill-color: transparent;
-    animation: fliessen 7s linear infinite;
-}
-@keyframes fliessen {
-    to { background-position: 220% center; }
 }
 
 .marke-unter {
@@ -248,13 +224,8 @@ header {
     width: 6px; height: 6px;
     border-radius: 50%;
     background: #34d399;
-    box-shadow: 0 0 0 0 rgba(52, 211, 153, 0.6);
-    animation: puls 2.4s ease-out infinite;
-}
-@keyframes puls {
-    0%   { box-shadow: 0 0 0 0 rgba(52, 211, 153, 0.55); }
-    70%  { box-shadow: 0 0 0 7px rgba(52, 211, 153, 0); }
-    100% { box-shadow: 0 0 0 0 rgba(52, 211, 153, 0); }
+    /* Fester Schein statt Pulsieren - siehe Logo. */
+    box-shadow: 0 0 10px rgba(52, 211, 153, 0.8);
 }
 
 h1 {
@@ -267,11 +238,9 @@ h1 {
 
 h1 em {
     font-style: normal;
-    background: linear-gradient(120deg, var(--lila), var(--pink), var(--lila));
-    background-size: 220% auto;
+    background: linear-gradient(120deg, var(--lila), var(--pink));
     -webkit-background-clip: text; background-clip: text;
     -webkit-text-fill-color: transparent;
-    animation: fliessen 7s linear infinite;
 }
 
 .unter {
@@ -407,8 +376,25 @@ h2 {
 .karte h3 svg { flex: 0 0 auto; color: var(--lila); }
 .karte p { color: var(--grau); font-size: 13px; line-height: 1.75; }
 
-.bild-karte { overflow: hidden; padding: 0; cursor: zoom-in; }
-.bild-karte img { display: block; width: 100%; height: auto; }
+.bild-karte {
+    overflow: hidden;
+    padding: 0;
+    cursor: zoom-in;
+    /* Damit die Bildunterschrift direkt unter dem Bild sitzt und nicht
+       am Kartenende klebt, wenn die Nachbarkarte hoeher ist. */
+    display: flex;
+    flex-direction: column;
+}
+.bild-karte img {
+    display: block;
+    width: 100%;
+    /* Alle Kartenbilder werden im selben Format aufgenommen (1280x800).
+       Hier wurde vorher per CSS auf 16:10 beschnitten - bei einem
+       hochformatigen Formular schnitt das mitten durch den Text.
+       Jetzt sitzt der Ausschnitt schon in der Aufnahme, und er ist
+       bewusst gewaehlt statt vom Zufall bestimmt. */
+    height: auto;
+}
 .bild-karte figcaption {
     padding: 14px 20px;
     color: var(--grau);
@@ -542,7 +528,6 @@ footer a:hover { color: var(--hell); }
     <div class="hg-schein hg-1"></div>
     <div class="hg-schein hg-2"></div>
     <div class="hg-schein hg-3"></div>
-    <div class="hg-band"></div>
     <div class="hg-raster"></div>
     <div class="hg-rand"></div>
 </div>
@@ -636,12 +621,12 @@ footer a:hover { color: var(--hell); }
             Denselben Export kannst du jeden Monat neu einlesen.
         </p>
         <div class="raster">
-            <figure class="bild-karte karte" data-gross="img/anleitung/02-import@2x.webp">
-                <img src="img/anleitung/02-import.webp" alt="Der Daten-Tab mit CSV-Import" loading="lazy">
+            <figure class="bild-karte karte" data-gross="img/start-import@2x.webp">
+                <img src="img/start-import.webp" alt="Der Daten-Tab mit CSV-Import" loading="lazy">
                 <figcaption>Import, Sicherung und Löschen an einer Stelle</figcaption>
             </figure>
-            <figure class="bild-karte karte" data-gross="img/anleitung/04-kacheln@2x.webp">
-                <img src="img/anleitung/04-kacheln.webp" alt="Berechnete Kennzahlen zu einem Knock-Out" loading="lazy">
+            <figure class="bild-karte karte" data-gross="img/start-knockout@2x.webp">
+                <img src="img/start-knockout.webp" alt="Berechnete Kennzahlen zu einem Knock-Out" loading="lazy">
                 <figcaption>Zwei Zahlen vom Schein — den Rest rechnet die App</figcaption>
             </figure>
         </div>
@@ -655,13 +640,13 @@ footer a:hover { color: var(--hell); }
             eine Auswertung, die dir sagt, welche Art Trade dich Geld kostet.
         </p>
         <div class="raster">
-            <figure class="bild-karte karte" data-gross="img/anleitung/06-tradekarte.webp">
-                <img src="img/anleitung/06-tradekarte.webp" alt="Eine Trade-Karte im Journal" loading="lazy">
+            <figure class="bild-karte karte" data-gross="img/start-journal@2x.webp">
+                <img src="img/start-journal.webp" alt="Eine Trade-Karte im Journal" loading="lazy">
                 <figcaption>Eine Trade-Karte im Journal</figcaption>
             </figure>
-            <figure class="bild-karte karte" data-gross="img/anleitung/03-knockout@2x.webp">
-                <img src="img/anleitung/03-knockout.webp" alt="Das Knock-Out-Formular im Journal" loading="lazy">
-                <figcaption>Das Formular für Knock-Outs</figcaption>
+            <figure class="bild-karte karte" data-gross="img/start-auswertung@2x.webp">
+                <img src="img/start-auswertung.webp" alt="Die Auswertung: Haltedauer und Hebel gegen ohne Hebel" loading="lazy">
+                <figcaption>Was deine Zahlen über dich sagen</figcaption>
             </figure>
         </div>
     </section>
