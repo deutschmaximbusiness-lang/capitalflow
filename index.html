@@ -911,7 +911,7 @@
                  das Seltene. Auf dem Handy untereinander.
                  Alle IDs und Aufrufe sind dieselben wie vorher im
                  Fenster - nur die Huelle ist neu. -->
-            <div class="daten-raster">
+            <div class="daten-oben">
 
                 <!-- ===================== Import ===================== -->
                 <section class="daten-karte">
@@ -926,14 +926,15 @@
                         Gebühren abgezogen, Doppelte übersprungen. Du siehst erst einen
                         Bericht — gespeichert wird nichts, bevor du auf Übernehmen gehst.
                     </p>
-                    <button onclick="cfTrImportWaehlen()" class="daten-btn">Transaktionsexport wählen…</button>
+                    <button onclick="cfTrImportWaehlen()" class="dtab-btn">Transaktionsexport wählen…</button>
                     <input type="file" id="trImportInput" accept="text/csv,.csv" style="display: none;" onchange="cfTrImportGelesen(this)">
                     <div id="trImportBericht" style="display: none; margin-top: 16px;"></div>
-                    <button id="trImportBtn" onclick="cfTrImportUebernehmen()" style="display: none;" class="daten-btn daten-btn-primaer">Übernehmen</button>
+                    <button id="trImportBtn" onclick="cfTrImportUebernehmen()" style="display: none;" class="dtab-btn dtab-btn-primaer">Übernehmen</button>
                     <p id="trImportStatus" class="daten-status"></p>
                 </section>
 
-                <div style="display: grid; gap: 22px; align-content: start;">
+                </div>
+            <div class="daten-raster">
 
                     <!-- ================== Sicherung ================== -->
                     <section class="daten-karte">
@@ -942,8 +943,8 @@
                             Eine Datei mit allen deinen Trades, Positionen, Setups und
                             Buchungen. Zieh sie dir, bevor du etwas Größeres änderst.
                         </p>
-                        <button onclick="cfExportieren()" class="daten-btn daten-btn-primaer">Sicherung herunterladen</button>
-                        <button onclick="cfImportWaehlen()" class="daten-btn" style="margin-top: 10px;">Sicherung einspielen…</button>
+                        <button onclick="cfExportieren()" class="dtab-btn dtab-btn-primaer">Sicherung herunterladen</button>
+                        <button onclick="cfImportWaehlen()" class="dtab-btn" style="margin-top: 10px;">Sicherung einspielen…</button>
                         <input type="file" id="datenImportInput" accept="application/json,.json" style="display: none;" onchange="cfImportGelesen(this)">
                         <div id="datenImportInfo" style="display: none; margin-top: 18px; background: rgba(168, 85, 247, 0.05); border: 1px solid rgba(168, 85, 247, 0.2); border-radius: 12px; padding: 16px 18px;"></div>
                         <div id="datenImportAktionen" style="display: none; gap: 12px; margin-top: 14px;">
@@ -961,7 +962,7 @@
                             geleerten Cache geschützt.
                         </p>
                         <div id="migrationBericht" style="display: none; background: rgba(168, 85, 247, 0.05); border: 1px solid rgba(168, 85, 247, 0.2); border-radius: 12px; padding: 14px 16px; margin-bottom: 14px;"></div>
-                        <button id="migrationBtn" onclick="cfMigrationStarten()" style="display: none;" class="daten-btn daten-btn-primaer">Daten übertragen</button>
+                        <button id="migrationBtn" onclick="cfMigrationStarten()" style="display: none;" class="dtab-btn dtab-btn-primaer">Daten übertragen</button>
                         <p id="migrationStatus" class="daten-status"></p>
                     </section>
 
@@ -981,7 +982,6 @@
                         <p id="loeschStatus" class="daten-status"></p>
                     </section>
 
-                </div>
             </div>
         </div>
 

@@ -4765,11 +4765,19 @@ body.pwa-installed .pwa-install-btn { display: none !important; }
 }
 
 /* --- Daten-Tab -------------------------------------------------------
-   Links, was man oft macht (Import), rechts das Seltene. Auf dem Handy
-   untereinander. */
+   Import oben ueber die volle Breite, der Rest darunter nebeneinander.
+   Die Import-Karte waechst stark, sobald ein Bericht mit 25 Kuerzeln
+   drinsteht - als schmale Spalte neben drei kurzen Karten reisst sie
+   ein Loch in die Seite.
+
+   Die Klassen heissen bewusst dtab- und nicht daten-: .daten-btn gibt
+   es bereits fuer den Knopf in der Kopfleiste. Eine zweite Regel mit
+   demselben Namen hat den aufgeblaeht, bis er ueber die halbe Leiste
+   ging. */
+.daten-oben { margin-bottom: 22px; }
 .daten-raster {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(310px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
     gap: 22px;
     align-items: start;
 }
@@ -4796,7 +4804,7 @@ body.pwa-installed .pwa-install-btn { display: none !important; }
     line-height: 1.7;
 }
 .daten-text strong { color: #cbd5e1; }
-.daten-btn {
+.dtab-btn {
     width: 100%;
     padding: 13px 20px;
     border-radius: 12px;
@@ -4809,18 +4817,18 @@ body.pwa-installed .pwa-install-btn { display: none !important; }
     cursor: pointer;
     transition: all 0.2s ease;
 }
-.daten-btn:hover {
+.dtab-btn:hover {
     background: rgba(100, 116, 139, 0.25);
     border-color: rgba(100, 116, 139, 0.5);
 }
-.daten-btn-primaer {
+.dtab-btn-primaer {
     background: linear-gradient(135deg, #a855f7 0%, #ec4899 100%);
     border: none;
     color: #fff;
     font-weight: 700;
     box-shadow: 0 4px 15px rgba(168, 85, 247, 0.3);
 }
-.daten-btn-primaer:hover {
+.dtab-btn-primaer:hover {
     background: linear-gradient(135deg, #a855f7 0%, #ec4899 100%);
     box-shadow: 0 8px 25px rgba(168, 85, 247, 0.45);
     transform: translateY(-2px);
