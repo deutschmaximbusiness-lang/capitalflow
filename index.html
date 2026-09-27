@@ -1271,6 +1271,24 @@
                 <button onclick="cfImportAusfuehren('ersetzen')" style="flex: 1; background: rgba(239, 68, 68, 0.12); border: 1px solid rgba(239, 68, 68, 0.3); color: #fca5a5; padding: 13px 16px; border-radius: 12px; cursor: pointer; font-weight: 700; font-size: 13px; font-family: 'Inter', sans-serif;">Alles ersetzen</button>
             </div>
 
+            <!-- ===== Gefahrenzone ===== -->
+            <div id="loeschBlock" style="margin-top: 26px; padding-top: 22px; border-top: 1px solid rgba(239, 68, 68, 0.2);">
+                <h3 style="margin: 0 0 6px 0; font-size: 15px; font-weight: 700; color: #fca5a5;">Daten löschen</h3>
+                <p style="margin: 0 0 14px 0; color: #94a3b8; font-size: 12px; line-height: 1.6;">
+                    Lade vorher eine Sicherung herunter. Gelöschte Daten sind weg —
+                    es gibt keinen Papierkorb.
+                </p>
+
+                <button onclick="cfLoeschImporte()" style="width: 100%; background: rgba(251, 191, 36, 0.1); border: 1px solid rgba(251, 191, 36, 0.3); color: #fbbf24; padding: 12px 20px; border-radius: 12px; cursor: pointer; font-weight: 600; font-size: 13px; font-family: 'Inter', sans-serif; margin-bottom: 16px;">Nur importierte Trades löschen</button>
+
+                <label style="display: block; color: #94a3b8; font-size: 11.5px; margin-bottom: 6px;">
+                    Für „alles löschen“ tippe <strong style="color:#fca5a5;">LÖSCHEN</strong> ein:
+                </label>
+                <input type="text" id="loeschBestaetigung" oninput="cfLoeschPruefen()" placeholder="LÖSCHEN" autocomplete="off" style="width: 100%; background: rgba(239, 68, 68, 0.06); border: 1px solid rgba(239, 68, 68, 0.25); border-radius: 10px; padding: 11px 14px; color: #f1f5f9; font-size: 13px; font-family: 'Inter', sans-serif; margin-bottom: 10px;">
+                <button id="loeschAllesBtn" onclick="cfLoeschAlles()" disabled style="width: 100%; background: rgba(239, 68, 68, 0.15); border: 1px solid rgba(239, 68, 68, 0.4); color: #fca5a5; padding: 12px 20px; border-radius: 12px; cursor: not-allowed; opacity: 0.4; font-weight: 700; font-size: 13px; font-family: 'Inter', sans-serif;">Alle meine Daten löschen</button>
+                <p id="loeschStatus" style="margin: 10px 0 0 0; color: #64748b; font-size: 11px; text-align: center; min-height: 14px;"></p>
+            </div>
+
             <button onclick="cfDatenModalZu()" style="width: 100%; margin-top: 20px; background: none; border: none; color: #64748b; padding: 8px; cursor: pointer; font-weight: 600; font-size: 13px; font-family: 'Inter', sans-serif;">Schließen</button>
         </div>
     </div>

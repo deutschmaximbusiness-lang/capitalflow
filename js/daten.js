@@ -243,3 +243,119 @@
         document.getElementById('datenModal').style.display = 'none';
     };
 })();
+
+/* CapitalFlow - Daten loeschen
+ *
+ * Zwei Stufen. Die Arbeit macht die Datenbankfunktion daten_loeschen()
+ * in 05_loeschen.sql - hier stehen nur die Rueckfragen davor und das
+ * Aufraeumen der Screenshots danach, die im Storage liegen und nicht in
+ * der Datenbank.
+ */
+(function () {
+    'use strict';
+
+    function el(id) { return document.getElementById(id); }
+    function status(t) { const e = el('loeschStatus'); if (e) e.textContent = t || ''; }
+
+    /**
+     * Screenshots des Nutzers aus dem Storage entfernen.
+     *
+     * Sie liegen unter <uid>/... und gehen bei einer Datenbank-Loeschung
+     * nicht mit. Wer sie stehen laesst, hat geloeschte Trades, deren
+     * Bilder noch auf dem Server liegen - bei einer Loeschanfrage nach
+     * Artikel 17 waere das die Haelfte der Arbeit.
+     */
+    async function screenshotsWeg() {
+        try {
+            const s = await window.cfSitzung();
+            if (!s) return 0;
+            const ordner = s.user.id;
+            let weg = 0;
+            // In Seiten, der Storage liefert nicht alles auf einmal
+            for (let runde = 0; runde < 20; runde++) {
+                const { data, error } = await window.cfDb.storage
+                    .from('screenshots').list(ordner, { limit: 100 });
+                if (error || !data || !data.length) break;
+                const pfade = data.map(function (f) { return ordner + '/' + f.name; });
+                const { error: f2 } = await window.cfDb.storage
+                    .from('screenshots').remove(pfade);
+                if (f2) break;
+                weg += pfade.length;
+                if (data.length < 100) break;
+            }
+            return weg;
+        } catch (e) { return 0; }
+    }
+
+    async function loeschen(nurImport) {
+        if (!window.cfDb) { status('Keine Verbindung zur Datenbank.'); return; }
+        const btns = document.querySelectorAll('#loeschBlock button');
+        btns.forEach(function (b) { b.disabled = true; });
+        try {
+            status('Wird gelöscht…');
+            const { data, error } = await window.cfDb
+                .rpc('daten_loeschen', { nur_import: nurImport });
+            if (error) throw new Error(error.message);
+
+            let bilder = 0;
+            if (!nurImport) {
+                status('Screenshots entfernen…');
+                bilder = await screenshotsWeg();
+            }
+
+            // Zwischenspeicher im Browser mitnehmen, sonst taucht alles
+            // beim naechsten Laden wieder auf
+            ['trades', 'positions', 'closedPositions', 'setups', 'transactions']
+                .forEach(function (k) {
+                    try { localStorage.setItem(k, '[]'); } catch (e) {}
+                });
+
+            const r = data || {};
+            status('✅ Gelöscht: ' + (r.trades || 0) + ' Trades'
+                + (nurImport ? ' (nur importierte)'
+                    : ', ' + (r.setups || 0) + ' Setups, '
+                      + (r.transaktionen || 0) + ' Buchungen'
+                      + (bilder ? ', ' + bilder + ' Screenshots' : '')) + '.');
+
+            const r2 = await window.cfDatenLaden();
+            if (r2 && r2.ok && typeof window.cfAnsichtenAufbauen === 'function') {
+                window.cfAnsichtenAufbauen();
+            }
+            if (typeof showToast === 'function') showToast('🗑️ Daten gelöscht');
+        } catch (e) {
+            console.error('Löschen:', e);
+            status('❌ ' + e.message);
+        } finally {
+            btns.forEach(function (b) { b.disabled = false; });
+            const f = el('loeschBestaetigung');
+            if (f) f.value = '';
+            window.cfLoeschPruefen();
+        }
+    }
+
+    /** Der Knopf für "alles" bleibt gesperrt, bis LÖSCHEN dasteht. */
+    window.cfLoeschPruefen = function () {
+        const f = el('loeschBestaetigung');
+        const b = el('loeschAllesBtn');
+        if (!f || !b) return;
+        const passt = f.value.trim().toUpperCase() === 'LÖSCHEN';
+        b.disabled = !passt;
+        b.style.opacity = passt ? '1' : '0.4';
+        b.style.cursor = passt ? 'pointer' : 'not-allowed';
+    };
+
+    window.cfLoeschImporte = function () {
+        if (!window.confirm('Alle importierten Trades löschen?\n\n'
+            + 'Von Hand eingetragene Trades, Setups und Buchungen bleiben.\n'
+            + 'Das lässt sich nicht rückgängig machen.')) return;
+        loeschen(true);
+    };
+
+    window.cfLoeschAlles = function () {
+        if (!window.confirm('Wirklich ALLE deine Daten löschen?\n\n'
+            + 'Trades, Positionen, Setups, Buchungen und Screenshots.\n'
+            + 'Dein Konto bleibt bestehen, die Daten sind weg.\n\n'
+            + 'Hast du vorher eine Sicherung heruntergeladen?')) return;
+        loeschen(false);
+    };
+})();
