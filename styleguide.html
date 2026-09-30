@@ -34,20 +34,14 @@ body { margin: 0; }
 .sg-schrift small { flex: 0 0 90px; color: var(--cf-text-leise); font-size: 0.75rem; }
 .sg-formular { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
 .sg-formular .sg-breit { grid-column: 1 / -1; }
-.sg-diagramm { position: relative; }
-.sg-diagramm svg { display: block; width: 100%; height: auto; overflow: visible; }
-.sg-tipp {
-    position: absolute; pointer-events: none; display: none;
-    padding: 8px 10px; border-radius: 6px;
-    background: var(--cf-erhoben); border: 1px solid var(--cf-rand-feld);
-    font-size: 0.8125rem; color: var(--cf-text); white-space: nowrap;
-    font-variant-numeric: tabular-nums;
-}
-.sg-tipp span { display: block; color: var(--cf-text-2); }
-.sg-legende { display: flex; gap: 16px; margin-bottom: 12px; font-size: 0.8125rem; color: var(--cf-text-2); }
-.sg-legende i { display: inline-block; width: 16px; height: 0; border-top: 2px solid; vertical-align: middle; margin-right: 6px; }
+.sg-app { display: grid; grid-template-columns: 220px minmax(0, 1fr); gap: 0; border: 1px solid var(--cf-rand); border-radius: 8px; overflow: hidden; }
+.sg-app-leiste { padding: 16px 12px; background: var(--cf-karte); border-right: 1px solid var(--cf-rand); }
+.sg-app-marke { display: flex; align-items: center; gap: 10px; padding: 4px 12px 16px; font-weight: 600; }
+.sg-app-marke img { width: 24px; height: 24px; border-radius: 6px; }
+.sg-app-inhalt { padding: 24px; background: var(--cf-seite); min-width: 0; }
 @media (max-width: 860px) {
-    .sg-raster-2, .sg-raster-3, .sg-formular { grid-template-columns: minmax(0, 1fr); }
+    .sg-raster-2, .sg-raster-3, .sg-formular, .sg-app { grid-template-columns: minmax(0, 1fr); }
+    .sg-app-leiste { border-right: 0; border-bottom: 1px solid var(--cf-rand); }
 }
 </style>
 </head>
@@ -128,30 +122,15 @@ body { margin: 0; }
     <section class="sg-abschnitt" id="ko">
         <h2>KO-Abstand</h2>
         <p class="sg-zweck">Das Erkennungszeichen der App. Links die KO-Schwelle, die Skala reicht bis 20 % Abstand, Striche bei 5 % und 10 %. Unter 5 % wird es bernsteinfarben und sagt es zusätzlich in Worten.</p>
-        <div class="sg-raster-3">
-            <div class="cf-karte cf-karte--dicht">
+        <div class="sg-raster-3" id="ko-beispiele">
+            <div class="cf-karte cf-karte--dicht" data-kurs="19267" data-ko="18650" data-richtung="long">
                 <div class="cf-karte-kopf"><h3 class="cf-karte-titel">DAX Long</h3><span class="cf-marke">Hebel 14,2</span></div>
-                <div class="cf-ko" data-zone="nah" style="--cf-ko-anteil:0.16">
-                    <div class="cf-ko-kopf"><span class="cf-ko-wert">3,2 %</span><span class="cf-ko-zone">Nah an der Schwelle</span></div>
-                    <div class="cf-ko-skala" role="img" aria-label="3,2 Prozent Abstand zur KO-Schwelle"><span class="cf-ko-fuellung"></span><span class="cf-ko-schwelle"></span></div>
-                    <div class="cf-ko-fuss"><span>KO <b>18.650</b></span><span>Kurs <b>19.267</b></span></div>
-                </div>
             </div>
-            <div class="cf-karte cf-karte--dicht">
+            <div class="cf-karte cf-karte--dicht" data-kurs="178.8" data-ko="192.4" data-richtung="short" data-einheit="$">
                 <div class="cf-karte-kopf"><h3 class="cf-karte-titel">NVIDIA Short</h3><span class="cf-marke">Hebel 8,9</span></div>
-                <div class="cf-ko" data-zone="eng" style="--cf-ko-anteil:0.38">
-                    <div class="cf-ko-kopf"><span class="cf-ko-wert">7,6 %</span><span class="cf-ko-zone">Eng</span></div>
-                    <div class="cf-ko-skala" role="img" aria-label="7,6 Prozent Abstand zur KO-Schwelle"><span class="cf-ko-fuellung"></span><span class="cf-ko-schwelle"></span></div>
-                    <div class="cf-ko-fuss"><span>KO <b>192,40 $</b></span><span>Kurs <b>178,80 $</b></span></div>
-                </div>
             </div>
-            <div class="cf-karte cf-karte--dicht">
+            <div class="cf-karte cf-karte--dicht" data-kurs="2622" data-ko="2108" data-richtung="long">
                 <div class="cf-karte-kopf"><h3 class="cf-karte-titel">Gold Long</h3><span class="cf-marke">Hebel 5,1</span></div>
-                <div class="cf-ko" data-zone="sicher" style="--cf-ko-anteil:0.98">
-                    <div class="cf-ko-kopf"><span class="cf-ko-wert">19,6 %</span><span class="cf-ko-zone">Genug Luft</span></div>
-                    <div class="cf-ko-skala" role="img" aria-label="19,6 Prozent Abstand zur KO-Schwelle"><span class="cf-ko-fuellung"></span><span class="cf-ko-schwelle"></span></div>
-                    <div class="cf-ko-fuss"><span>KO <b>2.108</b></span><span>Kurs <b>2.622</b></span></div>
-                </div>
             </div>
         </div>
     </section>
@@ -183,12 +162,40 @@ body { margin: 0; }
         <div class="sg-raster-2">
             <div class="cf-karte">
                 <div class="cf-karte-kopf"><h3 class="cf-karte-titel">Kontostand</h3><span class="cf-karte-zusatz">September</span></div>
-                <div class="sg-legende"><span><i style="border-color:#3987E5"></i>Tatsächlich</span><span><i style="border-color:#D4A5FF;border-top-style:dashed"></i>Ohne Trades gegen den Plan</span></div>
-                <div class="sg-diagramm" id="linie"><div class="sg-tipp"></div></div>
+                <div class="cf-legende"><span><i class="cf-legende-linie"></i>Tatsächlich</span><span><i class="cf-legende-linie cf-legende-linie--2"></i>Ohne Trades gegen den Plan</span></div>
+                <div class="cf-diagramm"><canvas id="linie" role="img" aria-label="Kontostand im September: tatsächlich 6.284 €, ohne Trades gegen den Plan 6.950 €"></canvas></div>
             </div>
             <div class="cf-karte">
                 <div class="cf-karte-kopf"><h3 class="cf-karte-titel">Ergebnis nach Setup</h3><span class="cf-karte-zusatz">41 Trades</span></div>
-                <div class="sg-diagramm" id="balken"><div class="sg-tipp"></div></div>
+                <div class="cf-diagramm"><canvas id="balken" role="img" aria-label="Ergebnis nach Setup: Ausbruch +842,30 €, Trendfolge +511,90 €, Rücklauf −69,70 €, ohne Setup −187,00 €"></canvas></div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ============================================================ Navigation -->
+    <section class="sg-abschnitt" id="navigation">
+        <h2>Navigation</h2>
+        <p class="sg-zweck">Seitenleiste mit Symbol und Namen. Der aktive Bereich ist hinterlegt, sonst nichts. Auf dem Handy wird daraus eine Leiste, die man seitlich wischt.</p>
+        <div class="sg-app">
+            <div class="sg-app-leiste">
+                <div class="sg-app-marke"><img src="img/capitalflow-icon.png" alt="">CapitalFlow</div>
+                <nav class="cf-nav" aria-label="Hauptnavigation">
+                    <p class="cf-nav-gruppe">Übersicht</p>
+                    <a class="cf-nav-punkt" href="#navigation" aria-current="page"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="9" rx="1"/><rect x="14" y="3" width="7" height="5" rx="1"/><rect x="14" y="12" width="7" height="9" rx="1"/><rect x="3" y="16" width="7" height="5" rx="1"/></svg>Dashboard</a>
+                    <a class="cf-nav-punkt" href="#navigation"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16v16H4zM4 9h16M9 9v11"/></svg>Journal<span class="cf-nav-zahl">41</span></a>
+                    <a class="cf-nav-punkt" href="#navigation"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg>Auswertung</a>
+                    <a class="cf-nav-punkt" href="#navigation"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>Offene Positionen<span class="cf-nav-zahl">3</span></a>
+                    <p class="cf-nav-gruppe">Daten</p>
+                    <a class="cf-nav-punkt" href="#navigation"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v12m0 0l-4-4m4 4l4-4M4 21h16"/></svg>Import</a>
+                    <a class="cf-nav-punkt" href="#navigation"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 5h16M4 12h16M4 19h10"/></svg>Anleitung</a>
+                </nav>
+            </div>
+            <div class="sg-app-inhalt">
+                <div class="cf-seitenkopf" style="margin-bottom:16px">
+                    <div><h3 class="cf-seitenkopf-titel">Dashboard</h3><p class="cf-seitenkopf-unter">September 2026, 41 Trades</p></div>
+                    <div class="cf-seitenkopf-aktionen"><button class="cf-knopf" type="button">CSV importieren</button><button class="cf-knopf cf-knopf--haupt" type="button">Trade eintragen</button></div>
+                </div>
+                <p class="cf-leise" style="margin:0">Seitenkopf: Titel links, höchstens zwei Aktionen rechts, eine davon violett.</p>
             </div>
         </div>
     </section>
@@ -196,7 +203,7 @@ body { margin: 0; }
     <!-- ============================================================ Bedienung -->
     <section class="sg-abschnitt" id="bedienung">
         <h2>Knöpfe und Auswahl</h2>
-        <p class="sg-zweck">Pro Bildschirm genau ein violetter Knopf. Alles andere ist grau oder leise. Löschen ist rot umrandet, nie gefüllt.</p>
+        <p class="sg-zweck">Pro Bildschirm genau ein violetter Knopf. Alles andere ist grau oder leise. Löschen ist rot umrandet, nie gefüllt, und fragt vorher nach. Probier es aus.</p>
         <div class="cf-karte">
             <div class="sg-reihe">
                 <button class="cf-knopf cf-knopf--haupt" type="button">Trade speichern</button>
@@ -205,7 +212,7 @@ body { margin: 0; }
                     CSV importieren
                 </button>
                 <button class="cf-knopf cf-knopf--leise" type="button">Abbrechen</button>
-                <button class="cf-knopf cf-knopf--gefahr" type="button">Trade löschen</button>
+                <button class="cf-knopf cf-knopf--gefahr" type="button" id="loeschen-oeffnen">Trade löschen …</button>
                 <button class="cf-knopf" type="button" disabled>Gesperrt</button>
                 <button class="cf-knopf cf-knopf--klein" type="button">Bearbeiten</button>
             </div>
@@ -296,101 +303,74 @@ body { margin: 0; }
 
 </main>
 
+<dialog class="cf-dialog" id="loeschen-dialog" aria-labelledby="loeschen-titel">
+    <form method="dialog">
+        <div class="cf-dialog-kopf"><h2 class="cf-dialog-titel" id="loeschen-titel">Trade löschen?</h2></div>
+        <div class="cf-dialog-inhalt">
+            <p>DAX Long vom 29.09., +182,40 €. Der Trade verschwindet aus Journal und Auswertung.</p>
+            <p>Das lässt sich nicht rückgängig machen.</p>
+        </div>
+        <div class="cf-dialog-fuss">
+            <button class="cf-knopf cf-knopf--leise" value="abbrechen" autofocus>Abbrechen</button>
+            <button class="cf-knopf cf-knopf--gefahr" value="loeschen">Trade löschen</button>
+        </div>
+    </form>
+</dialog>
+
+<script src="js/vendor/chart.min.js"></script>
+<script src="js/zertifikate.js"></script>
+<script src="js/basis.js"></script>
 <script>
-/* Zwei kleine SVG-Diagramme, nur zur Anschauung der Regeln.
-   Hover: Fadenkreuz auf der Linie, Tooltip je Balken. */
+/* Alles hier laeuft ueber dieselben Funktionen, die die App benutzen wird:
+   cfZert.koAbstand -> cfBasis.koAnzeige, cfBasis.diagrammOptionen fuer Chart.js. */
 (function () {
-    const NS = 'http://www.w3.org/2000/svg';
-    const eur = n => (n >= 0 ? '+' : '−') + Math.abs(n).toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' €';
-    const eurFlach = n => n.toLocaleString('de-DE', { minimumFractionDigits: 0, maximumFractionDigits: 0 }) + ' €';
-    function el(tag, attr, eltern) {
-        const e = document.createElementNS(NS, tag);
-        for (const k in attr) e.setAttribute(k, attr[k]);
-        if (eltern) eltern.appendChild(e);
-        return e;
-    }
+    const B = window.cfBasis;
 
-    /* ---------- Linie */
-    const ist =   [5000, 5080, 5040, 5190, 5150, 5320, 5260, 5410, 5480, 5390, 5560, 5620, 5510, 5700, 5760, 5690, 5850, 5920, 5870, 6010, 6090, 6040, 6180, 6284];
-    const plan =  [5000, 5100, 5110, 5260, 5290, 5450, 5470, 5630, 5720, 5700, 5870, 5950, 5930, 6120, 6200, 6200, 6360, 6440, 6450, 6600, 6690, 6700, 6840, 6950];
-    const B = 520, H = 240, L = 56, R = 64, O = 12, U = 26;
-    const halter = document.getElementById('linie');
-    const svg = el('svg', { viewBox: `0 0 ${B} ${H}`, role: 'img', 'aria-label': 'Kontostand im September, tatsächlich und ohne Trades gegen den Plan' });
-    halter.insertBefore(svg, halter.firstChild);
-    const min = 4900, max = 7000;
-    const x = i => L + i * (B - L - R) / (ist.length - 1);
-    const y = v => O + (1 - (v - min) / (max - min)) * (H - O - U);
-    [5000, 6000, 7000].forEach(v => {
-        el('line', { x1: L, x2: B - R, y1: y(v), y2: y(v), stroke: '#232834', 'stroke-width': 1 }, svg);
-        const t = el('text', { x: L - 8, y: y(v) + 4, fill: '#848D9D', 'font-size': 11, 'text-anchor': 'end' }, svg);
-        t.textContent = eurFlach(v);
+    // KO-Anzeigen aus echten Zahlen rechnen, nicht von Hand setzen
+    document.querySelectorAll('#ko-beispiele [data-kurs]').forEach(k => {
+        const kurs = parseFloat(k.dataset.kurs), ko = parseFloat(k.dataset.ko);
+        const r = window.cfZert.koAbstand({ kurs: kurs, ko: ko, richtung: k.dataset.richtung, art: 'knockout' });
+        k.insertAdjacentHTML('beforeend', B.koAnzeige({
+            prozent: r.ok ? r.wert.prozent : null, ko: ko, kurs: kurs, einheit: k.dataset.einheit || '',
+        }));
     });
-    const pfad = d => d.map((v, i) => (i ? 'L' : 'M') + x(i).toFixed(1) + ' ' + y(v).toFixed(1)).join(' ');
-    el('path', { d: pfad(plan), fill: 'none', stroke: '#D4A5FF', 'stroke-width': 2, 'stroke-dasharray': '5 4', 'stroke-linejoin': 'round' }, svg);
-    el('path', { d: pfad(ist), fill: 'none', stroke: '#3987E5', 'stroke-width': 2, 'stroke-linejoin': 'round' }, svg);
-    // direkte Beschriftung am Ende
-    const n = ist.length - 1;
-    const b1 = el('text', { x: x(n) + 8, y: y(ist[n]) + 14, fill: '#E7EAF0', 'font-size': 12, 'font-weight': 500 }, svg); b1.textContent = eurFlach(ist[n]);
-    const b2 = el('text', { x: x(n) + 8, y: y(plan[n]) - 6, fill: '#A3ACBB', 'font-size': 12 }, svg); b2.textContent = eurFlach(plan[n]);
-    ['1.9.', '15.9.', '30.9.'].forEach((t, k) => {
-        const i = [0, 11, n][k];
-        const e = el('text', { x: x(i), y: H - 6, fill: '#848D9D', 'font-size': 11, 'text-anchor': k === 0 ? 'start' : k === 2 ? 'end' : 'middle' }, svg);
-        e.textContent = t;
-    });
-    const kreuz = el('line', { y1: O, y2: H - U, stroke: '#4A5366', 'stroke-width': 1, visibility: 'hidden' }, svg);
-    const p1 = el('circle', { r: 4, fill: '#3987E5', stroke: '#161A22', 'stroke-width': 2, visibility: 'hidden' }, svg);
-    const p2 = el('circle', { r: 4, fill: '#D4A5FF', stroke: '#161A22', 'stroke-width': 2, visibility: 'hidden' }, svg);
-    const fang = el('rect', { x: L, y: 0, width: B - L - R, height: H, fill: 'transparent' }, svg);
-    const tipp1 = halter.querySelector('.sg-tipp');
-    function zeige(ev) {
-        const r = svg.getBoundingClientRect();
-        const sx = (ev.clientX - r.left) * B / r.width;
-        const i = Math.max(0, Math.min(n, Math.round((sx - L) / ((B - L - R) / n))));
-        [kreuz, p1, p2].forEach(e => e.setAttribute('visibility', 'visible'));
-        kreuz.setAttribute('x1', x(i)); kreuz.setAttribute('x2', x(i));
-        p1.setAttribute('cx', x(i)); p1.setAttribute('cy', y(ist[i]));
-        p2.setAttribute('cx', x(i)); p2.setAttribute('cy', y(plan[i]));
-        tipp1.innerHTML = `Handelstag ${i + 1}<span>Tatsächlich ${eurFlach(ist[i])}</span><span>Ohne Planbruch ${eurFlach(plan[i])}</span>`;
-        tipp1.style.display = 'block';
-        const px = x(i) * r.width / B;
-        tipp1.style.left = Math.min(px + 12, r.width - tipp1.offsetWidth) + 'px';
-        tipp1.style.top = '40px';
-    }
-    function weg() { [kreuz, p1, p2].forEach(e => e.setAttribute('visibility', 'hidden')); tipp1.style.display = 'none'; }
-    fang.addEventListener('pointermove', zeige);
-    fang.addEventListener('pointerleave', weg);
 
-    /* ---------- Balken: ein Ton, Wert daneben; Vorzeichen als Text */
-    const setups = [['Ausbruch', 842.3, 17], ['Trendfolge', 511.9, 9], ['Rücklauf', -69.7, 11], ['Ohne Setup', -187.0, 4]];
-    const BB = 520, zeile = 56, BL = 110, BR = 96;
-    const bh = el('svg', { viewBox: `0 0 ${BB} ${setups.length * zeile + 8}`, role: 'img', 'aria-label': 'Ergebnis nach Setup' });
-    const halter2 = document.getElementById('balken');
-    halter2.insertBefore(bh, halter2.firstChild);
-    const tipp2 = halter2.querySelector('.sg-tipp');
-    const maxAbs = Math.max(...setups.map(s => Math.abs(s[1])));
-    const null0 = BL + (BB - BL - BR) * (Math.max(...setups.map(s => -Math.min(0, s[1]))) / (maxAbs + Math.max(...setups.map(s => -Math.min(0, s[1])))));
-    const skala = (BB - BL - BR - (null0 - BL)) / maxAbs;
-    el('line', { x1: null0, x2: null0, y1: 0, y2: setups.length * zeile, stroke: '#3A4252', 'stroke-width': 1 }, bh);
-    setups.forEach((s, k) => {
-        const yy = k * zeile + 19, h = 18;
-        const w = Math.abs(s[1]) * skala;
-        const x0 = s[1] >= 0 ? null0 + 1 : null0 - w - 1;
-        const name = el('text', { x: 0, y: yy + 13, fill: '#A3ACBB', 'font-size': 12 }, bh); name.textContent = s[0];
-        const farbe = s[1] >= 0 ? '#12A38F' : '#E5484D';
-        const bal = el('rect', { x: x0, y: yy, width: Math.max(w, 2), height: h, rx: 3, fill: farbe }, bh);
-        const wert = el('text', { x: s[1] >= 0 ? null0 + w + 8 : null0 + 8, y: yy + 13, fill: '#E7EAF0', 'font-size': 12, 'font-weight': 500 }, bh);
-        wert.textContent = eur(s[1]);
-        const ziel = el('rect', { x: 0, y: k * zeile + 4, width: BB, height: zeile - 8, fill: 'transparent' }, bh);
-        ziel.addEventListener('pointerenter', () => {
-            bal.setAttribute('opacity', '0.8');
-            tipp2.innerHTML = `${s[0]}<span>${s[2]} Trades, Ø ${eur(s[1] / s[2])}</span>`;
-            tipp2.style.display = 'block';
-            const r = bh.getBoundingClientRect();
-            tipp2.style.left = Math.min(r.width * 0.55, r.width - tipp2.offsetWidth) + 'px';
-            tipp2.style.top = ((k * zeile + 46) * r.width / BB) + 'px';
-        });
-        ziel.addEventListener('pointerleave', () => { bal.setAttribute('opacity', '1'); tipp2.style.display = 'none'; });
+    // Linie: zwei Serien, direkt beschriftet, Fadenkreuz-Tooltip
+    const ist =  [5000, 5080, 5040, 5190, 5150, 5320, 5260, 5410, 5480, 5390, 5560, 5620, 5510, 5700, 5760, 5690, 5850, 5920, 5870, 6010, 6090, 6040, 6180, 6284];
+    const plan = [5000, 5100, 5110, 5260, 5290, 5450, 5470, 5630, 5720, 5700, 5870, 5950, 5930, 6120, 6200, 6200, 6360, 6440, 6450, 6600, 6690, 6700, 6840, 6950];
+    window.sgLinie = new Chart(document.getElementById('linie'), {
+        type: 'line',
+        data: { labels: ist.map((w, i) => (i + 1) + '. Handelstag'),
+                datasets: [B.serie(1, 'Tatsächlich', ist), B.serie(2, 'Ohne Planbruch', plan)] },
+        options: B.diagrammOptionen('linie', { format: 'eur', extra: {
+            scales: { x: { ticks: { autoSkip: false, maxTicksLimit: undefined, callback: (v, i) => ({ 0: '1.9.', 11: '15.9.', 23: '30.9.' })[i] || '' } } },
+        } }),
+        plugins: [B.wertePlugin],
     });
+
+    // Balken quer: Vorzeichen ist die Aussage -> gruen/rot, Wert daneben
+    const setups = ['Ausbruch', 'Trendfolge', 'Rücklauf', 'Ohne Setup'];
+    const ergebnis = [842.3, 511.9, -69.7, -187.0];
+    const anzahl = [17, 9, 11, 4];
+    window.sgBalken = new Chart(document.getElementById('balken'), {
+        type: 'bar',
+        data: { labels: setups, datasets: [{ label: 'Ergebnis', data: ergebnis,
+                backgroundColor: B.ergebnisFarben(ergebnis), barThickness: 18 }] },
+        options: B.diagrammOptionen('balken-quer', { format: 'eurVorzeichen', extra: {
+            indexAxis: 'y',
+            plugins: { tooltip: { callbacks: {
+                label: c => ' ' + B.formate.eurVorzeichen(c.parsed.x),
+                afterLabel: c => ' ' + anzahl[c.dataIndex] + ' Trades, Ø ' + B.formate.eurVorzeichen(ergebnis[c.dataIndex] / anzahl[c.dataIndex]),
+            } } },
+        } }),
+        plugins: [B.wertePlugin],
+    });
+
+    // Dialog
+    const dlg = document.getElementById('loeschen-dialog');
+    document.getElementById('loeschen-oeffnen').addEventListener('click', () => dlg.showModal());
+    // Klick auf den abgedunkelten Hintergrund schliesst wie Abbrechen
+    dlg.addEventListener('click', e => { if (e.target === dlg) dlg.close('abbrechen'); });
 })();
 </script>
 </body>

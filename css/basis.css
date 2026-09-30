@@ -473,9 +473,107 @@ select.cf-eingabe {
 }
 .cf-ko-fuss b { color: var(--cf-text-2); font-weight: 500; }
 
+.cf-ko[data-zone="getroffen"] { --cf-ko-ton: var(--cf-verlust); --cf-ko-anteil: 0; }
+.cf-ko[data-zone="getroffen"] .cf-ko-fuellung { display: none; }
+
+/* ------------------------------------------------------------ Navigation
+   Senkrechte Liste in der Seitenleiste, auf schmalen Bildschirmen eine
+   waagerechte Leiste, die in sich scrollt. Aktiver Punkt ueber
+   aria-current="page" (oder aria-selected="true" bei Tabs). */
+.cf-nav { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.cf-nav-gruppe {
+    margin: var(--cf-a-4) 0 var(--cf-a-1);
+    padding: 0 var(--cf-a-3);
+    font-size: var(--cf-t-12);
+    color: var(--cf-text-leise);
+}
+.cf-nav-gruppe:first-child { margin-top: 0; }
+.cf-nav-punkt {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-height: 36px;
+    padding: 0 var(--cf-a-3);
+    border: 0;
+    border-radius: var(--cf-r-2);
+    background: transparent;
+    color: var(--cf-text-2);
+    font-family: var(--cf-schrift);
+    font-size: var(--cf-t-14);
+    font-weight: 500;
+    text-align: left;
+    text-decoration: none;
+    white-space: nowrap;
+    cursor: pointer;
+    transition: background-color var(--cf-dauer), color var(--cf-dauer);
+}
+.cf-nav-punkt svg { width: 18px; height: 18px; flex: 0 0 auto; color: var(--cf-text-leise); }
+.cf-nav-punkt:hover { background: var(--cf-erhoben); color: var(--cf-text); }
+.cf-nav-punkt:focus-visible { outline: none; box-shadow: 0 0 0 2px var(--cf-akzent-text); }
+.cf-nav-punkt[aria-current="page"],
+.cf-nav-punkt[aria-selected="true"] { background: var(--cf-akzent-grund); color: var(--cf-text); }
+.cf-nav-punkt[aria-current="page"] svg,
+.cf-nav-punkt[aria-selected="true"] svg { color: var(--cf-akzent-text); }
+.cf-nav-zahl {
+    margin-left: auto;
+    font-size: var(--cf-t-12);
+    color: var(--cf-text-leise);
+    font-variant-numeric: tabular-nums;
+}
+
+/* ------------------------------------------------------------ Dialog
+   Fuer das native <dialog>: Fokus, Esc und Hintergrund-Sperre liefert
+   der Browser. Oeffnen mit showModal(). */
+dialog.cf-dialog {
+    width: min(480px, calc(100vw - 32px));
+    max-height: calc(100vh - 64px);
+    padding: 0;
+    border: 1px solid var(--cf-rand-feld);
+    border-radius: var(--cf-r-3);
+    background: var(--cf-karte);
+    color: var(--cf-text);
+    font-family: var(--cf-schrift);
+    font-size: var(--cf-t-14);
+    line-height: 1.5;
+    box-shadow: 0 24px 64px rgba(0, 0, 0, 0.5);
+}
+.cf-dialog::backdrop { background: rgba(8, 10, 14, 0.72); }
+.cf-dialog-kopf { padding: var(--cf-a-5) var(--cf-a-5) var(--cf-a-2); }
+.cf-dialog-titel { margin: 0; font-size: var(--cf-t-16); font-weight: 600; color: var(--cf-text); }
+.cf-dialog-inhalt { padding: 0 var(--cf-a-5); color: var(--cf-text-2); }
+.cf-dialog-inhalt p { margin: 0 0 var(--cf-a-3); }
+.cf-dialog-fuss {
+    display: flex;
+    justify-content: flex-end;
+    gap: var(--cf-a-2);
+    flex-wrap: wrap;
+    padding: var(--cf-a-4) var(--cf-a-5) var(--cf-a-5);
+}
+
+/* ------------------------------------------------------------ Diagramm */
+.cf-legende {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--cf-a-4);
+    margin-bottom: var(--cf-a-3);
+    font-size: var(--cf-t-13);
+    color: var(--cf-text-2);
+}
+.cf-legende-linie {
+    display: inline-block;
+    width: 16px;
+    height: 0;
+    margin-right: 6px;
+    border-top: 2px solid var(--cf-serie-1);
+    vertical-align: middle;
+}
+.cf-legende-linie--2 { border-top: 2px dashed var(--cf-serie-2); }
+.cf-diagramm { position: relative; height: 220px; }
+.cf-diagramm--klein { height: 160px; }
+
 /* ------------------------------------------------------------ Bewegung */
 @media (prefers-reduced-motion: reduce) {
-    .cf-knopf, .cf-eingabe, .cf-segment-teil, .cf-tabelle tbody tr { transition: none; }
+    .cf-knopf, .cf-eingabe, .cf-segment-teil, .cf-tabelle tbody tr, .cf-nav-punkt { transition: none; }
 }
 
 /* ------------------------------------------------------------ Schmal */
@@ -485,4 +583,9 @@ select.cf-eingabe {
     .cf-kennzahl { padding: var(--cf-a-3) var(--cf-a-4); }
     .cf-kennzahl-wert { font-size: var(--cf-t-20); }
     .cf-seitenkopf-titel { font-size: var(--cf-t-20); }
+    .cf-nav { flex-direction: row; overflow-x: auto; gap: var(--cf-a-1); scrollbar-width: none; }
+    .cf-nav::-webkit-scrollbar { display: none; }
+    .cf-nav-gruppe { display: none; }
+    .cf-nav-punkt { flex: 0 0 auto; }
+    .cf-dialog-fuss .cf-knopf { flex: 1 1 auto; }
 }
