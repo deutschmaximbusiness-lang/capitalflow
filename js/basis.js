@@ -110,7 +110,10 @@
     const wertePlugin = {
         id: 'cfWerte',
         afterDatasetsDraw(chart) {
-            const o = chart.options.plugins.cfWerte || {};
+            // Rohe Optionen lesen: Chart.js wuerde eine Format-Funktion sonst als
+            // "scriptable option" mit einem Kontext-Objekt aufrufen.
+            const roh = (chart.config.options && chart.config.options.plugins) || {};
+            const o = roh.cfWerte || {};
             const fmt = formatVon(o.format);
             const ctx = chart.ctx;
             const kaesten = [];
