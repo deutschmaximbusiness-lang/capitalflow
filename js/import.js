@@ -81,6 +81,41 @@
     }
     function z0(v) { const n = zahl(v); return n === null ? 0 : n; }
 
+    /**
+     * Zahl in DEUTSCHER Schreibweise, wie sie im Produktnamen steht.
+     *
+     * Getrennt von zahl(), weil die Datei zwei Formate mischt: Die
+     * Betragsspalten schreiben "-1227.59" (Punkt als Dezimalzeichen),
+     * der Produktname schreibt "Long 70,5213 $" (Komma als
+     * Dezimalzeichen). zahl() ersetzt nur das Komma - bei einem
+     * Index-Turbo "Long 18.250,5 Pkt." entstand daraus "18.250.5",
+     * parseFloat las 18.25, und KO-Abstand, Hebel und Risiko jedes
+     * Index-Turbos waren um den Faktor tausend falsch. Ohne jede
+     * Fehlermeldung, weil 18.25 eine gueltige Zahl ist.
+     *
+     * Regeln:
+     *   - Mit Komma: Punkte sind Tausendertrenner, das Komma ist das
+     *     Dezimalzeichen. "18.250,5" -> 18250.5
+     *   - Ohne Komma, aber in Dreiergruppen gepunktet: Tausender.
+     *     "18.250" -> 18250
+     *   - Sonst wie geschrieben. "70" -> 70
+     */
+    function zahlDe(v) {
+        if (v === '' || v === null || v === undefined) return null;
+        let s = String(v).trim();
+        if (s.indexOf(',') >= 0) {
+            s = s.replace(/\./g, '').replace(',', '.');
+        } else if (/^\d{1,3}(\.\d{3})+$/.test(s)) {
+            s = s.replace(/\./g, '');
+        }
+        const n = parseFloat(s);
+        return Number.isFinite(n) ? n : null;
+    }
+    // Fuer die Tests. Steht HIER und nicht beim Rest der Testschnittstelle
+    // weiter unten: diese Datei besteht aus zwei getrennten Bloecken, und
+    // zahlDe ist nur in diesem ersten sichtbar.
+    window.cfImportZahlDe = zahlDe;
+
     // ------------------------------------------------- Produkt erkennen
 
     // "Long 70,5213 $" / "Short 128,4 EUR"
@@ -111,7 +146,9 @@
         const nm = NAME_RE.exec(String(r.name || '').trim());
         if (nm) {
             roh.richtung = nm[1].toLowerCase();
-            roh.strike = zahl(nm[2]);
+            // Deutsch formatiert - siehe zahlDe(). Mit zahl() wurde ein
+            // DAX-Turbo bei 18.250 Punkten zu einem bei 18,25.
+            roh.strike = zahlDe(nm[2]);
         }
 
         if (text) {
@@ -519,33 +556,159 @@
      * was ein Nutzer einmal zuordnet, findet jeder Import danach
      * automatisch, auch bei anderen Nutzern.
      *
-     * Diese Liste ist nur der Anschub, damit der allererste Import
-     * nicht bei null anfaengt. Sie deckt, was im Discord gehandelt
-     * wird; alles andere fragt einmal nach und merkt es sich dann.
+     * Diese Liste ist der Anschub, damit der erste Import nicht bei null
+     * anfaengt. Sie deckt die Werte ab, auf die bei Trade Republic
+     * ueblich Turbos gehandelt werden: DAX 40, die grossen und die im
+     * Handel beliebten US-Werte. Alles andere fragt einmal nach und
+     * merkt es sich dann.
      *
-     * Schluessel ist die normalisierte Form aus kennung(): Grossbuch-
-     * staben, ohne Rechtsformen, auf acht Zeichen gekuerzt. Dadurch
-     * treffen "AST SpaceMobile" und "AST SPACEMOBIL.A" denselben
-     * Eintrag.
+     * WIE ZUGEORDNET WIRD - und warum nicht mehr ueber 8 Buchstaben:
+     *
+     * Vorher war der Schluessel der Name, auf acht Zeichen gekuerzt.
+     * Das hat ganze Firmenfamilien zu EINEM Wert gemacht:
+     *     "DEUTSCHE BANK", "DEUTSCHE TELEKOM", "DEUTSCHE BOERSE"
+     *         -> alle "DEUTSCHE"
+     *     "SIEMENS", "SIEMENS ENERGY", "SIEMENS HEALTHINEERS"
+     *         -> alle "SIEMENS" -> SIE
+     * Die Trades landeten dann unter demselben Basiswert, und jede
+     * Statistik je Wert war eine Mischung aus drei Firmen.
+     *
+     * Jetzt gewinnt der LAENGSTE Eintrag, mit dem der Name anfaengt,
+     * und zwar nur an Wortgrenzen: "SIEMENS ENERGY NA O N" passt auf
+     * "SIEMENS ENERGY" (ENR) und auf "SIEMENS" (SIE) - der laengere
+     * gewinnt. "SAPIENS" passt nicht auf "SAP", weil nach SAP kein
+     * Leerzeichen kommt.
+     *
+     * Jede Firma steht mit allen Schreibweisen drin, die in der Datei
+     * vorkommen koennen: dem Anzeigenamen ("Meta Platforms (A)") und
+     * dem abgekuerzten Boersennamen hinter "Turbo auf" ("META PLATF.").
      * ---------------------------------------------------------------- */
-    const START = {
-        'AST SPAC': 'ASTS',  'HIMS HER': 'HIMS',  'META PLA': 'META',
-        'CLOUDFLA': 'NET',   'COREWEAV': 'CRWV',  'CIPHER M': 'CIFR',
-        'ORACLE':   'ORCL',  'BROADCOM': 'AVGO',  'BAIDU':    'BIDU',
-        'COINBASE': 'COIN',  'DRAFTKIN': 'DKNG',  'INTUIT':   'INTU',
-        'IREN':     'IREN',  'MP MATER': 'MP',    'NOVO NOR': 'NVO',
-        'ONDAS':    'ONDS',  'ROCKET L': 'RKLB',  'SERVICEN': 'NOW',
-        'SOFI':     'SOFI',  'NVIDIA':   'NVDA',  'TESLA':    'TSLA',
-        'APPLE':    'AAPL',  'AMAZON':   'AMZN',  'MICROSOF': 'MSFT',
-        'ALPHABET': 'GOOGL', 'PALANTIR': 'PLTR',  'ADVANCED': 'AMD',
-        'MICRON':   'MU',    'NETFLIX':  'NFLX',  'RHEINMET': 'RHM',
-        'SIEMENS':  'SIE',   'SAP':      'SAP',
-    };
+    const START_LISTE = [
+        // --- USA: im Discord gehandelt
+        ['AST SPACEMOBILE', 'ASTS'],  ['AST SPACEMOBIL', 'ASTS'],
+        ['HIMS HERS', 'HIMS'],        ['HIMS AND HERS', 'HIMS'],
+        ['META PLATFORMS', 'META'],   ['META PLATF', 'META'],
+        ['CLOUDFLARE', 'NET'],        ['COREWEAVE', 'CRWV'],
+        ['CIPHER MINING', 'CIFR'],    ['ORACLE', 'ORCL'],
+        ['BROADCOM', 'AVGO'],         ['BAIDU', 'BIDU'],
+        ['COINBASE', 'COIN'],         ['DRAFTKINGS', 'DKNG'],
+        ['INTUIT', 'INTU'],           ['IREN', 'IREN'],
+        ['MP MATERIALS', 'MP'],       ['NOVO NORDISK', 'NVO'],
+        ['ONDAS', 'ONDS'],            ['ROCKET LAB', 'RKLB'],
+        ['SERVICENOW', 'NOW'],        ['SOFI', 'SOFI'],
+
+        // --- USA: grosse Werte
+        ['NVIDIA', 'NVDA'],           ['TESLA', 'TSLA'],
+        ['APPLE', 'AAPL'],            ['AMAZON', 'AMZN'],
+        ['MICROSOFT', 'MSFT'],        ['ALPHABET', 'GOOGL'],
+        ['ADVANCED MICRO', 'AMD'],    ['ADVANCED MIC', 'AMD'],
+        ['PALANTIR', 'PLTR'],         ['NETFLIX', 'NFLX'],
+        ['MICRON', 'MU'],             ['INTEL', 'INTC'],
+        ['QUALCOMM', 'QCOM'],         ['ASML', 'ASML'],
+        ['TAIWAN SEMICONDUCTOR', 'TSM'], ['TAIWAN SEMICON', 'TSM'],
+        ['TAIWAN SEMIC', 'TSM'],
+        ['ARM HOLDINGS', 'ARM'],      ['ARM HLDGS', 'ARM'],
+        ['SUPER MICRO', 'SMCI'],      ['ADOBE', 'ADBE'],
+        ['SALESFORCE', 'CRM'],        ['ALIBABA', 'BABA'],
+        ['PAYPAL', 'PYPL'],           ['SHOPIFY', 'SHOP'],
+        ['UBER', 'UBER'],             ['AIRBNB', 'ABNB'],
+        ['SNOWFLAKE', 'SNOW'],        ['CROWDSTRIKE', 'CRWD'],
+        ['PALO ALTO', 'PANW'],        ['DATADOG', 'DDOG'],
+        ['ZSCALER', 'ZS'],            ['MONGODB', 'MDB'],
+        ['SPOTIFY', 'SPOT'],          ['TRADE DESK', 'TTD'],
+        ['APPLOVIN', 'APP'],          ['REDDIT', 'RDDT'],
+        ['ROBINHOOD', 'HOOD'],        ['GAMESTOP', 'GME'],
+        ['AXON', 'AXON'],
+
+        // --- USA: Krypto-nah, Quanten, Energie fuer Rechenzentren
+        ['MICROSTRATEGY', 'MSTR'],    ['STRATEGY', 'MSTR'],
+        ['MARA', 'MARA'],             ['MARATHON DIGITAL', 'MARA'],
+        ['RIOT PLATFORMS', 'RIOT'],   ['RIOT', 'RIOT'],
+        ['IONQ', 'IONQ'],             ['RIGETTI', 'RGTI'],
+        ['D WAVE', 'QBTS'],           ['OKLO', 'OKLO'],
+        ['NUSCALE', 'SMR'],           ['CONSTELLATION ENERGY', 'CEG'],
+        ['VISTRA', 'VST'],
+
+        // --- USA: E-Autos
+        ['RIVIAN', 'RIVN'],           ['LUCID', 'LCID'],
+        ['NIO', 'NIO'],
+
+        // --- USA: Standardwerte
+        ['ELI LILLY', 'LLY'],         ['LILLY ELI', 'LLY'],
+        ['UNITEDHEALTH', 'UNH'],      ['JPMORGAN', 'JPM'],
+        ['JP MORGAN', 'JPM'],         ['BANK OF AMERICA', 'BAC'],
+        ['BANK OF AMER', 'BAC'],      ['GOLDMAN SACHS', 'GS'],
+        ['VISA', 'V'],                ['MASTERCARD', 'MA'],
+        ['WALT DISNEY', 'DIS'],       ['DISNEY', 'DIS'],
+        ['NIKE', 'NKE'],              ['STARBUCKS', 'SBUX'],
+        ['MCDONALD', 'MCD'],          ['MCDONALDS', 'MCD'],
+        ['COCA COLA', 'KO'],          ['PEPSICO', 'PEP'],
+        ['WALMART', 'WMT'],           ['COSTCO', 'COST'],
+        ['BOEING', 'BA'],             ['EXXON', 'XOM'],
+        ['CHEVRON', 'CVX'],           ['OCCIDENTAL', 'OXY'],
+        ['LOCKHEED', 'LMT'],          ['NORTHROP', 'NOC'],
+        ['RAYTHEON', 'RTX'],          ['RTX', 'RTX'],
+        ['FORD MOTOR', 'F'],          ['GENERAL MOTORS', 'GM'],
+
+        // --- Europa ausserhalb Deutschlands
+        ['LVMH', 'MC'],               ['TOTALENERGIES', 'TTE'],
+        ['SHELL', 'SHEL'],            ['NESTLE', 'NESN'],
+        ['NOVARTIS', 'NOVN'],         ['ROCHE', 'ROG'],
+
+        // --- DAX 40 und im Handel beliebte deutsche Werte.
+        //     Boersennamen kuerzen "Deutsche" gern zu "DT." und
+        //     schreiben Umlaute aus (MUENCH., BOERSE).
+        ['SAP', 'SAP'],
+        ['SIEMENS', 'SIE'],
+        ['SIEMENS ENERGY', 'ENR'],
+        ['SIEMENS HEALTHINEERS', 'SHL'], ['SIEMENS HEALTH', 'SHL'],
+        ['ALLIANZ', 'ALV'],
+        ['DEUTSCHE TELEKOM', 'DTE'],  ['DT TELEKOM', 'DTE'],
+        ['DEUTSCHE BANK', 'DBK'],
+        ['DEUTSCHE BOERSE', 'DB1'],   ['DT BOERSE', 'DB1'],
+        ['DEUTSCHE POST', 'DHL'],     ['DT POST', 'DHL'],
+        ['DHL', 'DHL'],
+        ['DEUTSCHE LUFTHANSA', 'LHA'], ['DT LUFTHANSA', 'LHA'],
+        ['LUFTHANSA', 'LHA'],
+        ['MERCEDES BENZ', 'MBG'],
+        ['BMW', 'BMW'],               ['BAY MOTOREN WERKE', 'BMW'],
+        ['BAYERISCHE MOTOREN WERKE', 'BMW'],
+        ['VOLKSWAGEN', 'VOW3'],
+        // Porsche gibt es zweimal: die Porsche AG (Autos) und die
+        // Porsche SE (Holding). Deshalb bleiben AG und SE im Namen
+        // stehen, siehe normal().
+        ['PORSCHE AG', 'P911'],       ['DR ING H C F PORSCHE', 'P911'],
+        ['PORSCHE SE', 'PAH3'],       ['PORSCHE AUTOMOBIL', 'PAH3'],
+        ['PORSCHE AUTOM', 'PAH3'],
+        ['MUENCHENER RUECK', 'MUV2'], ['MUENCH RUECKVERS', 'MUV2'],
+        ['MUNICH RE', 'MUV2'],
+        ['HANNOVER RUECK', 'HNR1'],   ['HANNOVER RE', 'HNR1'],
+        ['INFINEON', 'IFX'],          ['RHEINMETALL', 'RHM'],
+        ['ADIDAS', 'ADS'],            ['AIRBUS', 'AIR'],
+        ['BASF', 'BAS'],              ['BAYER', 'BAYN'],
+        ['BEIERSDORF', 'BEI'],        ['BRENNTAG', 'BNR'],
+        ['COMMERZBANK', 'CBK'],       ['CONTINENTAL', 'CON'],
+        ['DAIMLER TRUCK', 'DTG'],     ['E ON', 'EOAN'],
+        ['FRESENIUS', 'FRE'],
+        ['FRESENIUS MEDICAL CARE', 'FME'], ['FRESENIUS MED', 'FME'],
+        ['GEA', 'G1A'],
+        ['HEIDELBERG MATERIALS', 'HEI'], ['HEIDELBERGCEMENT', 'HEI'],
+        ['HENKEL', 'HEN3'],           ['MERCK', 'MRK'],
+        ['MTU AERO', 'MTX'],          ['QIAGEN', 'QIA'],
+        ['RWE', 'RWE'],               ['SARTORIUS', 'SRT3'],
+        ['SYMRISE', 'SY1'],           ['VONOVIA', 'VNA'],
+        ['ZALANDO', 'ZAL'],           ['HENSOLDT', 'HAG'],
+        ['RENK', 'R3NK'],             ['PUMA', 'PUM'],
+        ['THYSSENKRUPP', 'TKA'],
+
+        // --- Firmen, deren erstes Wort wie ein Markt klingt
+        ['GOLD FIELDS', 'GFI'],
+    ];
 
     /* Fonds heissen fast gleich und sind trotzdem verschieden:
-       "Core MSCI World" und "Core MSCI EM IMI" fallen ueber den Namen
-       auf denselben Schluessel und waeren damit derselbe Wert. Bei
-       ihnen entscheidet deshalb die ISIN, die in der Datei steht. */
+       "Core MSCI World" und "Core MSCI EM IMI" wuerden ueber den Namen
+       zu einem Wert. Bei ihnen entscheidet deshalb die ISIN, die in der
+       Datei steht. */
     const START_ISIN = {
         'IE00B4L5Y983': 'IWDA',   // iShares Core MSCI World
         'IE00BKM4GZ66': 'EIMI',   // iShares Core MSCI EM IMI
@@ -555,42 +718,131 @@
         'IE00B4ND3602': 'SGLN',   // iShares Physical Gold
     };
 
-    /**
-     * Vorschlag fuer das Kuerzel eines Basiswerts.
+    /* Indizes, Rohstoffe, Krypto, Devisen.
      *
-     * Bewusst grob: das erste bedeutungstragende Wort, gekuerzt. Wichtig
-     * ist nicht, dass es das richtige Boersenkuerzel traegt, sondern
-     * dass zwei Schreibweisen desselben Werts denselben Vorschlag
-     * bekommen - dann fallen sie beim Import von allein zusammen.
+     * Eigene Liste mit Mustern statt Namensanfaengen, weil hier die
+     * Verwechslungsgefahr umgekehrt liegt: "GOLD" darf nicht auf
+     * "GOLD FIELDS" (eine Minenaktie) passen und "BITCOIN" nicht auf
+     * "BITCOIN GROUP SE" (eine deutsche Firma). Deshalb muss nach dem
+     * Wort entweder nichts mehr kommen oder ein bekannter Zusatz wie
+     * "SPOT" oder "USD".
+     *
+     * Die Muster laufen gegen den normalisierten Namen: Grossbuchstaben,
+     * Satzzeichen als Leerzeichen. "S&P 500" steht dort als "S P 500",
+     * "EUR/USD" als "EUR USD". */
+    const ZUSATZ = '( (SPOT|KASSA|INDEX|PERFORMANCE INDEX|KURSINDEX|FEINUNZE|'
+        + 'TROY UNZE|TROY OUNCE|PREIS|USD|EUR|FUTURE|ROLLING FUTURE|CFD|ROHOEL|OIL))*$';
+    const MARKT = [
+        [new RegExp('^DAX( 40)?' + ZUSATZ), 'DAX'],
+        [new RegExp('^MDAX' + ZUSATZ), 'MDAX'],
+        [new RegExp('^TECDAX' + ZUSATZ), 'TECDAX'],
+        [new RegExp('^(EURO ?STOXX 50|ESTX 50|ESTX50)' + ZUSATZ), 'ESTX50'],
+        [new RegExp('^(NASDAQ ?100|NASDAQ 100|NDX)' + ZUSATZ), 'NDX'],
+        [new RegExp('^(S P 500|S AND P 500|SP 500|SPX)' + ZUSATZ), 'SPX'],
+        [new RegExp('^(DOW JONES( INDUSTRIAL( AVERAGE)?)?|DJIA)' + ZUSATZ), 'DJI'],
+        [new RegExp('^(NIKKEI( 225)?)' + ZUSATZ), 'N225'],
+        [new RegExp('^(GOLD|GOLDPREIS|XAU)' + ZUSATZ), 'GOLD'],
+        [new RegExp('^(SILBER|SILVER|XAG)' + ZUSATZ), 'SILVER'],
+        [new RegExp('^(BITCOIN|BTC)' + ZUSATZ), 'BTC'],
+        [new RegExp('^(ETHEREUM|ETHER|ETH)' + ZUSATZ), 'ETH'],
+        [new RegExp('^(ROHOEL )?(BRENT( CRUDE)?( OIL)?|ICE BRENT)' + ZUSATZ), 'BRENT'],
+        [new RegExp('^(ROHOEL )?(WTI( CRUDE)?( OIL)?|CRUDE OIL( WTI)?|LIGHT SWEET CRUDE( OIL)?)' + ZUSATZ), 'WTI'],
+        [new RegExp('^(NATURAL GAS|ERDGAS)' + ZUSATZ), 'NATGAS'],
+        [new RegExp('^EUR ?USD' + ZUSATZ), 'EURUSD'],
+    ];
+
+    /**
+     * Name in eine vergleichbare Form bringen.
+     *
+     * Umlaute werden AUSGESCHRIEBEN, nicht gestrichen: Boersennamen
+     * schreiben "MUENCH.RUECKVERS", Anzeigenamen "Münchener Rück".
+     * Vorher wurde aus dem Ü ein Leerzeichen, und "MÜNCHENER" wurde zu
+     * "M NCHENER" - der Wert war nie wiederzufinden.
+     *
+     * Gestrichen werden nur Rechtsformen, die zwischen Anzeige- und
+     * Boersennamen mal da sind und mal nicht (INC, CORP, LTD ...). AG
+     * und SE bleiben stehen: Sie sind das Einzige, was die Porsche AG
+     * von der Porsche SE unterscheidet.
      */
     function normal(name) {
         return String(name || '').toUpperCase()
+            .replace(/Ä/g, 'AE').replace(/Ö/g, 'OE').replace(/Ü/g, 'UE')
+            .replace(/ß/g, 'SS')
+            .normalize('NFD').replace(/[̀-ͯ]/g, '')
             .replace(/[^A-Z0-9 ]/g, ' ')
-            .replace(/\b(INC|CORP|CORPORATION|LTD|LIMITED|PLC|AG|SE|NV|SA|ADR|CL|CLASS|THE|HOLDINGS?|GROUP|CO|COMPANY|TECHNOLOGIES|TECHNOLOGY)\b/g, ' ')
+            .replace(/\b(INC|CORP|CORPORATION|LTD|LIMITED|PLC|NV|SA|ADR|CL|CLASS|THE|HOLDINGS?|GROUP|CO|COMPANY|TECHNOLOGIES|TECHNOLOGY)\b/g, ' ')
             .replace(/\s+/g, ' ').trim();
     }
 
+    // Einmal vorrechnen, laengste Eintraege zuerst: der erste Treffer ist
+    // dann automatisch der laengste.
+    const ANFAENGE = START_LISTE
+        .map(function (e) { return [normal(e[0]), e[1]]; })
+        .filter(function (e) { return e[0]; })
+        .sort(function (a, b) { return b[0].length - a[0].length; });
+
+    /* Alle Kuerzel, die schon fuer etwas Bestimmtes stehen. Die
+       Notloesung "erstes Wort" darf keines davon treffen: "GOLD FIELDS"
+       ergab als erstes Wort "GOLD" - das Kuerzel fuer den Rohstoff. Die
+       Minenaktie waere mit jedem Gold-Turbo zu einem Basiswert
+       zusammengelegt worden. Ebenso "META MATERIALS" mit Meta. */
+    const VERGEBEN = {};
+    START_LISTE.forEach(function (e) { VERGEBEN[e[1]] = true; });
+    MARKT.forEach(function (e) { VERGEBEN[e[1]] = true; });
+    Object.keys(START_ISIN).forEach(function (k) { VERGEBEN[START_ISIN[k]] = true; });
+
+    /** Faengt der Name mit diesem Anfang an - und zwar an einer Wortgrenze? */
+    function beginntMit(n, anfang) {
+        return n === anfang || n.indexOf(anfang + ' ') === 0;
+    }
+
+    /**
+     * Vorschlag fuer das Kuerzel eines Basiswerts.
+     *
+     * Reihenfolge: ISIN (bei Fonds eindeutig) -> Index/Rohstoff/Krypto
+     * -> laengster bekannter Namensanfang -> erstes Wort.
+     *
+     * Das erste Wort als Notloesung ist bewusst grob. Wichtig ist nicht,
+     * dass es das richtige Boersenkuerzel ist, sondern dass zwei
+     * Schreibweisen desselben Werts denselben Vorschlag bekommen. Im
+     * Importbericht laesst es sich ueberschreiben, und die Datenbank
+     * merkt es sich fuer den naechsten Import.
+     */
     function vorschlag(name, isin) {
         const i = String(isin || '').toUpperCase();
         if (START_ISIN[i]) return START_ISIN[i];
+
         const n = normal(name);
-        // Erst der volle Schluessel, dann nur das erste Wort. Ohne den
-        // zweiten Versuch geht "BAIDU A ADR" leer aus: das "A" bleibt
-        // stehen und der Schluessel heisst "BAIDU A".
-        if (START[n.slice(0, 8)]) return START[n.slice(0, 8)];
-        const erstes = (n.split(' ')[0] || 'WERT').slice(0, 8);
-        if (START[erstes]) return START[erstes];
-        return erstes;
+        for (let k = 0; k < MARKT.length; k++) {
+            if (MARKT[k][0].test(n)) return MARKT[k][1];
+        }
+        for (let k = 0; k < ANFAENGE.length; k++) {
+            if (beginntMit(n, ANFAENGE[k][0])) return ANFAENGE[k][1];
+        }
+        const woerter = n.split(' ').filter(Boolean);
+        const erstes = (woerter[0] || 'WERT').slice(0, 8);
+        if (!VERGEBEN[erstes] || woerter.length < 2) return erstes;
+        // Vergeben: die ersten zwei Woerter zusammen. "GOLD MINES INC"
+        // wird "GOLDMINE" statt "GOLD". Haesslich, aber eindeutig - und
+        // im Importbericht ueberschreibbar.
+        return (woerter[0] + woerter[1]).slice(0, 8);
     }
 
     /**
      * Fragt die gemeinsame Instrumententabelle nach bereits bekannten
      * Zuordnungen - erst ueber die ISIN, dann ueber den Namen.
      *
-     * Das ist der Teil, der mit der Zeit besser wird: jeder Nutzer, der
-     * einmal "CLOUDFLARE INC." auf NET setzt, erspart es allen
-     * folgenden. Faellt die Abfrage aus, bleibt der Startbestand -
-     * der Import laeuft weiter, nur mit gröberen Vorschlägen.
+     * Verglichen wird der VOLLE Name, nicht mehr die ersten acht Zeichen.
+     * Vorher reichte es, dass irgendein Nutzer "DEUTSCHE BANK" einmal auf
+     * DBK gesetzt hatte: Jeder spaetere Import bekam dann fuer "DEUTSCHE
+     * TELEKOM" ebenfalls DBK vorgeschlagen - gruen umrandet, also als
+     * gesichert markiert, und damit besonders leicht zu uebernehmen.
+     * Ein falscher Vorschlag, der sich als bekannt ausgibt, ist
+     * schlimmer als gar keiner.
+     *
+     * Der volle Name ist streng genug: Alle Nutzer exportieren aus
+     * derselben App, derselbe Basiswert steht also bei allen gleich in
+     * der Datei.
      */
     async function bekannteKuerzel(namen, isinFuer) {
         const treffer = {};
@@ -603,19 +855,21 @@
             const nachIsin = {}, nachName = {};
             data.forEach(function (i) {
                 if (i.isin) nachIsin[String(i.isin).toUpperCase()] = i.symbol;
-                if (i.name) nachName[normal(i.name).slice(0, 8)] = i.symbol;
-                if (i.symbol) nachName[normal(i.symbol).slice(0, 8)] =
-                    nachName[normal(i.symbol).slice(0, 8)] || i.symbol;
+                if (i.name) nachName[normal(i.name)] = i.symbol;
             });
             namen.forEach(function (n) {
                 const isin = (isinFuer[n] || '').toUpperCase();
                 if (isin && nachIsin[isin]) { treffer[n] = nachIsin[isin]; return; }
-                const k = normal(n).slice(0, 8);
-                if (nachName[k]) treffer[n] = nachName[k];
+                const k = normal(n);
+                if (k && nachName[k]) treffer[n] = nachName[k];
             });
         } catch (e) { /* Vorschlaege sind nie kritisch */ }
         return treffer;
     }
+
+    // Fuer die Tests: die Zuordnung ohne den ganzen Importbericht pruefen.
+    window.cfImportVorschlag = vorschlag;
+    window.cfImportNormal = normal;
 
     window.cfTrImportWaehlen = function () {
         const e = el('trImportInput');
