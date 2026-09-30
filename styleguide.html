@@ -1,0 +1,397 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>CapitalFlow Designsprache</title>
+<link rel="icon" type="image/png" sizes="32x32" href="img/capitalflow-icon-32.png">
+<link rel="stylesheet" href="css/basis.css">
+<style>
+/* Nur das Geruest dieser Seite. Alles, was in der App gebraucht wird,
+   steht in css/basis.css. */
+html { background: #0F1218; }
+body { margin: 0; }
+.sg { max-width: 1120px; margin: 0 auto; padding: 32px 24px 96px; }
+.sg-abschnitt { margin-top: 56px; }
+.sg-abschnitt > h2 {
+    margin: 0 0 4px; font-size: 1.25rem; font-weight: 600; color: var(--cf-text);
+}
+.sg-abschnitt > p.sg-zweck { margin: 0 0 20px; color: var(--cf-text-2); max-width: 70ch; }
+.sg-raster-2 { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+.sg-raster-3 { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
+.sg-reihe { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.sg-marke { display: flex; align-items: center; gap: 12px; }
+.sg-marke img { width: 32px; height: 32px; border-radius: 8px; }
+.sg-marke span { font-size: 1rem; font-weight: 600; }
+.sg-farben { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 12px; }
+.sg-farbe { border: 1px solid var(--cf-rand); border-radius: 8px; overflow: hidden; background: var(--cf-karte); }
+.sg-farbe i { display: block; height: 44px; }
+.sg-farbe div { padding: 10px 12px; font-size: 0.8125rem; }
+.sg-farbe b { display: block; font-weight: 500; color: var(--cf-text); }
+.sg-farbe code { color: var(--cf-text-leise); font-family: inherit; }
+.sg-schrift div { display: flex; gap: 24px; align-items: baseline; padding: 10px 0; border-bottom: 1px solid var(--cf-gitter); }
+.sg-schrift small { flex: 0 0 90px; color: var(--cf-text-leise); font-size: 0.75rem; }
+.sg-formular { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
+.sg-formular .sg-breit { grid-column: 1 / -1; }
+.sg-diagramm { position: relative; }
+.sg-diagramm svg { display: block; width: 100%; height: auto; overflow: visible; }
+.sg-tipp {
+    position: absolute; pointer-events: none; display: none;
+    padding: 8px 10px; border-radius: 6px;
+    background: var(--cf-erhoben); border: 1px solid var(--cf-rand-feld);
+    font-size: 0.8125rem; color: var(--cf-text); white-space: nowrap;
+    font-variant-numeric: tabular-nums;
+}
+.sg-tipp span { display: block; color: var(--cf-text-2); }
+.sg-legende { display: flex; gap: 16px; margin-bottom: 12px; font-size: 0.8125rem; color: var(--cf-text-2); }
+.sg-legende i { display: inline-block; width: 16px; height: 0; border-top: 2px solid; vertical-align: middle; margin-right: 6px; }
+@media (max-width: 860px) {
+    .sg-raster-2, .sg-raster-3, .sg-formular { grid-template-columns: minmax(0, 1fr); }
+}
+</style>
+</head>
+<body class="cf-flaeche">
+<main class="sg">
+
+    <header class="cf-seitenkopf">
+        <div>
+            <div class="sg-marke"><img src="img/capitalflow-icon.png" alt=""><span>CapitalFlow</span></div>
+            <h1 class="cf-seitenkopf-titel" style="margin-top:16px">Designsprache</h1>
+            <p class="cf-seitenkopf-unter">Alle Bausteine aus css/basis.css, mit echten Inhalten. Was hier nicht steht, gibt es in der App nicht.</p>
+        </div>
+    </header>
+
+    <!-- ============================================================ Farbe -->
+    <section class="sg-abschnitt" id="farbe">
+        <h2>Farbe</h2>
+        <p class="sg-zweck">Jeder Ton hat eine Aufgabe. Violett heißt „ausgewählt oder Hauptaktion“, Grün und Rot heißen Ergebnis, Bernstein heißt „nah an der Schwelle“. Deko-Farbe gibt es nicht.</p>
+        <div class="sg-farben">
+            <div class="sg-farbe"><i style="background:#0F1218"></i><div><b>Seite</b><code>#0F1218</code></div></div>
+            <div class="sg-farbe"><i style="background:#161A22"></i><div><b>Karte</b><code>#161A22</code></div></div>
+            <div class="sg-farbe"><i style="background:#1D222C"></i><div><b>Erhoben, Knopf</b><code>#1D222C</code></div></div>
+            <div class="sg-farbe"><i style="background:#2A303C"></i><div><b>Rand</b><code>#2A303C</code></div></div>
+            <div class="sg-farbe"><i style="background:#E7EAF0"></i><div><b>Text</b><code>#E7EAF0</code></div></div>
+            <div class="sg-farbe"><i style="background:#A3ACBB"></i><div><b>Text zweitrangig</b><code>#A3ACBB</code></div></div>
+            <div class="sg-farbe"><i style="background:#6D5AE6"></i><div><b>Hauptknopf, Auswahl</b><code>#6D5AE6 · Text #A596F7</code></div></div>
+            <div class="sg-farbe"><i style="background:#12A38F"></i><div><b>Gewinn</b><code>#12A38F · Text #3CC4A8</code></div></div>
+            <div class="sg-farbe"><i style="background:#E5484D"></i><div><b>Verlust</b><code>#E5484D · Text #F4777B</code></div></div>
+            <div class="sg-farbe"><i style="background:#C98500"></i><div><b>Nah an der Schwelle</b><code>#C98500 · Text #E8AE4F</code></div></div>
+            <div class="sg-farbe"><i style="background:#3987E5"></i><div><b>Serie 1</b><code>#3987E5</code></div></div>
+            <div class="sg-farbe"><i style="background:#D4A5FF"></i><div><b>Serie 2, gestrichelt</b><code>#D4A5FF</code></div></div>
+        </div>
+    </section>
+
+    <!-- ============================================================ Schrift -->
+    <section class="sg-abschnitt" id="schrift">
+        <h2>Schrift</h2>
+        <p class="sg-zweck">IBM Plex Sans, drei Schnitte. Ziffern sind überall gleich breit, damit Beträge in Spalten untereinander stehen. Beschriftungen in normaler Schreibweise, keine Großbuchstaben-Etiketten.</p>
+        <div class="sg-schrift">
+            <div><small>32 · 600</small><span style="font-size:2rem;font-weight:600;letter-spacing:-0.01em">+1.284,50 €</span></div>
+            <div><small>24 · 600</small><span style="font-size:1.5rem;font-weight:600">Auswertung</span></div>
+            <div><small>16 · 600</small><span style="font-size:1rem;font-weight:600">Offene Positionen</span></div>
+            <div><small>14 · 400</small><span>Dein Transaktionsexport aus Trade Republic, als CSV.</span></div>
+            <div><small>13 · 500</small><span style="font-size:0.8125rem;font-weight:500;color:var(--cf-text-2)">Trefferquote</span></div>
+            <div><small>12 · 400</small><span style="font-size:0.75rem;color:var(--cf-text-leise)">Letzte 30 Tage, 41 Trades</span></div>
+        </div>
+    </section>
+
+    <!-- ============================================================ Kennzahlen -->
+    <section class="sg-abschnitt" id="kennzahlen">
+        <h2>Kennzahlen</h2>
+        <p class="sg-zweck">Eine Leiste statt vier einzelner Karten. Farbe nur beim Ergebnis, nicht bei neutralen Werten.</p>
+        <div class="cf-kennzahlen">
+            <div class="cf-kennzahl">
+                <p class="cf-kennzahl-name">Netto-Ergebnis</p>
+                <div class="cf-kennzahl-wert cf-kennzahl-wert--gewinn">+1.284,50 €</div>
+                <div class="cf-kennzahl-fuss">nach 187,00 € Gebühren</div>
+            </div>
+            <div class="cf-kennzahl">
+                <p class="cf-kennzahl-name">Trefferquote</p>
+                <div class="cf-kennzahl-wert">46,3 %</div>
+                <div class="cf-kennzahl-fuss">19 von 41 Trades</div>
+            </div>
+            <div class="cf-kennzahl">
+                <p class="cf-kennzahl-name">Ø Chance-Risiko</p>
+                <div class="cf-kennzahl-wert">1 : 1,8</div>
+                <div class="cf-kennzahl-fuss">nur Trades mit Stop (33)</div>
+            </div>
+            <div class="cf-kennzahl">
+                <p class="cf-kennzahl-name">Größter Verlust</p>
+                <div class="cf-kennzahl-wert cf-kennzahl-wert--verlust">−412,80 €</div>
+                <div class="cf-kennzahl-fuss">DAX Long, 12.09.</div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ============================================================ KO-Abstand -->
+    <section class="sg-abschnitt" id="ko">
+        <h2>KO-Abstand</h2>
+        <p class="sg-zweck">Das Erkennungszeichen der App. Links die KO-Schwelle, die Skala reicht bis 20 % Abstand, Striche bei 5 % und 10 %. Unter 5 % wird es bernsteinfarben und sagt es zusätzlich in Worten.</p>
+        <div class="sg-raster-3">
+            <div class="cf-karte cf-karte--dicht">
+                <div class="cf-karte-kopf"><h3 class="cf-karte-titel">DAX Long</h3><span class="cf-marke">Hebel 14,2</span></div>
+                <div class="cf-ko" data-zone="nah" style="--cf-ko-anteil:0.16">
+                    <div class="cf-ko-kopf"><span class="cf-ko-wert">3,2 %</span><span class="cf-ko-zone">Nah an der Schwelle</span></div>
+                    <div class="cf-ko-skala" role="img" aria-label="3,2 Prozent Abstand zur KO-Schwelle"><span class="cf-ko-fuellung"></span><span class="cf-ko-schwelle"></span></div>
+                    <div class="cf-ko-fuss"><span>KO <b>18.650</b></span><span>Kurs <b>19.267</b></span></div>
+                </div>
+            </div>
+            <div class="cf-karte cf-karte--dicht">
+                <div class="cf-karte-kopf"><h3 class="cf-karte-titel">NVIDIA Short</h3><span class="cf-marke">Hebel 8,9</span></div>
+                <div class="cf-ko" data-zone="eng" style="--cf-ko-anteil:0.38">
+                    <div class="cf-ko-kopf"><span class="cf-ko-wert">7,6 %</span><span class="cf-ko-zone">Eng</span></div>
+                    <div class="cf-ko-skala" role="img" aria-label="7,6 Prozent Abstand zur KO-Schwelle"><span class="cf-ko-fuellung"></span><span class="cf-ko-schwelle"></span></div>
+                    <div class="cf-ko-fuss"><span>KO <b>192,40 $</b></span><span>Kurs <b>178,80 $</b></span></div>
+                </div>
+            </div>
+            <div class="cf-karte cf-karte--dicht">
+                <div class="cf-karte-kopf"><h3 class="cf-karte-titel">Gold Long</h3><span class="cf-marke">Hebel 5,1</span></div>
+                <div class="cf-ko" data-zone="sicher" style="--cf-ko-anteil:0.98">
+                    <div class="cf-ko-kopf"><span class="cf-ko-wert">19,6 %</span><span class="cf-ko-zone">Genug Luft</span></div>
+                    <div class="cf-ko-skala" role="img" aria-label="19,6 Prozent Abstand zur KO-Schwelle"><span class="cf-ko-fuellung"></span><span class="cf-ko-schwelle"></span></div>
+                    <div class="cf-ko-fuss"><span>KO <b>2.108</b></span><span>Kurs <b>2.622</b></span></div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ============================================================ Tabelle -->
+    <section class="sg-abschnitt" id="tabelle">
+        <h2>Tabelle</h2>
+        <p class="sg-zweck">Beträge rechtsbündig, gleich breite Ziffern, Linien nur zwischen den Zeilen. Richtung und Ergebnis als kleine Marke, nicht als farbige Zeile.</p>
+        <div class="cf-tabelle-rahmen">
+            <table class="cf-tabelle">
+                <thead><tr>
+                    <th>Basiswert</th><th>Richtung</th><th>Setup</th>
+                    <th class="cf-rechts">Einsatz</th><th class="cf-rechts">Ergebnis</th><th class="cf-rechts">R</th><th>Geschlossen</th>
+                </tr></thead>
+                <tbody>
+                    <tr><td><span class="cf-tabelle-name">DAX</span><span class="cf-tabelle-unter">Turbo Long · KO 18.200</span></td><td><span class="cf-marke">Long</span></td><td class="cf-zweit">Ausbruch</td><td class="cf-rechts">500,00 €</td><td class="cf-rechts cf-gewinn-text">+182,40 €</td><td class="cf-rechts">+2,1</td><td class="cf-zweit">29.09., 16:42</td></tr>
+                    <tr><td><span class="cf-tabelle-name">NVIDIA</span><span class="cf-tabelle-unter">Turbo Short · KO 192,40</span></td><td><span class="cf-marke">Short</span></td><td class="cf-zweit">Rücklauf</td><td class="cf-rechts">300,00 €</td><td class="cf-rechts cf-verlust-text">−96,00 €</td><td class="cf-rechts">−1,0</td><td class="cf-zweit">26.09., 21:03</td></tr>
+                    <tr><td><span class="cf-tabelle-name">Gold</span><span class="cf-tabelle-unter">Faktor 5 Long</span></td><td><span class="cf-marke">Long</span></td><td class="cf-zweit">Trendfolge</td><td class="cf-rechts">1.000,00 €</td><td class="cf-rechts cf-gewinn-text">+54,10 €</td><td class="cf-rechts cf-leise">ohne Stop</td><td class="cf-zweit">24.09., 10:15</td></tr>
+                    <tr><td><span class="cf-tabelle-name">Deutsche Bank</span><span class="cf-tabelle-unter">Turbo Long · KO 15,80</span></td><td><span class="cf-marke">Long</span></td><td class="cf-zweit">Ausbruch</td><td class="cf-rechts">250,00 €</td><td class="cf-rechts cf-verlust-text">−250,00 €</td><td class="cf-rechts">−2,4</td><td class="cf-zweit">20.09., 09:31 <span class="cf-marke cf-marke--verlust">KO getroffen</span></td></tr>
+                </tbody>
+            </table>
+        </div>
+    </section>
+
+    <!-- ============================================================ Diagramm -->
+    <section class="sg-abschnitt" id="diagramm">
+        <h2>Diagramme</h2>
+        <p class="sg-zweck">Höchstens zwei Linien, beide direkt beschriftet, die zweite gestrichelt. Balken tragen ihren Wert daneben. Grün und Rot nur, wenn das Vorzeichen die Aussage ist.</p>
+        <div class="sg-raster-2">
+            <div class="cf-karte">
+                <div class="cf-karte-kopf"><h3 class="cf-karte-titel">Kontostand</h3><span class="cf-karte-zusatz">September</span></div>
+                <div class="sg-legende"><span><i style="border-color:#3987E5"></i>Tatsächlich</span><span><i style="border-color:#D4A5FF;border-top-style:dashed"></i>Ohne Trades gegen den Plan</span></div>
+                <div class="sg-diagramm" id="linie"><div class="sg-tipp"></div></div>
+            </div>
+            <div class="cf-karte">
+                <div class="cf-karte-kopf"><h3 class="cf-karte-titel">Ergebnis nach Setup</h3><span class="cf-karte-zusatz">41 Trades</span></div>
+                <div class="sg-diagramm" id="balken"><div class="sg-tipp"></div></div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ============================================================ Bedienung -->
+    <section class="sg-abschnitt" id="bedienung">
+        <h2>Knöpfe und Auswahl</h2>
+        <p class="sg-zweck">Pro Bildschirm genau ein violetter Knopf. Alles andere ist grau oder leise. Löschen ist rot umrandet, nie gefüllt.</p>
+        <div class="cf-karte">
+            <div class="sg-reihe">
+                <button class="cf-knopf cf-knopf--haupt" type="button">Trade speichern</button>
+                <button class="cf-knopf" type="button">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v12m0 0l-4-4m4 4l4-4M4 21h16"/></svg>
+                    CSV importieren
+                </button>
+                <button class="cf-knopf cf-knopf--leise" type="button">Abbrechen</button>
+                <button class="cf-knopf cf-knopf--gefahr" type="button">Trade löschen</button>
+                <button class="cf-knopf" type="button" disabled>Gesperrt</button>
+                <button class="cf-knopf cf-knopf--klein" type="button">Bearbeiten</button>
+            </div>
+            <div class="sg-reihe" style="margin-top:20px">
+                <div class="cf-segment" role="group" aria-label="Zeitraum">
+                    <button class="cf-segment-teil" type="button" aria-pressed="false">7 Tage</button>
+                    <button class="cf-segment-teil" type="button" aria-pressed="true">30 Tage</button>
+                    <button class="cf-segment-teil" type="button" aria-pressed="false">Jahr</button>
+                    <button class="cf-segment-teil" type="button" aria-pressed="false">Alles</button>
+                </div>
+                <span class="cf-marke cf-marke--gewinn">Gewinn</span>
+                <span class="cf-marke cf-marke--verlust">Verlust</span>
+                <span class="cf-marke cf-marke--warnung">Stop fehlt</span>
+                <span class="cf-marke cf-marke--akzent">Importiert</span>
+                <span class="cf-marke">Faktor 5</span>
+            </div>
+        </div>
+    </section>
+
+    <!-- ============================================================ Formular -->
+    <section class="sg-abschnitt" id="formular">
+        <h2>Formular</h2>
+        <p class="sg-zweck">Beschriftung über dem Feld, Einheit im Feld, Fehler sagt, was zu tun ist.</p>
+        <form class="cf-karte" onsubmit="return false">
+            <div class="sg-formular">
+                <label class="cf-feld">
+                    <span class="cf-feld-name">Basiswert</span>
+                    <input class="cf-eingabe" value="DAX">
+                </label>
+                <label class="cf-feld">
+                    <span class="cf-feld-name">Setup</span>
+                    <select class="cf-eingabe"><option>Ausbruch</option><option>Rücklauf</option><option>Trendfolge</option></select>
+                </label>
+                <label class="cf-feld">
+                    <span class="cf-feld-name">KO-Schwelle</span>
+                    <span class="cf-eingabe-mit-einheit"><input class="cf-eingabe" inputmode="decimal" value="18.200"><span class="cf-einheit">Pkt.</span></span>
+                </label>
+                <label class="cf-feld">
+                    <span class="cf-feld-name">Einsatz</span>
+                    <span class="cf-eingabe-mit-einheit"><input class="cf-eingabe" inputmode="decimal" value="500,00"><span class="cf-einheit">€</span></span>
+                </label>
+                <label class="cf-feld cf-feld--fehler">
+                    <span class="cf-feld-name">Stop</span>
+                    <span class="cf-eingabe-mit-einheit"><input class="cf-eingabe" inputmode="decimal" value="18.100" aria-invalid="true" aria-describedby="stop-hilfe"><span class="cf-einheit">Pkt.</span></span>
+                    <span class="cf-feld-hilfe" id="stop-hilfe">Stop liegt unter der KO-Schwelle. Setz ihn über 18.200, sonst greift er nie.</span>
+                </label>
+                <label class="cf-feld">
+                    <span class="cf-feld-name">Ausstieg</span>
+                    <input class="cf-eingabe" type="datetime-local" value="2026-09-29T16:42">
+                    <span class="cf-feld-hilfe">Uhrzeit aus dem Import, änderbar.</span>
+                </label>
+                <label class="cf-feld sg-breit">
+                    <span class="cf-feld-name">Notiz</span>
+                    <textarea class="cf-eingabe" placeholder="Warum rein, warum raus?">Ausbruch über das Vortageshoch, Volumen dabei.</textarea>
+                </label>
+            </div>
+            <div class="sg-reihe" style="margin-top:20px;justify-content:flex-end">
+                <button class="cf-knopf cf-knopf--leise" type="button">Abbrechen</button>
+                <button class="cf-knopf cf-knopf--haupt" type="submit">Änderungen speichern</button>
+            </div>
+        </form>
+    </section>
+
+    <!-- ============================================================ Rueckmeldung -->
+    <section class="sg-abschnitt" id="rueckmeldung">
+        <h2>Hinweise und leere Zustände</h2>
+        <p class="sg-zweck">Hinweise sagen, was passiert ist und was jetzt zu tun ist. Ein leerer Bildschirm ist eine Aufforderung, keine Entschuldigung.</p>
+        <div style="display:grid;gap:12px">
+            <div class="cf-hinweis cf-hinweis--info">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 8h.01"/></svg>
+                <div><b>38 Trades importiert.</b> 3 Zeilen waren Sparplan-Käufe und wurden übersprungen.</div>
+            </div>
+            <div class="cf-hinweis cf-hinweis--warnung">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3l10 18H2L12 3z"/><path d="M12 10v4M12 17h.01"/></svg>
+                <div><b>8 Trades ohne Stop.</b> Sie fehlen im Chance-Risiko-Schnitt. Trag den Stop im Journal nach.</div>
+            </div>
+            <div class="cf-hinweis cf-hinweis--fehler">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M15 9l-6 6M9 9l6 6"/></svg>
+                <div><b>Datei nicht erkannt.</b> Erwartet wird der Transaktionsexport aus Trade Republic (CSV). Kontoauszüge als PDF gehen nicht.</div>
+            </div>
+            <div class="cf-leer" style="margin-top:12px">
+                <p class="cf-leer-titel">Noch keine Trades</p>
+                <p class="cf-leer-text">Lade deinen Transaktionsexport hoch. Die App erkennt Knock-Outs und Faktor-Zertifikate selbst.</p>
+                <button class="cf-knopf cf-knopf--haupt" type="button">CSV importieren</button>
+            </div>
+        </div>
+    </section>
+
+</main>
+
+<script>
+/* Zwei kleine SVG-Diagramme, nur zur Anschauung der Regeln.
+   Hover: Fadenkreuz auf der Linie, Tooltip je Balken. */
+(function () {
+    const NS = 'http://www.w3.org/2000/svg';
+    const eur = n => (n >= 0 ? '+' : '−') + Math.abs(n).toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' €';
+    const eurFlach = n => n.toLocaleString('de-DE', { minimumFractionDigits: 0, maximumFractionDigits: 0 }) + ' €';
+    function el(tag, attr, eltern) {
+        const e = document.createElementNS(NS, tag);
+        for (const k in attr) e.setAttribute(k, attr[k]);
+        if (eltern) eltern.appendChild(e);
+        return e;
+    }
+
+    /* ---------- Linie */
+    const ist =   [5000, 5080, 5040, 5190, 5150, 5320, 5260, 5410, 5480, 5390, 5560, 5620, 5510, 5700, 5760, 5690, 5850, 5920, 5870, 6010, 6090, 6040, 6180, 6284];
+    const plan =  [5000, 5100, 5110, 5260, 5290, 5450, 5470, 5630, 5720, 5700, 5870, 5950, 5930, 6120, 6200, 6200, 6360, 6440, 6450, 6600, 6690, 6700, 6840, 6950];
+    const B = 520, H = 240, L = 56, R = 64, O = 12, U = 26;
+    const halter = document.getElementById('linie');
+    const svg = el('svg', { viewBox: `0 0 ${B} ${H}`, role: 'img', 'aria-label': 'Kontostand im September, tatsächlich und ohne Trades gegen den Plan' });
+    halter.insertBefore(svg, halter.firstChild);
+    const min = 4900, max = 7000;
+    const x = i => L + i * (B - L - R) / (ist.length - 1);
+    const y = v => O + (1 - (v - min) / (max - min)) * (H - O - U);
+    [5000, 6000, 7000].forEach(v => {
+        el('line', { x1: L, x2: B - R, y1: y(v), y2: y(v), stroke: '#232834', 'stroke-width': 1 }, svg);
+        const t = el('text', { x: L - 8, y: y(v) + 4, fill: '#848D9D', 'font-size': 11, 'text-anchor': 'end' }, svg);
+        t.textContent = eurFlach(v);
+    });
+    const pfad = d => d.map((v, i) => (i ? 'L' : 'M') + x(i).toFixed(1) + ' ' + y(v).toFixed(1)).join(' ');
+    el('path', { d: pfad(plan), fill: 'none', stroke: '#D4A5FF', 'stroke-width': 2, 'stroke-dasharray': '5 4', 'stroke-linejoin': 'round' }, svg);
+    el('path', { d: pfad(ist), fill: 'none', stroke: '#3987E5', 'stroke-width': 2, 'stroke-linejoin': 'round' }, svg);
+    // direkte Beschriftung am Ende
+    const n = ist.length - 1;
+    const b1 = el('text', { x: x(n) + 8, y: y(ist[n]) + 14, fill: '#E7EAF0', 'font-size': 12, 'font-weight': 500 }, svg); b1.textContent = eurFlach(ist[n]);
+    const b2 = el('text', { x: x(n) + 8, y: y(plan[n]) - 6, fill: '#A3ACBB', 'font-size': 12 }, svg); b2.textContent = eurFlach(plan[n]);
+    ['1.9.', '15.9.', '30.9.'].forEach((t, k) => {
+        const i = [0, 11, n][k];
+        const e = el('text', { x: x(i), y: H - 6, fill: '#848D9D', 'font-size': 11, 'text-anchor': k === 0 ? 'start' : k === 2 ? 'end' : 'middle' }, svg);
+        e.textContent = t;
+    });
+    const kreuz = el('line', { y1: O, y2: H - U, stroke: '#4A5366', 'stroke-width': 1, visibility: 'hidden' }, svg);
+    const p1 = el('circle', { r: 4, fill: '#3987E5', stroke: '#161A22', 'stroke-width': 2, visibility: 'hidden' }, svg);
+    const p2 = el('circle', { r: 4, fill: '#D4A5FF', stroke: '#161A22', 'stroke-width': 2, visibility: 'hidden' }, svg);
+    const fang = el('rect', { x: L, y: 0, width: B - L - R, height: H, fill: 'transparent' }, svg);
+    const tipp1 = halter.querySelector('.sg-tipp');
+    function zeige(ev) {
+        const r = svg.getBoundingClientRect();
+        const sx = (ev.clientX - r.left) * B / r.width;
+        const i = Math.max(0, Math.min(n, Math.round((sx - L) / ((B - L - R) / n))));
+        [kreuz, p1, p2].forEach(e => e.setAttribute('visibility', 'visible'));
+        kreuz.setAttribute('x1', x(i)); kreuz.setAttribute('x2', x(i));
+        p1.setAttribute('cx', x(i)); p1.setAttribute('cy', y(ist[i]));
+        p2.setAttribute('cx', x(i)); p2.setAttribute('cy', y(plan[i]));
+        tipp1.innerHTML = `Handelstag ${i + 1}<span>Tatsächlich ${eurFlach(ist[i])}</span><span>Ohne Planbruch ${eurFlach(plan[i])}</span>`;
+        tipp1.style.display = 'block';
+        const px = x(i) * r.width / B;
+        tipp1.style.left = Math.min(px + 12, r.width - tipp1.offsetWidth) + 'px';
+        tipp1.style.top = '40px';
+    }
+    function weg() { [kreuz, p1, p2].forEach(e => e.setAttribute('visibility', 'hidden')); tipp1.style.display = 'none'; }
+    fang.addEventListener('pointermove', zeige);
+    fang.addEventListener('pointerleave', weg);
+
+    /* ---------- Balken: ein Ton, Wert daneben; Vorzeichen als Text */
+    const setups = [['Ausbruch', 842.3, 17], ['Trendfolge', 511.9, 9], ['Rücklauf', -69.7, 11], ['Ohne Setup', -187.0, 4]];
+    const BB = 520, zeile = 56, BL = 110, BR = 96;
+    const bh = el('svg', { viewBox: `0 0 ${BB} ${setups.length * zeile + 8}`, role: 'img', 'aria-label': 'Ergebnis nach Setup' });
+    const halter2 = document.getElementById('balken');
+    halter2.insertBefore(bh, halter2.firstChild);
+    const tipp2 = halter2.querySelector('.sg-tipp');
+    const maxAbs = Math.max(...setups.map(s => Math.abs(s[1])));
+    const null0 = BL + (BB - BL - BR) * (Math.max(...setups.map(s => -Math.min(0, s[1]))) / (maxAbs + Math.max(...setups.map(s => -Math.min(0, s[1])))));
+    const skala = (BB - BL - BR - (null0 - BL)) / maxAbs;
+    el('line', { x1: null0, x2: null0, y1: 0, y2: setups.length * zeile, stroke: '#3A4252', 'stroke-width': 1 }, bh);
+    setups.forEach((s, k) => {
+        const yy = k * zeile + 19, h = 18;
+        const w = Math.abs(s[1]) * skala;
+        const x0 = s[1] >= 0 ? null0 + 1 : null0 - w - 1;
+        const name = el('text', { x: 0, y: yy + 13, fill: '#A3ACBB', 'font-size': 12 }, bh); name.textContent = s[0];
+        const farbe = s[1] >= 0 ? '#12A38F' : '#E5484D';
+        const bal = el('rect', { x: x0, y: yy, width: Math.max(w, 2), height: h, rx: 3, fill: farbe }, bh);
+        const wert = el('text', { x: s[1] >= 0 ? null0 + w + 8 : null0 + 8, y: yy + 13, fill: '#E7EAF0', 'font-size': 12, 'font-weight': 500 }, bh);
+        wert.textContent = eur(s[1]);
+        const ziel = el('rect', { x: 0, y: k * zeile + 4, width: BB, height: zeile - 8, fill: 'transparent' }, bh);
+        ziel.addEventListener('pointerenter', () => {
+            bal.setAttribute('opacity', '0.8');
+            tipp2.innerHTML = `${s[0]}<span>${s[2]} Trades, Ø ${eur(s[1] / s[2])}</span>`;
+            tipp2.style.display = 'block';
+            const r = bh.getBoundingClientRect();
+            tipp2.style.left = Math.min(r.width * 0.55, r.width - tipp2.offsetWidth) + 'px';
+            tipp2.style.top = ((k * zeile + 46) * r.width / BB) + 'px';
+        });
+        ziel.addEventListener('pointerleave', () => { bal.setAttribute('opacity', '1'); tipp2.style.display = 'none'; });
+    });
+})();
+</script>
+</body>
+</html>

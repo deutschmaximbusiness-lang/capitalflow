@@ -1,0 +1,488 @@
+/* ==========================================================================
+   CapitalFlow Basis  (M6a, Designsprache "Nuechterner Finanz-Look")
+
+   Regeln, die diese Datei einhaelt, damit sie gefahrlos in app.html
+   geladen werden kann, bevor die Bildschirme umgestellt sind:
+   - Nur Klassen mit Praefix  cf-  und Variablen mit Praefix  --cf- .
+   - Keine Element-Selektoren (kein body, button, table ...). Ein Bildschirm
+     sieht erst anders aus, wenn er die Klassen bewusst benutzt.
+
+   Farbe hat genau eine Aufgabe pro Ton:
+   - Violett: Auswahl, Fokus, Hauptknopf. Sonst nirgends.
+   - Gruen / Rot: Ergebnis (Gewinn / Verlust). Nie als Deko.
+   - Bernstein: "nah an der KO-Schwelle" bzw. Warnung. Immer mit Text.
+   - Serien in Diagrammen: hoechstens zwei (Blau, Flieder), immer mit
+     direkter Beschriftung, die zweite gestrichelt.
+   ========================================================================== */
+
+/* Schrift liegt im Repo statt bei Google: keine Anfrage an Google-Server
+   beim Oeffnen (DSGVO), und sie funktioniert offline in der installierten App.
+   IBM Plex hat von Haus aus gleich breite Ziffern. Lizenz: fonts/OFL-IBM-Plex.txt */
+@font-face {
+    font-family: 'IBM Plex Sans';
+    font-style: normal;
+    font-weight: 400;
+    font-display: swap;
+    src: url('../fonts/ibm-plex-sans-latin-400-normal.woff2') format('woff2');
+}
+@font-face {
+    font-family: 'IBM Plex Sans';
+    font-style: normal;
+    font-weight: 500;
+    font-display: swap;
+    src: url('../fonts/ibm-plex-sans-latin-500-normal.woff2') format('woff2');
+}
+@font-face {
+    font-family: 'IBM Plex Sans';
+    font-style: normal;
+    font-weight: 600;
+    font-display: swap;
+    src: url('../fonts/ibm-plex-sans-latin-600-normal.woff2') format('woff2');
+}
+
+:root {
+    /* Flaechen */
+    --cf-seite: #0F1218;
+    --cf-karte: #161A22;
+    --cf-erhoben: #1D222C;
+    --cf-rand: #2A303C;
+    --cf-rand-feld: #3A4252;
+
+    /* Text */
+    --cf-text: #E7EAF0;
+    --cf-text-2: #A3ACBB;
+    --cf-text-leise: #848D9D;
+
+    /* Akzent */
+    --cf-akzent: #6D5AE6;          /* Flaeche Hauptknopf, weisser Text 4.9:1 */
+    --cf-akzent-druck: #5E4BD8;
+    --cf-akzent-text: #A596F7;
+    --cf-akzent-grund: rgba(109, 90, 230, 0.14);
+
+    /* Ergebnis und Zustand: Text-Ton / Flaechen-Ton / Grund */
+    --cf-gewinn: #3CC4A8;
+    --cf-gewinn-flaeche: #12A38F;
+    --cf-gewinn-grund: rgba(18, 163, 143, 0.12);
+    --cf-verlust: #F4777B;
+    --cf-verlust-flaeche: #E5484D;
+    --cf-verlust-grund: rgba(229, 72, 77, 0.12);
+    --cf-warnung: #E8AE4F;
+    --cf-warnung-flaeche: #C98500;
+    --cf-warnung-grund: rgba(201, 133, 0, 0.13);
+
+    /* Diagramm-Serien (validiert gegen #161A22, siehe styleguide.html) */
+    --cf-serie-1: #3987E5;
+    --cf-serie-2: #D4A5FF;
+    --cf-gitter: #232834;
+
+    /* Schrift */
+    --cf-schrift: 'IBM Plex Sans', system-ui, -apple-system, 'Segoe UI', sans-serif;
+    --cf-t-12: 0.75rem;
+    --cf-t-13: 0.8125rem;
+    --cf-t-14: 0.875rem;
+    --cf-t-16: 1rem;
+    --cf-t-20: 1.25rem;
+    --cf-t-24: 1.5rem;
+    --cf-t-32: 2rem;
+
+    /* Abstand */
+    --cf-a-1: 4px;
+    --cf-a-2: 8px;
+    --cf-a-3: 12px;
+    --cf-a-4: 16px;
+    --cf-a-5: 24px;
+    --cf-a-6: 32px;
+    --cf-a-7: 48px;
+
+    /* Radius: klein fuer Marken, mittel fuer Bedienelemente, gross fuer Karten */
+    --cf-r-1: 4px;
+    --cf-r-2: 6px;
+    --cf-r-3: 8px;
+
+    --cf-fokus: 0 0 0 2px var(--cf-seite), 0 0 0 4px var(--cf-akzent-text);
+    --cf-dauer: 120ms;
+}
+
+/* ------------------------------------------------------------ Grundflaeche */
+.cf-flaeche {
+    background: var(--cf-seite);
+    color: var(--cf-text);
+    font-family: var(--cf-schrift);
+    font-size: var(--cf-t-14);
+    line-height: 1.5;
+    font-feature-settings: 'tnum' 1;
+    -webkit-font-smoothing: antialiased;
+}
+.cf-zahl { font-variant-numeric: tabular-nums; font-feature-settings: 'tnum' 1; }
+.cf-gewinn-text { color: var(--cf-gewinn); }
+.cf-verlust-text { color: var(--cf-verlust); }
+.cf-leise { color: var(--cf-text-leise); }
+
+/* ------------------------------------------------------------ Seitenkopf */
+.cf-seitenkopf {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: var(--cf-a-4);
+    flex-wrap: wrap;
+    padding-bottom: var(--cf-a-4);
+    margin-bottom: var(--cf-a-5);
+    border-bottom: 1px solid var(--cf-rand);
+}
+.cf-seitenkopf-titel {
+    margin: 0;
+    font-size: var(--cf-t-24);
+    font-weight: 600;
+    line-height: 1.25;
+    letter-spacing: -0.01em;
+    color: var(--cf-text);
+}
+.cf-seitenkopf-unter {
+    margin: var(--cf-a-1) 0 0;
+    font-size: var(--cf-t-14);
+    color: var(--cf-text-2);
+}
+.cf-seitenkopf-aktionen { display: flex; gap: var(--cf-a-2); flex-wrap: wrap; }
+
+/* ------------------------------------------------------------ Karte */
+.cf-karte {
+    background: var(--cf-karte);
+    border: 1px solid var(--cf-rand);
+    border-radius: var(--cf-r-3);
+    padding: var(--cf-a-5);
+    min-width: 0;
+}
+.cf-karte-kopf {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: var(--cf-a-3);
+    margin-bottom: var(--cf-a-4);
+}
+.cf-karte-titel {
+    margin: 0;
+    font-size: var(--cf-t-16);
+    font-weight: 600;
+    color: var(--cf-text);
+}
+.cf-karte-zusatz { font-size: var(--cf-t-13); color: var(--cf-text-leise); }
+.cf-karte--dicht { padding: var(--cf-a-4); }
+
+/* ------------------------------------------------------------ Kennzahl */
+.cf-kennzahlen {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+    gap: 1px;
+    background: var(--cf-rand);             /* Trennlinien statt vier Karten */
+    border: 1px solid var(--cf-rand);
+    border-radius: var(--cf-r-3);
+    overflow: hidden;
+}
+.cf-kennzahl {
+    background: var(--cf-karte);
+    padding: var(--cf-a-4) var(--cf-a-5);
+    min-width: 0;
+}
+.cf-kennzahl-name {
+    font-size: var(--cf-t-13);
+    color: var(--cf-text-2);
+    margin: 0 0 var(--cf-a-1);
+}
+.cf-kennzahl-wert {
+    font-size: var(--cf-t-24);
+    font-weight: 600;
+    line-height: 1.2;
+    color: var(--cf-text);
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+}
+.cf-kennzahl-wert--gewinn { color: var(--cf-gewinn); }
+.cf-kennzahl-wert--verlust { color: var(--cf-verlust); }
+.cf-kennzahl-fuss {
+    margin-top: var(--cf-a-1);
+    font-size: var(--cf-t-12);
+    color: var(--cf-text-leise);
+    font-variant-numeric: tabular-nums;
+}
+
+/* ------------------------------------------------------------ Knoepfe */
+.cf-knopf {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--cf-a-2);
+    min-height: 36px;
+    padding: 0 var(--cf-a-4);
+    border: 1px solid var(--cf-rand-feld);
+    border-radius: var(--cf-r-2);
+    background: var(--cf-erhoben);
+    color: var(--cf-text);
+    font-family: var(--cf-schrift);
+    font-size: var(--cf-t-14);
+    font-weight: 500;
+    line-height: 1;
+    text-decoration: none;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: background-color var(--cf-dauer), border-color var(--cf-dauer), color var(--cf-dauer);
+}
+.cf-knopf:hover { background: #252B37; border-color: #4A5366; }
+.cf-knopf:focus-visible { outline: none; box-shadow: var(--cf-fokus); }
+.cf-knopf:disabled,
+.cf-knopf[aria-disabled="true"] { opacity: 0.45; cursor: not-allowed; }
+.cf-knopf svg { width: 16px; height: 16px; flex: 0 0 auto; }
+
+.cf-knopf--haupt { background: var(--cf-akzent); border-color: var(--cf-akzent); color: #FFFFFF; }
+.cf-knopf--haupt:hover { background: var(--cf-akzent-druck); border-color: var(--cf-akzent-druck); }
+
+.cf-knopf--leise { background: transparent; border-color: transparent; color: var(--cf-text-2); }
+.cf-knopf--leise:hover { background: var(--cf-erhoben); border-color: transparent; color: var(--cf-text); }
+
+.cf-knopf--gefahr { background: transparent; border-color: rgba(229, 72, 77, 0.5); color: var(--cf-verlust); }
+.cf-knopf--gefahr:hover { background: var(--cf-verlust-grund); border-color: var(--cf-verlust-flaeche); }
+
+.cf-knopf--klein { min-height: 28px; padding: 0 var(--cf-a-3); font-size: var(--cf-t-13); }
+
+/* ------------------------------------------------------------ Felder */
+.cf-feld { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.cf-feld-name { font-size: var(--cf-t-13); font-weight: 500; color: var(--cf-text-2); }
+.cf-eingabe {
+    width: 100%;
+    box-sizing: border-box;
+    min-height: 36px;
+    padding: 0 var(--cf-a-3);
+    border: 1px solid var(--cf-rand-feld);
+    border-radius: var(--cf-r-2);
+    background: var(--cf-seite);
+    color: var(--cf-text);
+    font-family: var(--cf-schrift);
+    font-size: var(--cf-t-14);
+    font-variant-numeric: tabular-nums;
+    transition: border-color var(--cf-dauer);
+}
+.cf-eingabe::placeholder { color: var(--cf-text-leise); }
+.cf-eingabe:hover { border-color: #4A5366; }
+.cf-eingabe:focus { outline: none; border-color: var(--cf-akzent-text); box-shadow: 0 0 0 3px var(--cf-akzent-grund); }
+textarea.cf-eingabe { padding: var(--cf-a-2) var(--cf-a-3); min-height: 80px; line-height: 1.5; resize: vertical; }
+select.cf-eingabe {
+    appearance: none;
+    padding-right: 32px;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath d='M3 4.5l3 3 3-3' fill='none' stroke='%23A3ACBB' stroke-width='1.5'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 10px center;
+}
+.cf-feld-hilfe { font-size: var(--cf-t-12); color: var(--cf-text-leise); }
+.cf-feld--fehler .cf-eingabe { border-color: var(--cf-verlust-flaeche); }
+.cf-feld--fehler .cf-feld-hilfe { color: var(--cf-verlust); }
+.cf-eingabe-mit-einheit { position: relative; }
+.cf-eingabe-mit-einheit .cf-eingabe { padding-right: 40px; }
+.cf-einheit {
+    position: absolute; right: var(--cf-a-3); top: 50%;
+    transform: translateY(-50%);
+    font-size: var(--cf-t-13); color: var(--cf-text-leise);
+    pointer-events: none;
+}
+
+/* ------------------------------------------------------------ Segment */
+.cf-segment {
+    display: inline-flex;
+    padding: 2px;
+    gap: 2px;
+    border: 1px solid var(--cf-rand);
+    border-radius: var(--cf-r-2);
+    background: var(--cf-seite);
+}
+.cf-segment-teil {
+    min-height: 28px;
+    padding: 0 var(--cf-a-3);
+    border: 0;
+    border-radius: var(--cf-r-1);
+    background: transparent;
+    color: var(--cf-text-2);
+    font-family: var(--cf-schrift);
+    font-size: var(--cf-t-13);
+    font-weight: 500;
+    cursor: pointer;
+    transition: background-color var(--cf-dauer), color var(--cf-dauer);
+}
+.cf-segment-teil:hover { color: var(--cf-text); }
+.cf-segment-teil:focus-visible { outline: none; box-shadow: 0 0 0 2px var(--cf-akzent-text); }
+.cf-segment-teil[aria-pressed="true"],
+.cf-segment-teil[aria-selected="true"] { background: var(--cf-erhoben); color: var(--cf-text); box-shadow: inset 0 0 0 1px var(--cf-rand-feld); }
+
+/* ------------------------------------------------------------ Marken */
+.cf-marke {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    height: 22px;
+    padding: 0 var(--cf-a-2);
+    border-radius: var(--cf-r-1);
+    background: var(--cf-erhoben);
+    color: var(--cf-text-2);
+    font-size: var(--cf-t-12);
+    font-weight: 500;
+    line-height: 1;
+    white-space: nowrap;
+}
+.cf-marke--gewinn { background: var(--cf-gewinn-grund); color: var(--cf-gewinn); }
+.cf-marke--verlust { background: var(--cf-verlust-grund); color: var(--cf-verlust); }
+.cf-marke--warnung { background: var(--cf-warnung-grund); color: var(--cf-warnung); }
+.cf-marke--akzent { background: var(--cf-akzent-grund); color: var(--cf-akzent-text); }
+.cf-marke svg { width: 12px; height: 12px; }
+
+/* ------------------------------------------------------------ Tabelle */
+.cf-tabelle-rahmen {
+    overflow-x: auto;
+    border: 1px solid var(--cf-rand);
+    border-radius: var(--cf-r-3);
+    background: var(--cf-karte);
+}
+.cf-tabelle {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: var(--cf-t-14);
+    font-variant-numeric: tabular-nums;
+}
+.cf-tabelle th {
+    padding: 10px var(--cf-a-4);
+    text-align: left;
+    font-size: var(--cf-t-12);
+    font-weight: 500;
+    color: var(--cf-text-leise);
+    border-bottom: 1px solid var(--cf-rand);
+    white-space: nowrap;
+}
+.cf-tabelle td {
+    padding: 11px var(--cf-a-4);
+    color: var(--cf-text);
+    border-bottom: 1px solid var(--cf-gitter);
+    white-space: nowrap;
+}
+.cf-tabelle tr:last-child td { border-bottom: 0; }
+.cf-tabelle tbody tr { transition: background-color var(--cf-dauer); }
+.cf-tabelle tbody tr:hover { background: rgba(255, 255, 255, 0.025); }
+.cf-tabelle .cf-rechts { text-align: right; }
+.cf-tabelle .cf-zweit { color: var(--cf-text-2); }
+.cf-tabelle .cf-gewinn-text { color: var(--cf-gewinn); }
+.cf-tabelle .cf-verlust-text { color: var(--cf-verlust); }
+.cf-tabelle .cf-leise { color: var(--cf-text-leise); }
+.cf-tabelle-name { font-weight: 500; }
+.cf-tabelle-unter { display: block; font-size: var(--cf-t-12); color: var(--cf-text-leise); font-weight: 400; }
+
+/* ------------------------------------------------------------ Hinweis */
+.cf-hinweis {
+    display: flex;
+    gap: var(--cf-a-3);
+    padding: var(--cf-a-3) var(--cf-a-4);
+    border: 1px solid var(--cf-rand);
+    border-left-width: 3px;
+    border-radius: var(--cf-r-2);
+    background: var(--cf-karte);
+    color: var(--cf-text-2);
+    font-size: var(--cf-t-14);
+    line-height: 1.5;
+}
+.cf-hinweis svg { flex: 0 0 auto; width: 18px; height: 18px; margin-top: 1px; }
+.cf-hinweis b { color: var(--cf-text); font-weight: 600; }
+.cf-hinweis--info { border-left-color: var(--cf-akzent-text); }
+.cf-hinweis--info svg { color: var(--cf-akzent-text); }
+.cf-hinweis--warnung { border-left-color: var(--cf-warnung-flaeche); }
+.cf-hinweis--warnung svg { color: var(--cf-warnung); }
+.cf-hinweis--fehler { border-left-color: var(--cf-verlust-flaeche); }
+.cf-hinweis--fehler svg { color: var(--cf-verlust); }
+
+/* ------------------------------------------------------------ Leerer Zustand */
+.cf-leer {
+    padding: var(--cf-a-7) var(--cf-a-5);
+    border: 1px dashed var(--cf-rand-feld);
+    border-radius: var(--cf-r-3);
+    text-align: center;
+}
+.cf-leer-titel { margin: 0 0 var(--cf-a-2); font-size: var(--cf-t-16); font-weight: 600; color: var(--cf-text); }
+.cf-leer-text { margin: 0 auto var(--cf-a-4); max-width: 44ch; color: var(--cf-text-2); }
+
+/* ------------------------------------------------------------ KO-Abstand
+   Das eine markante Element. Die Skala laeuft von der KO-Schwelle (links)
+   bis 20 % Abstand (rechts). Striche bei 5 % und 10 %. Die Fuellung zeigt,
+   wie viel Luft der Kurs noch hat. Zone kommt als data-zone und steht
+   immer zusaetzlich als Text daneben: sicher | eng | nah.
+   Breite ueber --cf-ko-anteil (0..1), gesetzt von JS. */
+.cf-ko { --cf-ko-anteil: 0.5; --cf-ko-ton: var(--cf-text-2); min-width: 0; }
+.cf-ko[data-zone="eng"] { --cf-ko-ton: var(--cf-text); }
+.cf-ko[data-zone="nah"] { --cf-ko-ton: var(--cf-warnung); }
+
+.cf-ko-kopf {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: var(--cf-a-3);
+    margin-bottom: var(--cf-a-2);
+}
+.cf-ko-wert {
+    font-size: var(--cf-t-20);
+    font-weight: 600;
+    color: var(--cf-ko-ton);
+    font-variant-numeric: tabular-nums;
+}
+.cf-ko-zone { font-size: var(--cf-t-12); font-weight: 500; color: var(--cf-ko-ton); }
+.cf-ko[data-zone="nah"] .cf-ko-zone::before {
+    content: '';
+    display: inline-block;
+    width: 0; height: 0;
+    margin-right: 5px;
+    border-left: 4px solid transparent;
+    border-right: 4px solid transparent;
+    border-bottom: 7px solid currentColor;
+    vertical-align: 0;
+}
+.cf-ko-skala {
+    position: relative;
+    height: 8px;
+    border-radius: 2px;
+    background: var(--cf-erhoben);
+    /* Striche bei 5 % und 10 % von 20 % */
+    background-image:
+        linear-gradient(90deg, transparent calc(25% - 1px), var(--cf-rand-feld) calc(25% - 1px), var(--cf-rand-feld) 25%, transparent 25%),
+        linear-gradient(90deg, transparent calc(50% - 1px), var(--cf-rand-feld) calc(50% - 1px), var(--cf-rand-feld) 50%, transparent 50%);
+}
+.cf-ko-fuellung {
+    position: absolute;
+    left: 0; top: 0; bottom: 0;
+    width: calc(var(--cf-ko-anteil) * 100%);
+    min-width: 2px;
+    border-radius: 2px;
+    background: #6B7486;
+}
+.cf-ko[data-zone="eng"] .cf-ko-fuellung { background: #9AA3B3; }
+.cf-ko[data-zone="nah"] .cf-ko-fuellung { background: var(--cf-warnung-flaeche); }
+.cf-ko-schwelle {
+    position: absolute;
+    left: -1px; top: -4px; bottom: -4px;
+    width: 2px;
+    background: var(--cf-verlust-flaeche);
+}
+.cf-ko-fuss {
+    display: flex;
+    justify-content: space-between;
+    gap: var(--cf-a-3);
+    margin-top: var(--cf-a-2);
+    font-size: var(--cf-t-12);
+    color: var(--cf-text-leise);
+    font-variant-numeric: tabular-nums;
+}
+.cf-ko-fuss b { color: var(--cf-text-2); font-weight: 500; }
+
+/* ------------------------------------------------------------ Bewegung */
+@media (prefers-reduced-motion: reduce) {
+    .cf-knopf, .cf-eingabe, .cf-segment-teil, .cf-tabelle tbody tr { transition: none; }
+}
+
+/* ------------------------------------------------------------ Schmal */
+@media (max-width: 640px) {
+    .cf-karte { padding: var(--cf-a-4); }
+    .cf-kennzahlen { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .cf-kennzahl { padding: var(--cf-a-3) var(--cf-a-4); }
+    .cf-kennzahl-wert { font-size: var(--cf-t-20); }
+    .cf-seitenkopf-titel { font-size: var(--cf-t-20); }
+}
