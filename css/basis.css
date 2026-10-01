@@ -151,6 +151,9 @@
 }
 .cf-wortmarke img { width: 28px; height: 28px; border-radius: 8px; }
 .cf-wortmarke-verlauf {
+    /* Erbt das Gewicht der Wortmarke. Ohne das setzt eine allgemeine
+       span-Regel aus style.css "Flow" auf 400 - es wirkte duenn. */
+    font-weight: inherit !important;
     background: var(--cf-marke-verlauf);
     -webkit-background-clip: text;
     background-clip: text;
