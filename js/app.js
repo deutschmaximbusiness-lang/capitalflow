@@ -2674,7 +2674,7 @@ function loadAnalytics() {
                     </div>
                     <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: rgba(20, 20, 35, 0.9); padding: 10px 18px; border-radius: 8px; color: #ECEAF4; font-weight: 700; font-size: 11px; letter-spacing: 0; border: 1.5px solid #8B6CF3; white-space: nowrap;">Kommt mit dem Playbook</div>
                 </div>
-                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 340px), 1fr)); gap: 12px; font-size: 12px;">
+                <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; font-size: 12px;">
                     <div style="text-align: center;">
                         <div style="color: #A9A5BD; margin-bottom: 4px;">Win Rate</div>
                         <div style="font-size: 20px; font-weight: 700; color: #34D399;">${stats.winRate}%</div>
