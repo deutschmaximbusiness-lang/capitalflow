@@ -1,0 +1,394 @@
+/* ==========================================================================
+   CapitalFlow Thema  (M6b, Stufe 1)
+
+   Legt die Designsprache aus basis.css ueber die bestehenden Bildschirme,
+   ohne deren HTML oder Logik anzufassen. Wird NACH style.css geladen.
+
+   Die Farben in style.css und in den Inline-Stilen hat umbau.py schon auf
+   die neue Palette gebracht. Hier steht nur, was sich nicht mechanisch
+   umrechnen laesst: Kartenform, Navigation, Knoepfe, Felder, Fenster.
+
+   !important nur dort, wo Karten ihre Optik als Inline-Stil tragen.
+   ========================================================================== */
+
+:root {
+    --primary: #7C5CF0;
+    --primary-light: #B9A6FF;
+    --accent: #7257EE;
+    --background: #0B0A12;
+    --card-bg: #13121C;
+    --border-color: #262433;
+}
+
+html { background: #0B0A12; }
+body {
+    font-family: var(--cf-schrift) !important;
+    background:
+        radial-gradient(900px 520px at 0% -8%, rgba(124, 92, 240, 0.10), transparent 70%),
+        radial-gradient(700px 420px at 100% -12%, rgba(236, 72, 153, 0.05), transparent 70%),
+        #0B0A12;
+    background-attachment: fixed;
+    color: var(--cf-text);
+}
+body::before { display: none; }
+input, select, textarea, button { font-family: inherit; }
+
+/* ------------------------------------------------------------ Kopfzeile */
+.navbar {
+    background: rgba(11, 10, 18, 0.96) !important;
+    border-bottom: 1px solid var(--cf-rand);
+    box-shadow: none;
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+}
+.navbar-title { color: var(--cf-text); letter-spacing: -0.02em; }
+.navbar-subtitle { color: var(--cf-text-leise); }
+.navbar-subtitle-accent { color: var(--cf-text-2); }
+.navbar-logo-img { box-shadow: none; }
+.navbar-phase {
+    background: var(--cf-akzent-grund);
+    border: 1px solid transparent;
+    color: var(--cf-akzent-text);
+    box-shadow: none;
+}
+
+/* ------------------------------------------------------------ Seitenleiste */
+.sidebar {
+    background: rgba(19, 18, 28, 0.6);
+    border-right: 1px solid var(--cf-rand);
+}
+.nav-item {
+    position: relative;
+    border: 0;
+    border-radius: var(--cf-r-2);
+    padding: 11px 16px;
+    color: var(--cf-text-2);
+    font-weight: 500;
+    transition: background-color var(--cf-dauer), color var(--cf-dauer);
+}
+.nav-item:hover {
+    background: var(--cf-erhoben);
+    border-color: transparent;
+    color: var(--cf-text);
+    transform: none;
+}
+.nav-item.active {
+    background: var(--cf-akzent-grund);
+    border-color: transparent;
+    color: var(--cf-text);
+    box-shadow: none;
+}
+.nav-item.active::before {
+    content: '';
+    position: absolute;
+    left: 0; top: 9px; bottom: 9px;
+    width: 3px;
+    border-radius: 0 3px 3px 0;
+    background: var(--cf-marke-verlauf);
+}
+.nav-item .nav-icon { color: var(--cf-text-leise); opacity: 1; }
+.nav-item.active .nav-icon { color: var(--cf-akzent-text); }
+.sidebar-logout-btn {
+    background: transparent;
+    border: 1px solid transparent;
+    color: var(--cf-text-2);
+    border-radius: var(--cf-r-2);
+    padding: 11px 16px;
+    font-weight: 500;
+}
+.sidebar-logout-btn:hover {
+    background: var(--cf-verlust-grund);
+    border-color: transparent;
+    color: var(--cf-verlust);
+    transform: none;
+}
+
+/* ------------------------------------------------------------ Karten
+   Alle Kartenarten der App bekommen dieselbe Form: Kartenflaeche, feiner
+   Rand, Lichtkante oben, 12 px Radius, kein Schatten, kein Hochspringen. */
+.dashboard-stat, .top-stat, .dashboard-section, .dashboard-card, .dashboard-big-card,
+.analytics-metric-card, .analytics-metric-card-small, .premium-stat-card, .trade-score-card,
+.daily-summary-card, .trade-card, .position-card, .setups-card, .setup-type-stat-card,
+.aus-karte, .daten-karte, .admin-karte, .admin-section, .hilfe-block, .form-section,
+.portfolio-summary, .summary-item, .zert-block, .newkey-card, .start-kasten,
+.roadmap-card-premium, .completed-card, .in-progress-card, .planned-card,
+.trades-stats, .equity-section, .dir-card, .zert-kachel, .admin-key-karte, .bereich-sperre-karte {
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.02), transparent 120px), var(--cf-karte) !important;
+    border: 1px solid var(--cf-rand) !important;
+    border-radius: var(--cf-r-3) !important;
+    box-shadow: inset 0 1px 0 var(--cf-schimmer) !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+}
+.dashboard-stat:hover, .top-stat:hover, .dashboard-section:hover, .dashboard-card:hover,
+.analytics-metric-card:hover, .analytics-metric-card-small:hover, .premium-stat-card:hover,
+.trade-card:hover, .position-card:hover, .setups-card:hover, .aus-karte:hover,
+.roadmap-card-premium:hover, .completed-card:hover, .in-progress-card:hover, .planned-card:hover,
+.dir-card:hover, .zert-kachel:hover {
+    transform: none !important;
+    border-color: #35324A !important;
+    box-shadow: inset 0 1px 0 var(--cf-schimmer) !important;
+}
+.portfolio-summary::before, .dashboard-section::before, .trade-card::before { display: none; }
+/* Setups behalten ihre farbige Statuskante oben */
+.setups-card { border-top: 3px solid var(--st) !important; }
+/* Long/Short-Karten: Richtung als feine Kante statt Farbflaeche */
+.dir-card-long { border-left: 3px solid var(--cf-gewinn-flaeche) !important; }
+.dir-card-short { border-left: 3px solid var(--cf-verlust-flaeche) !important; }
+
+/* Warnflaechen bleiben erkennbar, aber flach */
+.hilfe-warn, .zert-warnung, .bereich-warnung, .admin-key-warn, .newkey-warn {
+    background: var(--cf-warnung-grund) !important;
+    border: 1px solid rgba(232, 174, 79, 0.25) !important;
+    box-shadow: none !important;
+}
+.hilfe-tipp, .zert-hinweis, .edit-hinweis {
+    background: var(--cf-akzent-grund) !important;
+    border: 1px solid rgba(124, 92, 240, 0.22) !important;
+    box-shadow: none !important;
+}
+.daten-karte-gefahr {
+    border-color: rgba(229, 72, 77, 0.35) !important;
+}
+
+/* ------------------------------------------------------------ Ueberschriften */
+.tab-content h2 { color: var(--cf-text); letter-spacing: -0.025em; font-weight: 700; }
+.dash-greeting-title { color: var(--cf-text); letter-spacing: -0.025em; }
+.dash-greeting-name { color: var(--cf-text); }
+.dash-greeting-date { color: var(--cf-text-leise); letter-spacing: 0; }
+.section-title, .admin-karte-titel, .hilfe-titel, .daten-titel { color: var(--cf-text); letter-spacing: -0.01em; }
+.hilfe-nr {
+    background: var(--cf-erhoben) !important;
+    color: var(--cf-akzent-text) !important;
+    border: 1px solid var(--cf-rand) !important;
+    box-shadow: none !important;
+}
+.trade-score-value, .equity-current-value { color: var(--cf-text); }
+.trade-ticker, .position-ticker, .setups-card-ticker { color: var(--cf-text); letter-spacing: -0.01em; }
+
+/* ------------------------------------------------------------ Knoepfe
+   Hauptaktion: Violett mit Lichtkante. Alles andere: grau oder leise. */
+.submit-btn, .btn-primary, .login-btn, .setups-btn-primary, .admin-btn-primary,
+.dtab-btn-primaer, .modal-btn-confirm, .newkey-btn {
+    background: linear-gradient(180deg, var(--cf-akzent-hell), var(--cf-akzent)) !important;
+    border: 1px solid transparent !important;
+    color: #FFFFFF !important;
+    border-radius: var(--cf-r-2) !important;
+    font-weight: 600 !important;
+    letter-spacing: 0 !important;
+    text-transform: none !important;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.18), 0 1px 2px rgba(0, 0, 0, 0.4), 0 6px 18px -6px rgba(124, 92, 240, 0.55) !important;
+    transition: background-color var(--cf-dauer), filter var(--cf-dauer);
+}
+.submit-btn:hover, .btn-primary:hover, .login-btn:hover, .setups-btn-primary:hover,
+.admin-btn-primary:hover, .dtab-btn-primaer:hover, .modal-btn-confirm:hover, .newkey-btn:hover {
+    background: linear-gradient(180deg, var(--cf-akzent), var(--cf-akzent-druck)) !important;
+    transform: none !important;
+}
+/* Gefaehrliche Bestaetigung bleibt rot */
+#deleteModal .modal-btn-confirm, .modal-btn-confirm.gefahr, .btn-gefahr, .key-btn-delete, .trade-delete, .position-delete-btn, .setups-btn-delete {
+    background: transparent !important;
+    border: 1px solid rgba(229, 72, 77, 0.5) !important;
+    color: var(--cf-verlust) !important;
+    box-shadow: none !important;
+}
+#deleteModal .modal-btn-confirm:hover, .btn-gefahr:hover, .key-btn-delete:hover, .trade-delete:hover,
+.position-delete-btn:hover, .setups-btn-delete:hover {
+    background: var(--cf-verlust-grund) !important;
+}
+.btn-secondary, .modal-btn-cancel, .setups-btn-ghost, .login-btn-secondary, .dtab-btn,
+.trade-edit, .trade-nachtragen-btn, .key-btn-copy, .admin-zeile-btn, .position-close-btn, .calendar-btn, .pnl-nav-btn, .daten-btn {
+    background: var(--cf-erhoben) !important;
+    border: 1px solid var(--cf-rand-feld) !important;
+    color: var(--cf-text) !important;
+    border-radius: var(--cf-r-2) !important;
+    box-shadow: none !important;
+    text-transform: none !important;
+    letter-spacing: 0 !important;
+}
+.btn-secondary:hover, .modal-btn-cancel:hover, .setups-btn-ghost:hover, .login-btn-secondary:hover, .dtab-btn:hover,
+.trade-edit:hover, .trade-nachtragen-btn:hover, .key-btn-copy:hover, .admin-zeile-btn:hover,
+.position-close-btn:hover, .calendar-btn:hover, .pnl-nav-btn:hover, .daten-btn:hover {
+    background: #242233 !important;
+    border-color: #47435E !important;
+    transform: none !important;
+}
+
+/* Auswahl-Knoepfe (Filter, Tabs, Richtung, Produkt): Segment-Optik */
+.filter-btn, .tab-button, .setup-type-filter-btn, .produkt-btn, .direction-btn, .setups-status-btn, .login-mode-btn {
+    background: transparent !important;
+    border: 1px solid var(--cf-rand) !important;
+    color: var(--cf-text-2) !important;
+    border-radius: var(--cf-r-2) !important;
+    box-shadow: none !important;
+    font-weight: 500 !important;
+    text-transform: none !important;
+    letter-spacing: 0 !important;
+}
+.filter-btn:hover, .tab-button:hover, .setup-type-filter-btn:hover, .produkt-btn:hover,
+.direction-btn:hover, .setups-status-btn:hover, .login-mode-btn:hover {
+    background: var(--cf-erhoben) !important;
+    color: var(--cf-text) !important;
+    transform: none !important;
+}
+.filter-btn.active, .tab-button.active, .setup-type-filter-btn.active, .produkt-btn.active,
+.setups-status-btn.active, .login-mode-btn.active {
+    background: var(--cf-akzent-grund) !important;
+    border-color: rgba(124, 92, 240, 0.45) !important;
+    color: var(--cf-text) !important;
+}
+/* Long/Short behalten ihre Bedeutung */
+.direction-btn.active.long, .direction-btn.long.active, .direction-btn[data-direction="long"].active, .dir-long.active {
+    background: var(--cf-gewinn-grund) !important;
+    border-color: rgba(52, 211, 153, 0.45) !important;
+    color: var(--cf-gewinn) !important;
+}
+.direction-btn.active.short, .direction-btn.short.active, .direction-btn[data-direction="short"].active, .dir-short.active {
+    background: var(--cf-verlust-grund) !important;
+    border-color: rgba(251, 113, 133, 0.45) !important;
+    color: var(--cf-verlust) !important;
+}
+
+/* ------------------------------------------------------------ Felder */
+.form-group label, .login-form-group label, .admin-feld label, .filter-label {
+    color: var(--cf-text-2);
+    font-weight: 500;
+    letter-spacing: 0;
+    text-transform: none;
+}
+.form-group input, .form-group select, .form-group textarea,
+.login-input, .admin-input, .custom-select-header, .trades-filter select, .trades-filter input {
+    background: var(--cf-seite) !important;
+    border: 1px solid var(--cf-rand-feld) !important;
+    border-radius: var(--cf-r-2) !important;
+    color: var(--cf-text) !important;
+    box-shadow: none !important;
+}
+.form-group input:hover, .form-group select:hover, .form-group textarea:hover,
+.login-input:hover, .admin-input:hover { border-color: #47435E !important; }
+.form-group input:focus, .form-group select:focus, .form-group textarea:focus,
+.login-input:focus, .admin-input:focus {
+    outline: none;
+    border-color: var(--cf-akzent-text) !important;
+    box-shadow: 0 0 0 3px var(--cf-akzent-grund) !important;
+}
+.form-group input::placeholder, .form-group textarea::placeholder,
+.login-input::placeholder, .admin-input::placeholder { color: var(--cf-text-leise); }
+.custom-select-dropdown {
+    background: var(--cf-erhoben) !important;
+    border: 1px solid var(--cf-rand-feld) !important;
+    border-radius: var(--cf-r-2) !important;
+    box-shadow: 0 16px 40px rgba(0, 0, 0, 0.5) !important;
+}
+.custom-option:hover, .custom-option.selected { background: var(--cf-akzent-grund) !important; color: var(--cf-text) !important; }
+.screenshot-paste-area {
+    background: var(--cf-seite) !important;
+    border: 1px dashed var(--cf-rand-feld) !important;
+    border-radius: var(--cf-r-3) !important;
+    color: var(--cf-text-2) !important;
+}
+.screenshot-paste-area:hover { border-color: var(--cf-akzent-text) !important; }
+.feld-zusatz, .zert-optional { color: var(--cf-text-leise); letter-spacing: 0; text-transform: none; }
+
+/* ------------------------------------------------------------ Marken / Kleinteile */
+.setup-type-badge, .trade-leverage-badge, .trade-ko-badge, .dir-badge, .session-badge, .setups-status-pill {
+    border-radius: var(--cf-r-1) !important;
+    box-shadow: none !important;
+    letter-spacing: 0 !important;
+    text-transform: none !important;
+}
+
+/* ------------------------------------------------------------ Tabellen */
+.aus-tabelle th { color: var(--cf-text-leise); font-weight: 500; letter-spacing: 0; text-transform: none; }
+.aus-tabelle td { border-color: var(--cf-gitter); }
+
+/* ------------------------------------------------------------ Kalender */
+.calendar-day {
+    background: var(--cf-karte) !important;
+    border: 1px solid var(--cf-rand) !important;
+    border-radius: var(--cf-r-2) !important;
+    box-shadow: none !important;
+    backdrop-filter: none !important;
+}
+.calendar-day.profit { background: linear-gradient(180deg, rgba(52, 211, 153, 0.10), rgba(52, 211, 153, 0.03)), var(--cf-karte) !important; border-color: rgba(52, 211, 153, 0.30) !important; }
+.calendar-day.loss { background: linear-gradient(180deg, rgba(251, 113, 133, 0.10), rgba(251, 113, 133, 0.03)), var(--cf-karte) !important; border-color: rgba(251, 113, 133, 0.30) !important; }
+.calendar-day:hover { transform: none !important; border-color: #47435E !important; }
+
+/* ------------------------------------------------------------ Fenster */
+.modal { background: rgba(6, 5, 12, 0.7) !important; backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px); }
+.modal-content, .screenshot-modal-content {
+    background: var(--cf-karte) !important;
+    border: 1px solid var(--cf-rand-feld) !important;
+    border-radius: var(--cf-r-3) !important;
+    box-shadow: inset 0 1px 0 var(--cf-schimmer), 0 24px 64px rgba(0, 0, 0, 0.55) !important;
+}
+.modal-content h2, .modal-content h3, .modal-title {
+    color: var(--cf-text) !important;
+    -webkit-text-fill-color: currentColor !important;
+    background: none !important;
+    letter-spacing: -0.01em;
+}
+
+/* ------------------------------------------------------------ Login */
+.login-screen { background: #0B0A12; }
+.login-container {
+    background: var(--cf-karte) !important;
+    border: 1px solid var(--cf-rand) !important;
+    border-radius: 16px !important;
+    box-shadow: inset 0 1px 0 var(--cf-schimmer), 0 24px 64px rgba(0, 0, 0, 0.5) !important;
+}
+.discord-btn { box-shadow: none !important; border-radius: var(--cf-r-2) !important; }
+
+/* ------------------------------------------------------------ Toast */
+.toast {
+    background: var(--cf-erhoben) !important;
+    border: 1px solid var(--cf-rand-feld) !important;
+    border-radius: var(--cf-r-2) !important;
+    box-shadow: 0 16px 40px rgba(0, 0, 0, 0.5) !important;
+    color: var(--cf-text) !important;
+}
+
+/* ------------------------------------------------------------ Bewegung */
+.tab-content, .dashboard-stat, .top-stat, .dashboard-section, .recent-trade-item, .daily-summary-card {
+    animation-duration: 0.25s !important;
+}
+@media (prefers-reduced-motion: reduce) {
+    .tab-content, .dashboard-stat, .top-stat, .dashboard-section, .recent-trade-item, .daily-summary-card,
+    .welcome-note, .toast, .app-enter { animation: none !important; }
+}
+
+/* ------------------------------------------------------------ Schmal */
+@media (max-width: 640px) {
+    /* Filterknoepfe brechen um statt seitlich aus dem Bild zu laufen */
+    .trades-filter { flex-wrap: wrap; }
+}
+/* minmax(440px) ist breiter als ein Telefon: Karten liefen 62 px heraus */
+.aus-raster { grid-template-columns: repeat(auto-fit, minmax(min(100%, 440px), 1fr)); }
+
+/* Zwischenueberschriften waren lila; jetzt Text. Inline-Farben gewinnen weiter. */
+.tab-content h3 { color: var(--cf-text); letter-spacing: -0.01em; }
+
+/* Fenster-Knoepfe tragen ihre Optik inline: hier auf die Regeln gebracht */
+#logoutModal button[onclick="cancelLogout()"], #deleteModal button[onclick="cancelDelete()"],
+#closePositionModal button[onclick*="closeModal"] {
+    background: var(--cf-erhoben) !important;
+    border: 1px solid var(--cf-rand-feld) !important;
+    color: var(--cf-text) !important;
+    border-radius: var(--cf-r-2) !important;
+    box-shadow: none !important;
+}
+#logoutModal button[onclick="confirmLogout()"], #deleteConfirmBtn {
+    background: transparent !important;
+    border: 1px solid rgba(229, 72, 77, 0.55) !important;
+    color: var(--cf-verlust) !important;
+    border-radius: var(--cf-r-2) !important;
+    box-shadow: none !important;
+}
+#logoutModal button[onclick="confirmLogout()"]:hover, #deleteConfirmBtn:hover { background: var(--cf-verlust-grund) !important; }
+#closePositionModal button[onclick*="confirm"] {
+    background: linear-gradient(180deg, var(--cf-akzent-hell), var(--cf-akzent)) !important;
+    border: 1px solid transparent !important;
+    color: #FFFFFF !important;
+    border-radius: var(--cf-r-2) !important;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.18), 0 6px 18px -6px rgba(124, 92, 240, 0.55) !important;
+}

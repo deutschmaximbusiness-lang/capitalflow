@@ -87,7 +87,7 @@
         const name = (feld && feld.value || '').trim();
 
         if (!name) {
-            meldung('❌ Für wen ist der Schlüssel? Name eintragen.', 'error');
+            meldung('Für wen ist der Schlüssel? Name eintragen.', 'error');
             if (feld) feld.focus();
             return;
         }
@@ -96,13 +96,13 @@
         try {
             key = generateUserKey();
         } catch (e) {
-            meldung('❌ ' + e.message, 'error');
+            meldung('' + e.message, 'error');
             return;
         }
 
         const hash = sha256Hex(key);
         if (!/^[0-9a-f]{64}$/.test(hash)) {
-            meldung('❌ Der Hash sieht falsch aus — nichts angelegt.', 'error');
+            meldung('Der Hash sieht falsch aus — nichts angelegt.', 'error');
             return;
         }
 
@@ -125,7 +125,7 @@
             if (notizFeld) notizFeld.value = '';
             await listeLaden();
         } catch (e) {
-            meldung('❌ ' + e.message, 'error');
+            meldung('' + e.message, 'error');
         } finally {
             if (btn) { btn.disabled = false; btn.textContent = 'Schlüssel erzeugen'; }
         }
@@ -155,9 +155,9 @@
         if (btn) {
             btn.addEventListener('click', function () {
                 navigator.clipboard.writeText(anzeige).then(function () {
-                    meldung('📋 Schlüssel kopiert');
+                    meldung('Schlüssel kopiert');
                 }, function () {
-                    meldung('❌ Kopieren ging nicht — markier ihn von Hand.',
+                    meldung('Kopieren ging nicht — markier ihn von Hand.',
                         'error');
                 });
             });
@@ -260,11 +260,11 @@
             });
             if (error) throw new Error(error.message);
             if (!data || !data.ok) throw new Error('Unerwartete Antwort.');
-            meldung(sperren ? '🔒 ' + name + ' gesperrt'
-                            : '✅ ' + name + ' wieder freigegeben');
+            meldung(sperren ? '' + name + ' gesperrt'
+                            : '' + name + ' wieder freigegeben');
             await listeLaden();
         } catch (e) {
-            meldung('❌ ' + e.message, 'error');
+            meldung('' + e.message, 'error');
             btn.disabled = false;
         }
     }

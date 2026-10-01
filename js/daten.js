@@ -44,7 +44,7 @@
 
     window.cfExportieren = function () {
         if (!angemeldet()) {
-            meldung('❌ Bitte zuerst einloggen', 'error');
+            meldung('Bitte zuerst einloggen', 'error');
             return;
         }
 
@@ -57,7 +57,7 @@
         });
 
         if (gesamt === 0) {
-            meldung('❌ Keine Daten zum Sichern vorhanden', 'error');
+            meldung('Keine Daten zum Sichern vorhanden', 'error');
             return;
         }
 
@@ -80,7 +80,7 @@
         // Ohne revoke bleibt der Blob bis zum Neuladen im Speicher
         setTimeout(function () { URL.revokeObjectURL(url); }, 1000);
 
-        meldung(`✅ ${gesamt} Einträge gesichert`, 'success');
+        meldung(`${gesamt} Einträge gesichert`, 'success');
     };
 
     // ---------------------------------------------------------------- Import
@@ -125,7 +125,7 @@
 
     window.cfImportWaehlen = function () {
         if (!angemeldet()) {
-            meldung('❌ Bitte zuerst einloggen', 'error');
+            meldung('Bitte zuerst einloggen', 'error');
             return;
         }
         document.getElementById('datenImportInput').click();
@@ -138,18 +138,18 @@
 
         const leser = new FileReader();
         leser.onerror = function () {
-            meldung('❌ Datei konnte nicht gelesen werden', 'error');
+            meldung('Datei konnte nicht gelesen werden', 'error');
         };
         leser.onload = function () {
             let obj;
             try {
                 obj = JSON.parse(leser.result);
             } catch (e) {
-                meldung('❌ Die Datei ist keine gültige JSON-Datei', 'error');
+                meldung('Die Datei ist keine gültige JSON-Datei', 'error');
                 return;
             }
             const fehler = pruefen(obj);
-            if (fehler) { meldung('❌ ' + fehler, 'error'); return; }
+            if (fehler) { meldung('' + fehler, 'error'); return; }
 
             geladen = {};
             const zeilen = [];
@@ -158,9 +158,9 @@
                     .filter(function (e) { return brauchbar(b.key, e); });
                 geladen[b.key] = liste;
                 zeilen.push(`<div style="display:flex;justify-content:space-between;`
-                    + `padding:7px 0;border-bottom:1px solid rgba(168,85,247,0.08);">`
-                    + `<span style="color:#94a3b8;font-size:13px;">${b.label}</span>`
-                    + `<span style="color:#e9d5ff;font-size:13px;font-weight:700;">`
+                    + `padding:7px 0;border-bottom:1px solid rgba(124, 92, 240, 0.06);">`
+                    + `<span style="color:#A9A5BD;font-size:13px;">${b.label}</span>`
+                    + `<span style="color:#DDD3FF;font-size:13px;font-weight:700;">`
                     + `${liste.length}</span></div>`);
             });
 
@@ -168,7 +168,7 @@
                 ? new Date(obj.erstellt).toLocaleDateString('de-DE')
                 : 'unbekannt';
             document.getElementById('datenImportInfo').innerHTML =
-                `<p style="margin:0 0 14px 0;color:#94a3b8;font-size:12px;">`
+                `<p style="margin:0 0 14px 0;color:#A9A5BD;font-size:12px;">`
                 + `Sicherung vom ${wann}</p>` + zeilen.join('');
             document.getElementById('datenImportAktionen').style.display = 'flex';
             document.getElementById('datenImportInfo').style.display = 'block';
@@ -206,8 +206,8 @@
         cfDatenModalZu();
 
         const text = modus === 'ersetzen'
-            ? `✅ ${neu} Einträge eingespielt`
-            : `✅ ${neu} neu, ${uebersprungen} bereits vorhanden`;
+            ? `${neu} Einträge eingespielt`
+            : `${neu} neu, ${uebersprungen} bereits vorhanden`;
         meldung(text, 'success');
 
         // Neu laden ist hier das Ehrlichste: sonst zeigen Journal,
@@ -328,7 +328,7 @@
                 });
 
             const r = data || {};
-            status('✅ Gelöscht: ' + (r.trades || 0) + ' Trades'
+            status('Gelöscht: ' + (r.trades || 0) + ' Trades'
                 + (nurImport ? ' (nur importierte)'
                     : ', ' + (r.setups || 0) + ' Setups, '
                       + (r.transaktionen || 0) + ' Buchungen'
@@ -338,10 +338,10 @@
             if (r2 && r2.ok && typeof window.cfAnsichtenAufbauen === 'function') {
                 window.cfAnsichtenAufbauen();
             }
-            if (typeof showToast === 'function') showToast('🗑️ Daten gelöscht');
+            if (typeof showToast === 'function') showToast('Daten gelöscht');
         } catch (e) {
             console.error('Löschen:', e);
-            status('❌ ' + e.message);
+            status('' + e.message);
         } finally {
             btns.forEach(function (b) { b.disabled = false; });
             const f = el('loeschBestaetigung');

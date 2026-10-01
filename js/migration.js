@@ -109,7 +109,7 @@
 
         try {
             const sitzung = await window.cfSitzung();
-            if (!sitzung) { fertig('❌ Nicht angemeldet', 'error'); return; }
+            if (!sitzung) { fertig('Nicht angemeldet', 'error'); return; }
             const uid = sitzung.user.id;
 
             // --- Schutz vor doppelter Ausführung
@@ -118,7 +118,7 @@
                 .from('trades').select('id', { count: 'exact', head: true });
             if (zaehlFehler) throw new Error('Bestand prüfen: ' + zaehlFehler.message);
             if (count > 0) {
-                fertig('❌ In der Datenbank liegen bereits ' + count
+                fertig('In der Datenbank liegen bereits ' + count
                        + ' Trades. Die Übertragung würde sie verdoppeln.', 'error');
                 return;
             }
@@ -187,14 +187,14 @@
                                     new Date().toISOString());
 
             const uebersprungen = bericht.problematisch.length;
-            fertig('✅ Übertragen: ' + a + ' Trades, ' + b + ' Transaktionen, '
+            fertig('Übertragen: ' + a + ' Trades, ' + b + ' Transaktionen, '
                    + c + ' Setups'
                    + (uebersprungen ? '  ·  ' + uebersprungen + ' übersprungen' : ''),
                    'success');
 
         } catch (e) {
             console.error(e);
-            fertig('❌ ' + e.message, 'error');
+            fertig('' + e.message, 'error');
         }
     };
 
@@ -206,9 +206,9 @@
 
         const zeile = function (k, v) {
             return '<div style="display:flex;justify-content:space-between;'
-                 + 'padding:6px 0;border-bottom:1px solid rgba(168,85,247,0.08);">'
-                 + '<span style="color:#94a3b8;font-size:12px;">' + k + '</span>'
-                 + '<span style="color:#e9d5ff;font-size:12px;font-weight:700;">'
+                 + 'padding:6px 0;border-bottom:1px solid rgba(124, 92, 240, 0.06);">'
+                 + '<span style="color:#A9A5BD;font-size:12px;">' + k + '</span>'
+                 + '<span style="color:#DDD3FF;font-size:12px;font-weight:700;">'
                  + v + '</span></div>';
         };
 
@@ -220,7 +220,7 @@
         }
         if (b.problematisch.length) {
             html += zeile('Wird übersprungen', b.problematisch.length + ' Einträge');
-            html += '<div style="margin-top:8px;color:#fca5a5;font-size:11px;'
+            html += '<div style="margin-top:8px;color:#FDA4AF;font-size:11px;'
                  + 'line-height:1.6;">'
                  + b.problematisch.slice(0, 5).map(function (p) {
                        return '· ' + p.symbol + ': ' + p.gruende.join(', ');
@@ -228,7 +228,7 @@
                  + (b.problematisch.length > 5 ? '<br>· …' : '') + '</div>';
         }
         if (b.hinweise.length) {
-            html += '<div style="margin-top:12px;color:#94a3b8;font-size:11px;'
+            html += '<div style="margin-top:12px;color:#A9A5BD;font-size:11px;'
                  + 'line-height:1.6;">' + b.hinweise.map(function (h) {
                        return '· ' + h;
                    }).join('<br>') + '</div>';

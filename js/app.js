@@ -437,7 +437,7 @@ function initLoginSystem() {
     generateNewKeyBtn.addEventListener('click', () => {
         const userName = adminUserNameInput.value.trim();
         if (!userName) {
-            showToast('❌ Bitte einen Namen eingeben!', 'error');
+            showToast('Bitte einen Namen eingeben!', 'error');
             return;
         }
 
@@ -450,7 +450,7 @@ function initLoginSystem() {
         // in js/keys.js.
         renderNewKeyResult(userName, newKey, hash, today);
         adminUserNameInput.value = '';
-        showToast('Key generated! ✅', 'success');
+        showToast('Key generated! ', 'success');
     });
 }
 
@@ -492,7 +492,7 @@ function renderKeysList() {
 
     const keys = (typeof AUTHORIZED_KEYS !== 'undefined') ? AUTHORIZED_KEYS : [];
     if (keys.length === 0) {
-        box.innerHTML = '<p style="color:#94a3b8;text-align:center;padding:20px;">' +
+        box.innerHTML = '<p style="color:#A9A5BD;text-align:center;padding:20px;">' +
             'Noch keine Keys in js/keys.js eingetragen</p>';
         return;
     }
@@ -503,7 +503,7 @@ function renderKeysList() {
               '<div class="key-item-name">' + escapeHtml(k.name) + '</div>' +
               '<div class="key-item-key">Hash ' +
                 escapeHtml(String(k.hash).slice(0, 16)) + '…</div>' +
-              '<div style="font-size:11px;color:#64748b;margin-top:4px;">' +
+              '<div style="font-size:11px;color:#8A86A0;margin-top:4px;">' +
                 'Eingetragen: ' + escapeHtml(k.added || '—') + '</div>' +
             '</div>' +
           '</div>';
@@ -511,7 +511,7 @@ function renderKeysList() {
 }
 function copyToClipboard(text) {
     navigator.clipboard.writeText(text).then(() => {
-        showToast('Key copied! 📋', 'success');
+        showToast('Key copied! ', 'success');
     });
 }
 
@@ -610,8 +610,8 @@ function displayScreenshot(base64Data) {
     pasteArea.textContent = '';
     pasteArea.style.display = 'none';
     preview.innerHTML = `
-        <img src="${base64Data}" alt="Trade Setup" style="max-width: 100%; height: auto; border-radius: 8px; border: 1px solid rgba(168, 85, 247, 0.3); display: block;">
-        <button type="button" onclick="document.getElementById('screenshot').click()" style="margin-top: 10px; padding: 8px 16px; background: rgba(168, 85, 247, 0.2); border: 1px solid rgba(168, 85, 247, 0.4); color: #cbd5e1; border-radius: 6px; cursor: pointer; font-size: 12px; font-weight: 600;">Bild ändern</button>
+        <img src="${base64Data}" alt="Trade Setup" style="max-width: 100%; height: auto; border-radius: 8px; border: 1px solid rgba(124, 92, 240, 0.225); display: block;">
+        <button type="button" onclick="document.getElementById('screenshot').click()" style="margin-top: 10px; padding: 8px 16px; background: rgba(124, 92, 240, 0.15); border: 1px solid rgba(124, 92, 240, 0.3); color: #D5D2E2; border-radius: 6px; cursor: pointer; font-size: 12px; font-weight: 600;">Bild ändern</button>
     `;
 }
 
@@ -620,7 +620,7 @@ function clearScreenshot() {
     const pasteArea = document.getElementById('screenshotPasteArea');
     const preview = document.getElementById('screenshotPreview');
     pasteArea.classList.remove('has-image');
-    pasteArea.textContent = '📋 Hier Screenshot einfügen (Ctrl+V) oder klicken zum Datei wählen';
+    pasteArea.textContent = 'Hier Screenshot einfügen (Ctrl+V) oder klicken zum Datei wählen';
     pasteArea.style.display = 'block';
     preview.innerHTML = '';
 }
@@ -655,7 +655,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const ripple = document.createElement('span');
             ripple.style.position = 'absolute';
             ripple.style.borderRadius = '50%';
-            ripple.style.background = 'radial-gradient(circle, rgba(168, 85, 247, 0.6) 0%, transparent 70%)';
+            ripple.style.background = 'radial-gradient(circle, rgba(124, 92, 240, 0.45) 0%, transparent 70%)';
             ripple.style.width = '100px';
             ripple.style.height = '100px';
             ripple.style.pointerEvents = 'none';
@@ -668,7 +668,7 @@ document.addEventListener('DOMContentLoaded', () => {
             logoElement.appendChild(ripple);
             setTimeout(() => ripple.remove(), 600);
             
-            showToast('💜 unemployment center journal');
+            showToast('unemployment center journal');
         });
     }
     
@@ -974,7 +974,7 @@ function bearbeitungsLeiste(trade) {
 
     if (!trade) {
         if (leiste) leiste.style.display = 'none';
-        if (btn) btn.textContent = '✨ Trade Hinzufügen';
+        if (btn) btn.textContent = 'Trade Hinzufügen';
         if (abbrechen) abbrechen.style.display = 'none';
         return;
     }
@@ -986,7 +986,7 @@ function bearbeitungsLeiste(trade) {
             + 'nicht ein zweiter angelegt.';
         leiste.style.display = '';
     }
-    if (btn) btn.textContent = '💾 Änderungen speichern';
+    if (btn) btn.textContent = 'Änderungen speichern';
     if (abbrechen) abbrechen.style.display = '';
 }
 
@@ -1114,7 +1114,7 @@ function addTrade(e) {
         if (istZert && window.cfProduktPruefen) {
             const fehlt = window.cfProduktPruefen();
             if (fehlt.length) {
-                showToast('❌ ' + fehlt[0], 'error');
+                showToast('' + fehlt[0], 'error');
                 return;
             }
         }
@@ -1226,7 +1226,7 @@ function addTrade(e) {
         }
 
         showToast(alt
-            ? `✅ ${ticker} geändert (P&L: €${trade.pnl.toFixed(2)})`
+            ? `${ticker} geändert (P&L: €${trade.pnl.toFixed(2)})`
             : `Trade hinzugefügt: ${ticker} (P&L: €${trade.pnl.toFixed(2)})`);
 
         tradeInBearbeitung = null;
@@ -1285,7 +1285,7 @@ function eurMitVorzeichen(n) {
 
 /** Gruen im Plus, rot im Minus - passend zu eurMitVorzeichen(). */
 function farbeFuer(n) {
-    return (parseFloat(n) || 0) >= 0 ? '#10b981' : '#f87171';
+    return (parseFloat(n) || 0) >= 0 ? '#34D399' : '#FB7185';
 }
 
 /**
@@ -1469,10 +1469,9 @@ function loadTrades() {
         // das schlaegt jedes color. Ein Minusbetrag blieb deshalb gruen,
         // egal was hier zugewiesen wurde - man muss den Verlauf selbst
         // austauschen.
-        const rot = 'linear-gradient(135deg, #f87171, #ef4444)';
-        const gruen = 'linear-gradient(135deg, #22c55e, #10b981)';
-        tradesPnLDisplay.style.backgroundImage = filteredPnL >= 0 ? gruen : rot;
-        tradesPnLDisplay.style.webkitTextFillColor = 'transparent';
+        const rot = 'linear-gradient(135deg, #FB7185, #F0505F)';
+        const gruen = 'linear-gradient(135deg, #34D399, #34D399)';
+        tradesPnLDisplay.style.color = filteredPnL >= 0 ? '#34D399' : '#FB7185';
     }
     
     if (tradeCountDisplay) {
@@ -1486,7 +1485,7 @@ function loadTrades() {
         // Hinweis, dass der Filter greift.
         tradesContainer.innerHTML = trades.length === 0
             ? leererStart(0)
-            : '<div style="text-align: center; padding: 40px; color: #94a3b8;">'
+            : '<div style="text-align: center; padding: 40px; color: #A9A5BD;">'
               + 'Keine Trades in dieser Kategorie</div>';
         return;
     }
@@ -1538,8 +1537,8 @@ function loadTrades() {
             ${trade.screenshot && trade.screenshot.trim() ? `<div class="trade-screenshot"><img src="${trade.screenshot}" alt="Trade Setup" onclick="openScreenshotModal('${trade.screenshot}')" style="cursor: pointer;"></div>` : ''}
             ${nachtragenHinweis(trade)}
             <div class="trade-aktionen">
-                <button class="trade-edit" onclick="tradeBearbeiten('${trade.id}')">✏️ Bearbeiten</button>
-                <button class="trade-delete" onclick="confirmDelete('${trade.id}')">🗑️ Löschen</button>
+                <button class="trade-edit" onclick="tradeBearbeiten('${trade.id}')">Bearbeiten</button>
+                <button class="trade-delete" onclick="confirmDelete('${trade.id}')">Löschen</button>
             </div>
         </div>
     `;
@@ -1551,10 +1550,10 @@ function loadTrades() {
             console.error('Trade konnte nicht dargestellt werden:', trade, err);
             return '<div class="trade-card"><div class="trade-header">' +
                    '<div class="trade-ticker">' + escapeHtml(trade.ticker || '—') +
-                   '</div></div><p style="color:#f87171;font-size:13px;">' +
+                   '</div></div><p style="color:#FB7185;font-size:13px;">' +
                    'Dieser Eintrag ist beschädigt und kann nicht angezeigt werden.' +
                    '</p><button class="trade-delete" onclick="confirmDelete(\'' +
-                   (trade.id || 0) + '\')">🗑️ Löschen</button></div>';
+                   (trade.id || 0) + '\')">Löschen</button></div>';
         }
     }).join('');
 }
@@ -1566,7 +1565,7 @@ function confirmDelete(id) {
     const modalText = document.getElementById('deleteModalText');
     const confirmBtn = document.getElementById('deleteConfirmBtn');
     
-    modalTitle.textContent = '🗑️ Trade löschen?';
+    modalTitle.textContent = 'Trade löschen?';
     modalText.textContent = 'Dieser Trade wird permanent gelöscht.';
     confirmBtn.textContent = 'Ja, löschen';
     confirmBtn.onclick = () => confirmDeleteTrade();
@@ -1599,7 +1598,7 @@ function confirmDeleteTrade() {
     tradeToDelete = null;
     
     loadTrades();
-    showToast('✅ Trade gelöscht!');
+    showToast('Trade gelöscht!');
 }
 
 // ===== CALENDAR =====
@@ -1691,18 +1690,18 @@ function renderDailyCalendar(trades, container) {
     // HTML
     const html = `
         <!-- Legende -->
-        <div style="display: flex; gap: 20px; margin-bottom: 30px; padding: 16px; background: rgba(100, 116, 139, 0.1); border-radius: 8px;">
+        <div style="display: flex; gap: 20px; margin-bottom: 30px; padding: 16px; background: rgba(138, 134, 160, 0.1); border-radius: 8px;">
             <div style="display: flex; align-items: center; gap: 8px;">
-                <div style="width: 24px; height: 24px; background: #10b981; border-radius: 6px;"></div>
-                <span style="color: #cbd5e1; font-size: 13px;">Gewinn</span>
+                <div style="width: 24px; height: 24px; background: #34D399; border-radius: 6px;"></div>
+                <span style="color: #D5D2E2; font-size: 13px;">Gewinn</span>
             </div>
             <div style="display: flex; align-items: center; gap: 8px;">
-                <div style="width: 24px; height: 24px; background: #f87171; border-radius: 6px;"></div>
-                <span style="color: #cbd5e1; font-size: 13px;">Verlust</span>
+                <div style="width: 24px; height: 24px; background: #FB7185; border-radius: 6px;"></div>
+                <span style="color: #D5D2E2; font-size: 13px;">Verlust</span>
             </div>
             <div style="display: flex; align-items: center; gap: 8px;">
-                <div style="width: 24px; height: 24px; background: #64748b; border-radius: 6px;"></div>
-                <span style="color: #cbd5e1; font-size: 13px;">Keine Trades</span>
+                <div style="width: 24px; height: 24px; background: #8A86A0; border-radius: 6px;"></div>
+                <span style="color: #D5D2E2; font-size: 13px;">Keine Trades</span>
             </div>
         </div>
         
@@ -1712,7 +1711,7 @@ function renderDailyCalendar(trades, container) {
                 const dayTrades = groupedByDate[date] || [];
                 const dayPnL = dayTrades.reduce((sum, t) => sum + t.pnl, 0);
                 const status = dayTrades.length === 0 ? 'neutral' : (dayPnL > 0 ? 'profit' : 'loss');
-                const isSpecial = (bestDay.date === date) ? 'style="box-shadow: 0 0 20px rgba(16, 185, 129, 0.6);"' : (worstDay.date === date) ? 'style="box-shadow: 0 0 20px rgba(248, 113, 113, 0.6);"' : '';
+                const isSpecial = (bestDay.date === date) ? 'style="box-shadow: 0 0 20px rgba(52, 211, 153, 0.6);"' : (worstDay.date === date) ? 'style="box-shadow: 0 0 20px rgba(251, 113, 133, 0.6);"' : '';
                 
                 return `
                     <div class="calendar-day ${status}" ${isSpecial} title="${date}: ${dayTrades.length} Trades, €${dayPnL.toFixed(2)}">
@@ -1837,18 +1836,18 @@ function renderMonthlyCalendar(trades, container) {
     // HTML
     const html = `
         <!-- Legende -->
-        <div style="display: flex; gap: 20px; margin-bottom: 30px; padding: 16px; background: rgba(100, 116, 139, 0.1); border-radius: 8px;">
+        <div style="display: flex; gap: 20px; margin-bottom: 30px; padding: 16px; background: rgba(138, 134, 160, 0.1); border-radius: 8px;">
             <div style="display: flex; align-items: center; gap: 8px;">
-                <div style="width: 24px; height: 24px; background: #10b981; border-radius: 6px;"></div>
-                <span style="color: #cbd5e1; font-size: 13px;">Gewinn</span>
+                <div style="width: 24px; height: 24px; background: #34D399; border-radius: 6px;"></div>
+                <span style="color: #D5D2E2; font-size: 13px;">Gewinn</span>
             </div>
             <div style="display: flex; align-items: center; gap: 8px;">
-                <div style="width: 24px; height: 24px; background: #f87171; border-radius: 6px;"></div>
-                <span style="color: #cbd5e1; font-size: 13px;">Verlust</span>
+                <div style="width: 24px; height: 24px; background: #FB7185; border-radius: 6px;"></div>
+                <span style="color: #D5D2E2; font-size: 13px;">Verlust</span>
             </div>
             <div style="display: flex; align-items: center; gap: 8px;">
-                <div style="width: 24px; height: 24px; background: #64748b; border-radius: 6px;"></div>
-                <span style="color: #cbd5e1; font-size: 13px;">Keine Trades</span>
+                <div style="width: 24px; height: 24px; background: #8A86A0; border-radius: 6px;"></div>
+                <span style="color: #D5D2E2; font-size: 13px;">Keine Trades</span>
             </div>
         </div>
         
@@ -1858,7 +1857,7 @@ function renderMonthlyCalendar(trades, container) {
                 const monthTrades = groupedByMonth[monthKey] || [];
                 const monthPnL = monthTrades.reduce((sum, t) => sum + t.pnl, 0);
                 const status = monthTrades.length === 0 ? 'neutral' : (monthPnL > 0 ? 'profit' : 'loss');
-                const isSpecial = (bestMonth.key === monthKey) ? 'style="box-shadow: 0 0 20px rgba(16, 185, 129, 0.6);"' : (worstMonth.key === monthKey) ? 'style="box-shadow: 0 0 20px rgba(248, 113, 113, 0.6);"' : '';
+                const isSpecial = (bestMonth.key === monthKey) ? 'style="box-shadow: 0 0 20px rgba(52, 211, 153, 0.6);"' : (worstMonth.key === monthKey) ? 'style="box-shadow: 0 0 20px rgba(251, 113, 133, 0.6);"' : '';
                 
                 return `
                     <div class="calendar-day ${status}" ${isSpecial} title="${getMonthName(monthKey)}: ${monthTrades.length} Trades, €${monthPnL.toFixed(2)}">
@@ -2116,11 +2115,11 @@ function loadDashboard() {
         </div>
         
         <!-- TOP 3 BIG CARDS -->
-        <div class="dashboard-top-cards" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin-bottom: 30px;">
+        <div class="dashboard-top-cards" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr)); gap: 20px; margin-bottom: 30px;">
             <div class="dashboard-big-card">
-                <div style="color: #94a3b8; font-size: 12px; margin-bottom: 8px;">Heute</div>
-                <div style="font-size: 28px; font-weight: 700; color: ${stats.todayPnL >= 0 ? '#10b981' : '#f87171'};">${eurMitVorzeichen(stats.todayPnL)}</div>
-                <div style="color: #94a3b8; font-size: 12px; margin-top: 8px;">${stats.todayTrades.length} Trades • ${stats.todayWinRate}% Treffer</div>
+                <div style="color: #A9A5BD; font-size: 12px; margin-bottom: 8px;">Heute</div>
+                <div style="font-size: 28px; font-weight: 700; color: ${stats.todayPnL >= 0 ? '#34D399' : '#FB7185'};">${eurMitVorzeichen(stats.todayPnL)}</div>
+                <div style="color: #A9A5BD; font-size: 12px; margin-top: 8px;">${stats.todayTrades.length} Trades • ${stats.todayWinRate}% Treffer</div>
             </div>
             <!-- Hier stand der Kontostand.
                  Raus, weil er mit Trade Republic konkurriert und
@@ -2133,78 +2132,78 @@ function loadDashboard() {
                  Luecke zwischen "heute" und "gesamt" und steht so
                  nirgendwo sonst. -->
             <div class="dashboard-big-card">
-                <div style="color: #94a3b8; font-size: 12px; margin-bottom: 8px;">Diese Woche</div>
-                <div style="font-size: 28px; font-weight: 700; color: ${wocheSumme >= 0 ? '#10b981' : '#f87171'};">${eurMitVorzeichen(wocheSumme)}</div>
-                <div style="color: #94a3b8; font-size: 12px; margin-top: 8px;">${wocheTrades.length} Trades${wocheTrades.length ? ' • ' + wocheQuote + '% Treffer' : ''}</div>
+                <div style="color: #A9A5BD; font-size: 12px; margin-bottom: 8px;">Diese Woche</div>
+                <div style="font-size: 28px; font-weight: 700; color: ${wocheSumme >= 0 ? '#34D399' : '#FB7185'};">${eurMitVorzeichen(wocheSumme)}</div>
+                <div style="color: #A9A5BD; font-size: 12px; margin-top: 8px;">${wocheTrades.length} Trades${wocheTrades.length ? ' • ' + wocheQuote + '% Treffer' : ''}</div>
             </div>
             <div class="dashboard-big-card">
-                <div style="color: #94a3b8; font-size: 12px; margin-bottom: 8px;">Gesamt</div>
-                <div style="font-size: 28px; font-weight: 700; color: ${stats.totalPnL >= 0 ? '#10b981' : '#f87171'};">${eurMitVorzeichen(stats.totalPnL)}</div>
-                <div style="color: #94a3b8; font-size: 12px; margin-top: 8px;">${stats.trades.length} Trades • ${stats.winRate}% Treffer</div>
+                <div style="color: #A9A5BD; font-size: 12px; margin-bottom: 8px;">Gesamt</div>
+                <div style="font-size: 28px; font-weight: 700; color: ${stats.totalPnL >= 0 ? '#34D399' : '#FB7185'};">${eurMitVorzeichen(stats.totalPnL)}</div>
+                <div style="color: #A9A5BD; font-size: 12px; margin-top: 8px;">${stats.trades.length} Trades • ${stats.winRate}% Treffer</div>
             </div>
         </div>
         
         <!-- MID 4 CARDS -->
-        <div class="dashboard-mid-cards" style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; margin-bottom: 30px;">
+        <div class="dashboard-mid-cards" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 170px), 1fr)); gap: 20px; margin-bottom: 30px;">
             <div class="dashboard-card">
-                <div style="color: #94a3b8; font-size: 11px; margin-bottom: 8px; text-transform: uppercase;">Streak</div>
-                <div style="font-size: 24px; font-weight: 700; color: #10b981;">${maxConsecutiveWins} wins</div>
-                <div style="color: #94a3b8; font-size: 11px; margin-top: 8px;">Current momentum 🔥</div>
+                <div style="color: #A9A5BD; font-size: 11px; margin-bottom: 8px; text-transform: none;">Streak</div>
+                <div style="font-size: 24px; font-weight: 700; color: #34D399;">${maxConsecutiveWins} wins</div>
+                <div style="color: #A9A5BD; font-size: 11px; margin-top: 8px;">Current momentum </div>
             </div>
             <div class="dashboard-card">
-                <div style="color: #94a3b8; font-size: 11px; margin-bottom: 8px; text-transform: uppercase;">Profit Factor</div>
-                <div style="font-size: 24px; font-weight: 700; color: #a855f7;">${stats.profitFactor}</div>
-                <div style="color: #94a3b8; font-size: 11px; margin-top: 8px;">Risk/Reward ratio</div>
+                <div style="color: #A9A5BD; font-size: 11px; margin-bottom: 8px; text-transform: none;">Profit Factor</div>
+                <div style="font-size: 24px; font-weight: 700; color: #ECEAF4;">${stats.profitFactor}</div>
+                <div style="color: #A9A5BD; font-size: 11px; margin-top: 8px;">Risk/Reward ratio</div>
             </div>
             <div class="dashboard-card">
-                <div style="color: #94a3b8; font-size: 11px; margin-bottom: 8px; text-transform: uppercase;">Biggest Win</div>
-                <div style="font-size: 24px; font-weight: 700; color: #10b981;">€${bestTradeData.pnl.toFixed(2)}</div>
-                <div style="color: #94a3b8; font-size: 11px; margin-top: 8px;">Single trade best</div>
+                <div style="color: #A9A5BD; font-size: 11px; margin-bottom: 8px; text-transform: none;">Biggest Win</div>
+                <div style="font-size: 24px; font-weight: 700; color: #34D399;">€${bestTradeData.pnl.toFixed(2)}</div>
+                <div style="color: #A9A5BD; font-size: 11px; margin-top: 8px;">Single trade best</div>
             </div>
             <div class="dashboard-card">
-                <div style="color: #94a3b8; font-size: 11px; margin-bottom: 8px; text-transform: uppercase;">Bester Wochentag</div>
-                <div style="font-size: 24px; font-weight: 700; color: ${bestDay.pnl >= 0 ? '#10b981' : '#f87171'};">${bestDay.pnl >= 0 ? '+' : '−'}€${Math.abs(bestDay.pnl).toFixed(2)}</div>
-                <div style="color: #94a3b8; font-size: 11px; margin-top: 8px;">${bestDay.day} • ${bestDay.total} Trades • ${bestDay.rate}% Treffer</div>
+                <div style="color: #A9A5BD; font-size: 11px; margin-bottom: 8px; text-transform: none;">Bester Wochentag</div>
+                <div style="font-size: 24px; font-weight: 700; color: ${bestDay.pnl >= 0 ? '#34D399' : '#FB7185'};">${bestDay.pnl >= 0 ? '+' : '−'}€${Math.abs(bestDay.pnl).toFixed(2)}</div>
+                <div style="color: #A9A5BD; font-size: 11px; margin-top: 8px;">${bestDay.day} • ${bestDay.total} Trades • ${bestDay.rate}% Treffer</div>
             </div>
         </div>
         
         <!-- TRADE SCORE + ACTIVITY GRID -->
         <div class="dashboard-zwei" style="display: grid; grid-template-columns: 1fr 1.2fr; gap: 20px; margin-bottom: 30px;">
             <!-- Trade Score Card -->
-            <div class="dashboard-section" style="background: linear-gradient(135deg, rgba(168, 85, 247, 0.08) 0%, rgba(236, 72, 153, 0.05) 100%); border: 1px solid rgba(168, 85, 247, 0.2); border-radius: 16px; padding: 24px;">
+            <div class="dashboard-section" style="background: linear-gradient(135deg, rgba(124, 92, 240, 0.06) 0%, rgba(124, 92, 240, 0.025) 100%); border: 1px solid rgba(124, 92, 240, 0.15); border-radius: 16px; padding: 24px;">
                 <div style="text-align: center; margin-bottom: 20px;">
-                    <div class="trade-score-label" style="color: #94a3b8; font-size: 12px; margin-bottom: 8px;">Trade Score</div>
-                    <div class="trade-score-value" id="tradeScoreValue" style="font-size: 48px; font-weight: 700; color: #a855f7;">0</div>
+                    <div class="trade-score-label" style="color: #A9A5BD; font-size: 12px; margin-bottom: 8px;">Trade Score</div>
+                    <div class="trade-score-value" id="tradeScoreValue" style="font-size: 48px; font-weight: 700; color: #ECEAF4;">0</div>
                     <div class="trade-score-status" id="tradeScoreStatus" style="color: #fbbf24; font-size: 13px; margin-top: 4px;">-</div>
                 </div>
                 <canvas id="tradeScoreChart" style="max-height: 250px;"></canvas>
             </div>
             
             <!-- Trading Activity Heatmap -->
-            <div class="dashboard-section" style="background: linear-gradient(135deg, rgba(168, 85, 247, 0.08) 0%, rgba(236, 72, 153, 0.05) 100%); border: 1px solid rgba(168, 85, 247, 0.2); border-radius: 16px; padding: 24px;">
-                <div style="color: #cbd5e1; font-size: 14px; font-weight: 600; margin-bottom: 16px;">Trading Activity</div>
-                <div style="color: #94a3b8; font-size: 12px; margin-bottom: 16px;">${stats.trades.length} trades in 2026</div>
+            <div class="dashboard-section" style="background: linear-gradient(135deg, rgba(124, 92, 240, 0.06) 0%, rgba(124, 92, 240, 0.025) 100%); border: 1px solid rgba(124, 92, 240, 0.15); border-radius: 16px; padding: 24px;">
+                <div style="color: #D5D2E2; font-size: 14px; font-weight: 600; margin-bottom: 16px;">Trading Activity</div>
+                <div style="color: #A9A5BD; font-size: 12px; margin-bottom: 16px;">${stats.trades.length} trades in 2026</div>
                 <div id="activityHeatmap" style="overflow-x: auto;"></div>
             </div>
         </div>
         
         <!-- BOTTOM STATS -->
-        <div class="dashboard-bottom-stats" style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px;">
+        <div class="dashboard-bottom-stats" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 170px), 1fr)); gap: 20px;">
             <div class="dashboard-card">
-                <div style="font-size: 28px; font-weight: 700; color: #a855f7;">${uniqueTradingDays}</div>
-                <div style="color: #94a3b8; font-size: 12px; margin-top: 8px;">Trading Days</div>
+                <div style="font-size: 28px; font-weight: 700; color: #ECEAF4;">${uniqueTradingDays}</div>
+                <div style="color: #A9A5BD; font-size: 12px; margin-top: 8px;">Trading Days</div>
             </div>
             <div class="dashboard-card">
-                <div style="font-size: 28px; font-weight: 700; color: #10b981;">${maxConsecutiveWins}</div>
-                <div style="color: #94a3b8; font-size: 12px; margin-top: 8px;">Current Streak</div>
+                <div style="font-size: 28px; font-weight: 700; color: #34D399;">${maxConsecutiveWins}</div>
+                <div style="color: #A9A5BD; font-size: 12px; margin-top: 8px;">Current Streak</div>
             </div>
             <div class="dashboard-card">
-                <div style="font-size: 28px; font-weight: 700; color: #f87171;">${maxConsecutiveLosses}</div>
-                <div style="color: #94a3b8; font-size: 12px; margin-top: 8px;">Longest Streak</div>
+                <div style="font-size: 28px; font-weight: 700; color: #FB7185;">${maxConsecutiveLosses}</div>
+                <div style="color: #A9A5BD; font-size: 12px; margin-top: 8px;">Longest Streak</div>
             </div>
             <div class="dashboard-card">
-                <div style="font-size: 28px; font-weight: 700; color: ${stats.totalPnL >= 0 ? '#10b981' : '#f87171'};">€${stats.totalPnL.toFixed(0)}</div>
-                <div style="color: #94a3b8; font-size: 12px; margin-top: 8px;">Total P&L</div>
+                <div style="font-size: 28px; font-weight: 700; color: ${stats.totalPnL >= 0 ? '#34D399' : '#FB7185'};">€${stats.totalPnL.toFixed(0)}</div>
+                <div style="color: #A9A5BD; font-size: 12px; margin-top: 8px;">Total P&L</div>
             </div>
         </div>
     `;
@@ -2255,10 +2254,10 @@ function renderDashboardCharts(trades, stats) {
                         Math.min((trades.length / 100) * 30, 30),
                         Math.min((stats.profitFactor / 2) * 20, 20)
                     ],
-                    borderColor: '#a855f7',
-                    backgroundColor: 'rgba(168, 85, 247, 0.15)',
+                    borderColor: '#8B6CF3',
+                    backgroundColor: 'rgba(124, 92, 240, 0.112)',
                     borderWidth: 2,
-                    pointBackgroundColor: '#a855f7',
+                    pointBackgroundColor: '#8B6CF3',
                     pointBorderColor: '#fff',
                     pointRadius: 4,
                     pointHoverRadius: 6
@@ -2277,11 +2276,11 @@ function renderDashboardCharts(trades, stats) {
                         ticks: { display: false },
                         pointLabels: { 
                             display: true,
-                            color: '#64748b',
+                            color: '#8A86A0',
                             font: { size: 10, weight: 'normal' }
                         },
-                        grid: { color: 'rgba(168, 85, 247, 0.1)' },
-                        angleLines: { color: 'rgba(168, 85, 247, 0.1)' }
+                        grid: { color: 'rgba(124, 92, 240, 0.075)' },
+                        angleLines: { color: 'rgba(124, 92, 240, 0.075)' }
                     }
                 }
             }
@@ -2341,13 +2340,13 @@ function renderActivityHeatmap(trades) {
     
     const dayHeaders = ['Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa', 'Su'];
     
-    let html = `<div style="margin-bottom: 8px; color: #94a3b8; font-size: 11px;">${String(parseInt(currentMonth)).padStart(2, '0')}/2026 — ${daysInMonth} days</div>`;
+    let html = `<div style="margin-bottom: 8px; color: #A9A5BD; font-size: 11px;">${String(parseInt(currentMonth)).padStart(2, '0')}/2026 — ${daysInMonth} days</div>`;
     html += '<div style="display: flex; gap: 8px; flex-direction: column;">';
     
     // Day headers
     html += '<div style="display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px;">';
     dayHeaders.forEach(h => {
-        html += `<div style="text-align: center; color: #94a3b8; font-size: 9px; font-weight: 600; height: 16px;">${h}</div>`;
+        html += `<div style="text-align: center; color: #A9A5BD; font-size: 9px; font-weight: 600; height: 16px;">${h}</div>`;
     });
     html += '</div>';
     
@@ -2366,7 +2365,7 @@ function renderActivityHeatmap(trades) {
                     else color = '#a855f766';
                 }
                 const tradeCount = data ? (data.wins + data.losses) : '-';
-                html += `<div title="${day.day}.${currentMonth}: ${tradeCount} trade(s)" style="width: 24px; height: 24px; background: ${color}; border-radius: 3px; font-size: 9px; display: flex; align-items: center; justify-content: center; color: #cbd5e1; border: 1px solid rgba(168, 85, 247, 0.2); cursor: pointer; font-weight: 500; transition: all 0.2s ease;" onmouseover="this.style.borderColor='rgba(168, 85, 247, 0.6)'; this.style.transform='scale(1.15)';" onmouseout="this.style.borderColor='rgba(168, 85, 247, 0.2)'; this.style.transform='scale(1)';">${day.day}</div>`;
+                html += `<div title="${day.day}.${currentMonth}: ${tradeCount} trade(s)" style="width: 24px; height: 24px; background: ${color}; border-radius: 3px; font-size: 9px; display: flex; align-items: center; justify-content: center; color: #D5D2E2; border: 1px solid rgba(124, 92, 240, 0.15); cursor: pointer; font-weight: 500; transition: all 0.2s ease;" onmouseover="this.style.borderColor='rgba(124, 92, 240, 0.45)'; this.style.transform='scale(1.15)';" onmouseout="this.style.borderColor='rgba(124, 92, 240, 0.15)'; this.style.transform='scale(1)';">${day.day}</div>`;
             }
         });
         html += '</div>';
@@ -2402,28 +2401,28 @@ function buildDirectionBreakdown(trades) {
 
     const karte = (titel, d, farbe, klasse) => {
         const vz = d.pnl >= 0 ? '+' : '';
-        const pnlFarbe = d.pnl >= 0 ? '#10b981' : '#f87171';
+        const pnlFarbe = d.pnl >= 0 ? '#34D399' : '#FB7185';
         const anteil = d.anzahl
             ? Math.round((d.anzahl / (l.anzahl + shrt.anzahl)) * 100) : 0;
         return `
         <div class="dir-card ${klasse}">
             <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;">
                 <div class="dir-card-title" style="color:${farbe};">${titel}</div>
-                <div style="font-size:11px;color:#64748b;font-weight:600;">${anteil}% aller Trades</div>
+                <div style="font-size:11px;color:#8A86A0;font-weight:600;">${anteil}% aller Trades</div>
             </div>
-            <div style="font-size:30px;font-weight:800;color:${pnlFarbe};line-height:1;margin-bottom:6px;">
+            <div style="font-size:30px;font-weight: 700;color:${pnlFarbe};line-height:1;margin-bottom:6px;">
                 ${vz}€${d.pnl.toFixed(2)}
             </div>
-            <div style="font-size:12px;color:#94a3b8;margin-bottom:18px;">
+            <div style="font-size:12px;color:#A9A5BD;margin-bottom:18px;">
                 ${d.anzahl} ${d.anzahl === 1 ? 'Trade' : 'Trades'} · Ø ${vz}€${d.schnitt.toFixed(2)}
             </div>
-            <div style="height:6px;border-radius:3px;background:rgba(248,113,113,0.25);overflow:hidden;margin-bottom:8px;">
-                <div style="height:100%;width:${d.quote.toFixed(1)}%;background:#10b981;"></div>
+            <div style="height:6px;border-radius:3px;background:rgba(251, 113, 133, 0.25);overflow:hidden;margin-bottom:8px;">
+                <div style="height:100%;width:${d.quote.toFixed(1)}%;background:#34D399;"></div>
             </div>
             <div style="display:flex;justify-content:space-between;font-size:12px;font-weight:600;">
-                <span style="color:#10b981;">${d.wins}W</span>
-                <span style="color:#cbd5e1;">${d.quote.toFixed(1)}% Trefferquote</span>
-                <span style="color:#f87171;">${d.verluste}L</span>
+                <span style="color:#34D399;">${d.wins}W</span>
+                <span style="color:#D5D2E2;">${d.quote.toFixed(1)}% Trefferquote</span>
+                <span style="color:#FB7185;">${d.verluste}L</span>
             </div>
         </div>`;
     };
@@ -2447,11 +2446,11 @@ function buildDirectionBreakdown(trades) {
     return `
         <div style="margin-bottom: 40px;">
             <h3 style="font-size:18px;font-weight:600;margin-bottom:20px;">Long gegen Short</h3>
-            <div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;">
-                ${karte('LONG', l, '#10b981', 'dir-card-long')}
+            <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,260px),1fr));gap:16px;">
+                ${karte('LONG', l, '#34D399', 'dir-card-long')}
                 ${karte('SHORT', shrt, '#fb923c', 'dir-card-short')}
             </div>
-            ${fazit ? `<p style="margin:16px 0 0 0;font-size:13px;color:#94a3b8;">${escapeHtml(fazit)}</p>` : ''}
+            ${fazit ? `<p style="margin:16px 0 0 0;font-size:13px;color:#A9A5BD;">${escapeHtml(fazit)}</p>` : ''}
         </div>`;
 }
 
@@ -2567,7 +2566,7 @@ function loadAnalytics() {
     analyticsContent.innerHTML = `
         <div style="margin-bottom: 40px;">
             <h2 style="margin-bottom: 8px;">Analytics</h2>
-            <p style="color: #94a3b8; font-size: 14px;">Deep dive into your trading performance</p>
+            <p style="color: #A9A5BD; font-size: 14px;">Deep dive into your trading performance</p>
         </div>
 
         ${buildDirectionBreakdown(trades)}
@@ -2580,85 +2579,85 @@ function loadAnalytics() {
         </div>
         
         <!-- TOP 4 KEY METRICS -->
-        <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; margin-bottom: 40px;">
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 170px), 1fr)); gap: 20px; margin-bottom: 40px;">
             <div class="analytics-metric-card">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
-                    <div style="font-size: 12px; text-transform: uppercase; color: #94a3b8; font-weight: 600;">Win Rate</div>
-                    <div style="font-size: 11px; background: rgba(168, 85, 247, 0.2); color: #d8b4fe; padding: 4px 8px; border-radius: 4px;">Key Metric</div>
+                    <div style="font-size: 12px; text-transform: none; color: #A9A5BD; font-weight: 600;">Win Rate</div>
+                    <div style="font-size: 11px; background: rgba(124, 92, 240, 0.15); color: #C9B8FF; padding: 4px 8px; border-radius: 4px;">Key Metric</div>
                 </div>
-                <div style="font-size: 32px; font-weight: 700; color: #cbd5e1; margin-bottom: 8px;">${stats.winRate}%</div>
-                <div style="font-size: 12px; color: #94a3b8;">${wins.length}W / ${losses.length}L</div>
+                <div style="font-size: 32px; font-weight: 700; color: #ECEAF4; margin-bottom: 8px;">${stats.winRate}%</div>
+                <div style="font-size: 12px; color: #A9A5BD;">${wins.length}W / ${losses.length}L</div>
             </div>
             
             <div class="analytics-metric-card">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
-                    <div style="font-size: 12px; text-transform: uppercase; color: #94a3b8; font-weight: 600;">Profit Factor</div>
+                    <div style="font-size: 12px; text-transform: none; color: #A9A5BD; font-weight: 600;">Profit Factor</div>
                 </div>
-                <div style="font-size: 32px; font-weight: 700; color: #cbd5e1; margin-bottom: 8px;">${stats.profitFactor}</div>
+                <div style="font-size: 32px; font-weight: 700; color: #ECEAF4; margin-bottom: 8px;">${stats.profitFactor}</div>
                 <div style="font-size: 12px; color: #fbbf24;">Excellent</div>
             </div>
             
             <div class="analytics-metric-card">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
-                    <div style="font-size: 12px; text-transform: uppercase; color: #94a3b8; font-weight: 600;">Expectancy</div>
+                    <div style="font-size: 12px; text-transform: none; color: #A9A5BD; font-weight: 600;">Expectancy</div>
                 </div>
-                <div style="font-size: 32px; font-weight: 700; color: #10b981; margin-bottom: 8px;">€${stats.expectancy.toFixed(2)}</div>
-                <div style="font-size: 12px; color: #94a3b8;">Per trade average</div>
+                <div style="font-size: 32px; font-weight: 700; color: #34D399; margin-bottom: 8px;">€${stats.expectancy.toFixed(2)}</div>
+                <div style="font-size: 12px; color: #A9A5BD;">Per trade average</div>
             </div>
             
             <div class="analytics-metric-card">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
-                    <div style="font-size: 12px; text-transform: uppercase; color: #94a3b8; font-weight: 600;">Total P&L</div>
+                    <div style="font-size: 12px; text-transform: none; color: #A9A5BD; font-weight: 600;">Total P&L</div>
                 </div>
-                <div style="font-size: 32px; font-weight: 700; color: ${stats.totalPnL >= 0 ? '#10b981' : '#f87171'}; margin-bottom: 8px;">€${stats.totalPnL.toFixed(2)}</div>
-                <div style="font-size: 12px; color: #94a3b8;">${trades.length} trades</div>
+                <div style="font-size: 32px; font-weight: 700; color: ${stats.totalPnL >= 0 ? '#34D399' : '#FB7185'}; margin-bottom: 8px;">€${stats.totalPnL.toFixed(2)}</div>
+                <div style="font-size: 12px; color: #A9A5BD;">${trades.length} trades</div>
             </div>
         </div>
         
         <!-- 5 SECONDARY METRICS -->
-        <div style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 20px; margin-bottom: 40px;">
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 150px), 1fr)); gap: 20px; margin-bottom: 40px;">
             <div class="analytics-metric-card-small">
-                <div style="font-size: 11px; text-transform: uppercase; color: #94a3b8; font-weight: 600; margin-bottom: 8px;">Avg Win</div>
-                <div style="font-size: 24px; font-weight: 700; color: #10b981;">€${avgWin.toFixed(2)}</div>
+                <div style="font-size: 11px; text-transform: none; color: #A9A5BD; font-weight: 600; margin-bottom: 8px;">Avg Win</div>
+                <div style="font-size: 24px; font-weight: 700; color: #34D399;">€${avgWin.toFixed(2)}</div>
             </div>
             <div class="analytics-metric-card-small">
-                <div style="font-size: 11px; text-transform: uppercase; color: #94a3b8; font-weight: 600; margin-bottom: 8px;">Avg Loss</div>
-                <div style="font-size: 24px; font-weight: 700; color: #f87171;">-€${Math.abs(avgLoss).toFixed(2)}</div>
+                <div style="font-size: 11px; text-transform: none; color: #A9A5BD; font-weight: 600; margin-bottom: 8px;">Avg Loss</div>
+                <div style="font-size: 24px; font-weight: 700; color: #FB7185;">-€${Math.abs(avgLoss).toFixed(2)}</div>
             </div>
             <div class="analytics-metric-card-small">
-                <div style="font-size: 11px; text-transform: uppercase; color: #94a3b8; font-weight: 600; margin-bottom: 8px;">Largest Win</div>
-                <div style="font-size: 24px; font-weight: 700; color: #10b981;">€${largestWin.toFixed(2)}</div>
+                <div style="font-size: 11px; text-transform: none; color: #A9A5BD; font-weight: 600; margin-bottom: 8px;">Largest Win</div>
+                <div style="font-size: 24px; font-weight: 700; color: #34D399;">€${largestWin.toFixed(2)}</div>
             </div>
             <div class="analytics-metric-card-small">
-                <div style="font-size: 11px; text-transform: uppercase; color: #94a3b8; font-weight: 600; margin-bottom: 8px;">Largest Loss</div>
-                <div style="font-size: 24px; font-weight: 700; color: #f87171;">-€${largestLoss.toFixed(2)}</div>
+                <div style="font-size: 11px; text-transform: none; color: #A9A5BD; font-weight: 600; margin-bottom: 8px;">Largest Loss</div>
+                <div style="font-size: 24px; font-weight: 700; color: #FB7185;">-€${largestLoss.toFixed(2)}</div>
             </div>
             <div class="analytics-metric-card-small">
-                <div style="font-size: 11px; text-transform: uppercase; color: #94a3b8; font-weight: 600; margin-bottom: 8px;">Ø Chance : Risiko</div>
-                <div style="font-size: 24px; font-weight: 700; color: #cbd5e1;">${avgRRText}</div>
-                <div style="font-size: 11px; color: #64748b; margin-top: 4px;">${escapeHtml(avgRRZusatz)}</div>
+                <div style="font-size: 11px; text-transform: none; color: #A9A5BD; font-weight: 600; margin-bottom: 8px;">Ø Chance : Risiko</div>
+                <div style="font-size: 24px; font-weight: 700; color: #ECEAF4;">${avgRRText}</div>
+                <div style="font-size: 11px; color: #8A86A0; margin-top: 4px;">${escapeHtml(avgRRZusatz)}</div>
             </div>
         </div>
         
         <!-- CHARTS GRID - 2 COLUMNS -->
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 30px; margin-bottom: 40px;">
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 340px), 1fr)); gap: 30px; margin-bottom: 40px;">
             <!-- LEFT: Equity Curve -->
-            <div class="dashboard-section" style="background: linear-gradient(135deg, rgba(168, 85, 247, 0.08) 0%, rgba(236, 72, 153, 0.05) 100%); border: 1px solid rgba(168, 85, 247, 0.2); border-radius: 16px; padding: 24px;">
+            <div class="dashboard-section" style="background: linear-gradient(135deg, rgba(124, 92, 240, 0.06) 0%, rgba(124, 92, 240, 0.025) 100%); border: 1px solid rgba(124, 92, 240, 0.15); border-radius: 16px; padding: 24px;">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
-                    <div style="font-size: 14px; font-weight: 600; color: #cbd5e1;">EQUITY CURVE</div>
+                    <div style="font-size: 14px; font-weight: 600; color: #D5D2E2;">Equity curve</div>
                     <div style="display: flex; gap: 12px; font-size: 11px;">
-                        <span style="color: #cbd5e1; padding: 4px 8px; background: rgba(168, 85, 247, 0.2); border-radius: 4px; cursor: pointer;">Portfolio</span>
-                        <span style="color: #94a3b8; cursor: pointer;">Benchmark</span>
+                        <span style="color: #D5D2E2; padding: 4px 8px; background: rgba(124, 92, 240, 0.15); border-radius: 4px; cursor: pointer;">Portfolio</span>
+                        <span style="color: #A9A5BD; cursor: pointer;">Benchmark</span>
                     </div>
                 </div>
-                <p style="color: #94a3b8; font-size: 12px; margin-bottom: 16px;">Track your growth with live-updating equity curves that reveal your true edge over time.</p>
+                <p style="color: #A9A5BD; font-size: 12px; margin-bottom: 16px;">Track your growth with live-updating equity curves that reveal your true edge over time.</p>
                 <canvas id="equityChart" style="max-height: 250px;"></canvas>
             </div>
             
             <!-- RIGHT: Behavioral Score -->
-            <div class="dashboard-section" style="background: linear-gradient(135deg, rgba(168, 85, 247, 0.08) 0%, rgba(236, 72, 153, 0.05) 100%); border: 1px solid rgba(168, 85, 247, 0.2); border-radius: 16px; padding: 24px;">
+            <div class="dashboard-section" style="background: linear-gradient(135deg, rgba(124, 92, 240, 0.06) 0%, rgba(124, 92, 240, 0.025) 100%); border: 1px solid rgba(124, 92, 240, 0.15); border-radius: 16px; padding: 24px;">
                 <div style="text-align: center; margin-bottom: 16px;">
-                    <div style="font-size: 14px; font-weight: 600; color: #10b981;">BEHAVIORAL SCORE</div>
+                    <div style="font-size: 14px; font-weight: 600; color: #ECEAF4;">Behavioral score</div>
                 </div>
                 <!-- Der Radar ist noch keine echte Auswertung.
                      "Disziplin" ist Trefferquote mal 1,5, "Strategie"
@@ -2673,91 +2672,91 @@ function loadAnalytics() {
                     <div style="opacity: 0.35; filter: blur(3px); pointer-events: none;">
                         <canvas id="behavioralChart" style="max-height: 250px;"></canvas>
                     </div>
-                    <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: rgba(20, 20, 35, 0.9); padding: 10px 18px; border-radius: 8px; color: #a855f7; font-weight: 700; font-size: 11px; text-transform: uppercase; letter-spacing: 0.8px; border: 1.5px solid #a855f7; white-space: nowrap;">Kommt mit dem Playbook</div>
+                    <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: rgba(20, 20, 35, 0.9); padding: 10px 18px; border-radius: 8px; color: #ECEAF4; font-weight: 700; font-size: 11px; letter-spacing: 0; border: 1.5px solid #8B6CF3; white-space: nowrap;">Kommt mit dem Playbook</div>
                 </div>
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; font-size: 12px;">
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 340px), 1fr)); gap: 12px; font-size: 12px;">
                     <div style="text-align: center;">
-                        <div style="color: #94a3b8; margin-bottom: 4px;">Win Rate</div>
-                        <div style="font-size: 20px; font-weight: 700; color: #10b981;">${stats.winRate}%</div>
+                        <div style="color: #A9A5BD; margin-bottom: 4px;">Win Rate</div>
+                        <div style="font-size: 20px; font-weight: 700; color: #34D399;">${stats.winRate}%</div>
                     </div>
                     <div style="text-align: center;">
-                        <div style="color: #94a3b8; margin-bottom: 4px;">Profit Factor</div>
-                        <div style="font-size: 20px; font-weight: 700; color: #cbd5e1;">${stats.profitFactor}</div>
+                        <div style="color: #A9A5BD; margin-bottom: 4px;">Profit Factor</div>
+                        <div style="font-size: 20px; font-weight: 700; color: #D5D2E2;">${stats.profitFactor}</div>
                     </div>
                     <div style="text-align: center;">
-                        <div style="color: #94a3b8; margin-bottom: 4px;">Avg R:R</div>
-                        <div style="font-size: 20px; font-weight: 700; color: #cbd5e1;">1:2.1</div>
+                        <div style="color: #A9A5BD; margin-bottom: 4px;">Avg R:R</div>
+                        <div style="font-size: 20px; font-weight: 700; color: #D5D2E2;">1:2.1</div>
                     </div>
                     <div style="text-align: center;">
-                        <div style="color: #94a3b8; margin-bottom: 4px;">Sharpe</div>
-                        <div style="font-size: 20px; font-weight: 700; color: #cbd5e1;">${sharpeRatio}</div>
+                        <div style="color: #A9A5BD; margin-bottom: 4px;">Sharpe</div>
+                        <div style="font-size: 20px; font-weight: 700; color: #D5D2E2;">${sharpeRatio}</div>
                     </div>
                 </div>
             </div>
         </div>
         
         <!-- BOTTOM GRID - 3 COLUMNS -->
-        <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 30px; margin-bottom: 40px;">
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr)); gap: 30px; margin-bottom: 40px;">
             <!-- Trades Logged -->
-            <div class="dashboard-section" style="background: linear-gradient(135deg, rgba(168, 85, 247, 0.08) 0%, rgba(236, 72, 153, 0.05) 100%); border: 1px solid rgba(168, 85, 247, 0.2); border-radius: 16px; padding: 24px;">
-                <div style="font-size: 13px; text-transform: uppercase; color: #94a3b8; font-weight: 600; margin-bottom: 16px;">TRADES LOGGED</div>
-                <div style="font-size: 48px; font-weight: 700; color: #cbd5e1; margin-bottom: 8px;">${trades.length}+</div>
-                <div style="font-size: 12px; color: #94a3b8;">metrics per trade</div>
+            <div class="dashboard-section" style="background: linear-gradient(135deg, rgba(124, 92, 240, 0.06) 0%, rgba(124, 92, 240, 0.025) 100%); border: 1px solid rgba(124, 92, 240, 0.15); border-radius: 16px; padding: 24px;">
+                <div style="font-size: 13px; text-transform: none; color: #A9A5BD; font-weight: 600; margin-bottom: 16px;">Trades logged</div>
+                <div style="font-size: 48px; font-weight: 700; color: #ECEAF4; margin-bottom: 8px;">${trades.length}+</div>
+                <div style="font-size: 12px; color: #A9A5BD;">metrics per trade</div>
             </div>
             
             <!-- Geographic Performance -->
             <div style="position: relative;">
                 <!-- Blurred Background -->
-                <div class="dashboard-section" style="background: linear-gradient(135deg, rgba(168, 85, 247, 0.08) 0%, rgba(236, 72, 153, 0.05) 100%); border: 1px solid rgba(168, 85, 247, 0.2); border-radius: 16px; padding: 24px; opacity: 0.4; pointer-events: none; filter: blur(3px); position: absolute; top: 0; left: 0; right: 0; bottom: 0; width: 100%; height: 100%;">
-                    <div style="font-size: 13px; text-transform: uppercase; color: #94a3b8; font-weight: 600; margin-bottom: 16px;">MARKET PERFORMANCE</div>
-                    <div style="font-size: 12px; color: #cbd5e1; margin-bottom: 8px;">
+                <div class="dashboard-section" style="background: linear-gradient(135deg, rgba(124, 92, 240, 0.06) 0%, rgba(124, 92, 240, 0.025) 100%); border: 1px solid rgba(124, 92, 240, 0.15); border-radius: 16px; padding: 24px; opacity: 0.4; pointer-events: none; filter: blur(3px); position: absolute; top: 0; left: 0; right: 0; bottom: 0; width: 100%; height: 100%;">
+                    <div style="font-size: 13px; text-transform: none; color: #A9A5BD; font-weight: 600; margin-bottom: 16px;">Market performance</div>
+                    <div style="font-size: 12px; color: #D5D2E2; margin-bottom: 8px;">
                         <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
                             <span>London</span>
-                            <span style="color: #10b981; font-weight: 600;">45%</span>
+                            <span style="color: #34D399; font-weight: 600;">45%</span>
                         </div>
-                        <div style="width: 100%; height: 4px; background: rgba(168, 85, 247, 0.2); border-radius: 2px; overflow: hidden;">
-                            <div style="width: 45%; height: 100%; background: #10b981;"></div>
+                        <div style="width: 100%; height: 4px; background: rgba(124, 92, 240, 0.15); border-radius: 2px; overflow: hidden;">
+                            <div style="width: 45%; height: 100%; background: #34D399;"></div>
                         </div>
                     </div>
-                    <div style="font-size: 12px; color: #cbd5e1; margin-bottom: 8px;">
+                    <div style="font-size: 12px; color: #D5D2E2; margin-bottom: 8px;">
                         <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
                             <span>New York</span>
                             <span style="color: #60a5fa; font-weight: 600;">32%</span>
                         </div>
-                        <div style="width: 100%; height: 4px; background: rgba(168, 85, 247, 0.2); border-radius: 2px; overflow: hidden;">
+                        <div style="width: 100%; height: 4px; background: rgba(124, 92, 240, 0.15); border-radius: 2px; overflow: hidden;">
                             <div style="width: 32%; height: 100%; background: #60a5fa;"></div>
                         </div>
                     </div>
-                    <div style="font-size: 12px; color: #cbd5e1;">
+                    <div style="font-size: 12px; color: #D5D2E2;">
                         <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
                             <span>Asian</span>
                             <span style="color: #f59e0b; font-weight: 600;">23%</span>
                         </div>
-                        <div style="width: 100%; height: 4px; background: rgba(168, 85, 247, 0.2); border-radius: 2px; overflow: hidden;">
+                        <div style="width: 100%; height: 4px; background: rgba(124, 92, 240, 0.15); border-radius: 2px; overflow: hidden;">
                             <div style="width: 23%; height: 100%; background: #f59e0b;"></div>
                         </div>
                     </div>
                 </div>
                 
                 <!-- Coming Soon Overlay (OUTSIDE blur!) -->
-                <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: rgba(20, 20, 35, 0.85); padding: 12px 20px; border-radius: 8px; color: #a855f7; font-weight: 700; font-size: 12px; text-transform: uppercase; letter-spacing: 0.8px; z-index: 100; white-space: nowrap; border: 1.5px solid #a855f7; box-shadow: 0 0 12px rgba(168, 85, 247, 0.3);">Coming Soon</div>
+                <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: rgba(20, 20, 35, 0.85); padding: 12px 20px; border-radius: 8px; color: #ECEAF4; font-weight: 700; font-size: 12px; letter-spacing: 0; z-index: 100; white-space: nowrap; border: 1.5px solid #8B6CF3; box-shadow: 0 0 12px rgba(124, 92, 240, 0.225);">Coming Soon</div>
             </div>
             
             <!-- Additional Stats -->
-            <div class="dashboard-section" style="background: linear-gradient(135deg, rgba(168, 85, 247, 0.08) 0%, rgba(236, 72, 153, 0.05) 100%); border: 1px solid rgba(168, 85, 247, 0.2); border-radius: 16px; padding: 24px;">
-                <div style="font-size: 13px; text-transform: uppercase; color: #94a3b8; font-weight: 600; margin-bottom: 16px;">KEY STATS</div>
-                <div style="font-size: 12px; color: #cbd5e1; line-height: 2;">
+            <div class="dashboard-section" style="background: linear-gradient(135deg, rgba(124, 92, 240, 0.06) 0%, rgba(124, 92, 240, 0.025) 100%); border: 1px solid rgba(124, 92, 240, 0.15); border-radius: 16px; padding: 24px;">
+                <div style="font-size: 13px; text-transform: none; color: #A9A5BD; font-weight: 600; margin-bottom: 16px;">Key stats</div>
+                <div style="font-size: 12px; color: #D5D2E2; line-height: 2;">
                     <div style="display: flex; justify-content: space-between;">
-                        <span style="color: #94a3b8;">Bester Tag</span>
+                        <span style="color: #A9A5BD;">Bester Tag</span>
                         <span style="color: ${farbeFuer(besterTag.pnl)}; font-weight: 600;" title="${besterTag.datum || ''}">${besterTag.datum ? eurMitVorzeichen(besterTag.pnl) : '—'}</span>
                     </div>
                     <div style="display: flex; justify-content: space-between;">
-                        <span style="color: #94a3b8;">Ø je Trade</span>
+                        <span style="color: #A9A5BD;">Ø je Trade</span>
                         <span style="color: ${farbeFuer(stats.expectancy)}; font-weight: 600;">${eurMitVorzeichen(stats.expectancy)}</span>
                     </div>
                     <div style="display: flex; justify-content: space-between;">
-                        <span style="color: #94a3b8;" title="Größter Rückgang vom Kontohöchststand">Max. Rückgang</span>
-                        <span style="color: #f87171; font-weight: 600;">−€${maxDD.toFixed(2)}${maxDDProzent !== null ? ' · ' + maxDDProzent.toFixed(1) + ' %' : ''}</span>
+                        <span style="color: #A9A5BD;" title="Größter Rückgang vom Kontohöchststand">Max. Rückgang</span>
+                        <span style="color: #FB7185; font-weight: 600;">−€${maxDD.toFixed(2)}${maxDDProzent !== null ? ' · ' + maxDDProzent.toFixed(1) + ' %' : ''}</span>
                     </div>
                 </div>
             </div>
@@ -2770,21 +2769,21 @@ function loadAnalytics() {
         <div id="cfAuswertung"></div>
 
         <!-- Win/Loss Donut -->
-        <div class="dashboard-section" style="background: linear-gradient(135deg, rgba(168, 85, 247, 0.08) 0%, rgba(236, 72, 153, 0.05) 100%); border: 1px solid rgba(168, 85, 247, 0.2); border-radius: 16px; padding: 24px; margin-bottom: 40px;">
+        <div class="dashboard-section" style="background: linear-gradient(135deg, rgba(124, 92, 240, 0.06) 0%, rgba(124, 92, 240, 0.025) 100%); border: 1px solid rgba(124, 92, 240, 0.15); border-radius: 16px; padding: 24px; margin-bottom: 40px;">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-                <div style="font-size: 14px; font-weight: 600; color: #cbd5e1;">Win/Loss</div>
+                <div style="font-size: 14px; font-weight: 600; color: #D5D2E2;">Win/Loss</div>
             </div>
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 30px;">
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 340px), 1fr)); gap: 30px;">
                 <canvas id="winLossChart"></canvas>
                 <div style="display: flex; flex-direction: column; justify-content: center;">
                     <div style="display: flex; gap: 20px; margin-bottom: 20px;">
                         <div style="display: flex; align-items: center; gap: 6px;">
-                            <div style="width: 12px; height: 12px; background: #10b981; border-radius: 2px;"></div>
-                            <span style="color: #cbd5e1; font-size: 12px;">Wins</span>
+                            <div style="width: 12px; height: 12px; background: #34D399; border-radius: 2px;"></div>
+                            <span style="color: #D5D2E2; font-size: 12px;">Wins</span>
                         </div>
                         <div style="display: flex; align-items: center; gap: 6px;">
-                            <div style="width: 12px; height: 12px; background: #f87171; border-radius: 2px;"></div>
-                            <span style="color: #cbd5e1; font-size: 12px;">Losses</span>
+                            <div style="width: 12px; height: 12px; background: #FB7185; border-radius: 2px;"></div>
+                            <span style="color: #D5D2E2; font-size: 12px;">Losses</span>
                         </div>
                     </div>
                 </div>
@@ -2826,8 +2825,8 @@ function renderAnalyticsCharts(trades, stats, wins, losses, behavioralScore) {
                 datasets: [{
                     label: 'Equity',
                     data: cumulativeData,
-                    borderColor: '#8b5cf6',
-                    backgroundColor: 'rgba(139, 92, 246, 0.1)',
+                    borderColor: '#7C5CF0',
+                    backgroundColor: 'rgba(124, 92, 240, 0.08)',
                     borderWidth: 2,
                     fill: true,
                     pointRadius: 0,
@@ -2844,11 +2843,11 @@ function renderAnalyticsCharts(trades, stats, wins, losses, behavioralScore) {
                 },
                 scales: {
                     y: {
-                        ticks: { color: '#94a3b8', font: { size: 10 } },
-                        grid: { color: 'rgba(168, 85, 247, 0.1)' }
+                        ticks: { color: '#A9A5BD', font: { size: 10 } },
+                        grid: { color: 'rgba(124, 92, 240, 0.075)' }
                     },
                     x: {
-                        ticks: { color: '#94a3b8', font: { size: 9 } },
+                        ticks: { color: '#A9A5BD', font: { size: 9 } },
                         grid: { display: false }
                     }
                 }
@@ -2898,11 +2897,11 @@ function renderAnalyticsCharts(trades, stats, wins, losses, behavioralScore) {
                         ticks: { display: false },
                         pointLabels: {
                             display: true,
-                            color: '#64748b',
+                            color: '#8A86A0',
                             font: { size: 10 }
                         },
-                        grid: { color: 'rgba(168, 85, 247, 0.1)' },
-                        angleLines: { color: 'rgba(168, 85, 247, 0.1)' }
+                        grid: { color: 'rgba(124, 92, 240, 0.075)' },
+                        angleLines: { color: 'rgba(124, 92, 240, 0.075)' }
                     }
                 }
             }
@@ -2921,8 +2920,8 @@ function renderAnalyticsCharts(trades, stats, wins, losses, behavioralScore) {
                 labels: ['Wins', 'Losses'],
                 datasets: [{
                     data: [wins.length, losses.length],
-                    backgroundColor: ['#10b981', '#f87171'],
-                    borderColor: '#0a0a15',
+                    backgroundColor: ['#34D399', '#FB7185'],
+                    borderColor: '#0B0A12',
                     borderWidth: 3
                 }]
             },
@@ -2967,8 +2966,8 @@ function renderCharts(trades, stats, winRateByDay, recentTrades) {
                 datasets: [{
                     label: 'Cumulative P&L',
                     data: equityData,
-                    borderColor: equityData[equityData.length - 1] >= 0 ? '#10b981' : '#f87171',
-                    backgroundColor: equityData[equityData.length - 1] >= 0 ? 'rgba(16, 185, 129, 0.05)' : 'rgba(248, 113, 113, 0.05)',
+                    borderColor: equityData[equityData.length - 1] >= 0 ? '#34D399' : '#FB7185',
+                    backgroundColor: equityData[equityData.length - 1] >= 0 ? 'rgba(52, 211, 153, 0.05)' : 'rgba(251, 113, 133, 0.05)',
                     tension: 0.4,
                     fill: true,
                     pointRadius: 0,
@@ -2981,8 +2980,8 @@ function renderCharts(trades, stats, winRateByDay, recentTrades) {
                 plugins: { legend: { display: false } },
                 scales: {
                     y: {
-                        ticks: { color: '#94a3b8', font: { size: 11 } },
-                        grid: { color: 'rgba(168, 85, 247, 0.05)', drawBorder: false }
+                        ticks: { color: '#A9A5BD', font: { size: 11 } },
+                        grid: { color: 'rgba(124, 92, 240, 0.038)', drawBorder: false }
                     },
                     x: { grid: { display: false } }
                 }
@@ -3006,14 +3005,14 @@ function renderCharts(trades, stats, winRateByDay, recentTrades) {
                 labels: ['Wins', 'Losses'],
                 datasets: [{
                     data: [stats.wins, stats.losses],
-                    backgroundColor: ['#10b981', '#f87171'],
-                    borderColor: '#0a0a15',
+                    backgroundColor: ['#34D399', '#FB7185'],
+                    borderColor: '#0B0A12',
                     borderWidth: 2
                 }]
             },
             options: {
                 responsive: true,
-                plugins: { legend: { position: 'bottom', labels: { color: '#cbd5e1' } } }
+                plugins: { legend: { position: 'bottom', labels: { color: '#D5D2E2' } } }
             }
         });
     }
@@ -3024,11 +3023,11 @@ function renderCharts(trades, stats, winRateByDay, recentTrades) {
         dayWinRateContainer.innerHTML = winRateByDay.map(day => `
             <div style="margin-bottom: 12px;">
                 <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
-                    <span style="color: #cbd5e1;">${day.day}</span>
+                    <span style="color: #D5D2E2;">${day.day}</span>
                     <span style="color: #a78bfa; font-weight: 600;">${day.rate}% (${day.total})</span>
                 </div>
-                <div style="width: 100%; height: 6px; background: rgba(168, 85, 247, 0.1); border-radius: 3px; overflow: hidden;">
-                    <div style="width: ${day.rate}%; height: 100%; background: linear-gradient(90deg, #a855f7, #ec4899);"></div>
+                <div style="width: 100%; height: 6px; background: rgba(124, 92, 240, 0.075); border-radius: 3px; overflow: hidden;">
+                    <div style="width: ${day.rate}%; height: 100%; background: linear-gradient(90deg, #8B6CF3, #ec4899);"></div>
                 </div>
             </div>
         `).join('');
@@ -3105,8 +3104,8 @@ function loadPositions() {
     
     if (positions.length === 0) {
         container.innerHTML = `
-            <div style="grid-column: 1/-1; text-align: center; padding: 40px; color: #94a3b8;">
-                <p style="font-size: 14px;">Noch keine offenen Positionen. 🚀</p>
+            <div style="grid-column: 1/-1; text-align: center; padding: 40px; color: #A9A5BD;">
+                <p style="font-size: 14px;">Noch keine offenen Positionen. </p>
             </div>
         `;
         updatePortfolioSummary();
@@ -3144,7 +3143,7 @@ function loadPositions() {
                 <div class="position-thesis">
                     <strong>These:</strong> ${escapeHtml(pos.thesis)}
                 </div>` : `
-                <div class="position-thesis" style="color:#64748b;">
+                <div class="position-thesis" style="color:#8A86A0;">
                     Keine These hinterlegt — kannst du nachtragen.
                 </div>`}
                 
@@ -3252,7 +3251,7 @@ function updatePositionsVorschau() {
                 zusatz, r.wert.totalverlust ? 'rot' : 'gut'));
             if (r.wert.hinweis) {
                 teile.push('<div class="zert-warnung" style="grid-column:1/-1;'
-                    + 'display:block;">⚠️ ' + escapeHtml(r.wert.hinweis) + '</div>');
+                    + 'display:block;">' + escapeHtml(r.wert.hinweis) + '</div>');
             }
         } else {
             teile.push(kachel('Risiko bei deinem Stop', '—', r.grund, 'leer'));
@@ -3280,7 +3279,7 @@ function addPosition(event) {
         // und dann fehlt nicht nur die These, sondern der ganze Trade.
         // Nachtragen geht; den nicht erfassten Trade holt niemand zurueck.
         if (!ticker || !entry || !size) {
-            showToast('❌ Ticker, Kaufpreis und Einsatz brauche ich.', 'error');
+            showToast('Ticker, Kaufpreis und Einsatz brauche ich.', 'error');
             return;
         }
         
@@ -3289,11 +3288,11 @@ function addPosition(event) {
         
         // Entry 0 wuerde beim Schliessen eine Division durch null ausloesen
         if (isNaN(entryNum) || entryNum <= 0) {
-            showToast('❌ Entry Price muss groesser als 0 sein!', 'error');
+            showToast('Entry Price muss groesser als 0 sein!', 'error');
             return;
         }
         if (isNaN(sizeNum) || sizeNum <= 0) {
-            showToast('❌ Position Size muss groesser als 0 sein!', 'error');
+            showToast('Position Size muss groesser als 0 sein!', 'error');
             return;
         }
         
@@ -3345,10 +3344,10 @@ function addPosition(event) {
         if (pdir) pdir.value = 'long';
         
         loadPositions();
-        showToast(`✅ Position ${ticker} geöffnet!`);
+        showToast(`Position ${ticker} geöffnet!`);
     } catch (error) {
         console.error('Fehler beim Öffnen der Position:', error);
-        showToast('❌ Fehler beim Öffnen der Position!', 'error');
+        showToast('Fehler beim Öffnen der Position!', 'error');
     }
 }
 
@@ -3362,7 +3361,7 @@ function deletePosition(idx) {
     const modalText = document.getElementById('deleteModalText');
     const confirmBtn = document.getElementById('deleteConfirmBtn');
     
-    modalTitle.textContent = '🗑️ Position löschen?';
+    modalTitle.textContent = 'Position löschen?';
     modalText.textContent = `${position.ticker} wird permanent gelöscht.`;
     confirmBtn.textContent = 'Ja, löschen';
     confirmBtn.onclick = () => confirmDeletePosition();
@@ -3381,7 +3380,7 @@ function confirmDeletePosition() {
         
         document.getElementById('deleteModal').style.display = 'none';
         loadPositions();
-        showToast(`✅ Position ${removedTicker} gelöscht!`);
+        showToast(`Position ${removedTicker} gelöscht!`);
         positionToDelete = null;
     }
 }
@@ -3411,13 +3410,13 @@ function confirmClosePositionModal() {
     
     // Validierung
     if (!exitPriceInput || exitPriceInput === '') {
-        showToast('❌ Exit Price erforderlich!', 'error');
+        showToast('Exit Price erforderlich!', 'error');
         return;
     }
     
     const exitPrice = parseFloat(exitPriceInput);
     if (isNaN(exitPrice) || exitPrice <= 0) {
-        showToast('❌ Exit Price muss eine Zahl > 0 sein!', 'error');
+        showToast('Exit Price muss eine Zahl > 0 sein!', 'error');
         return;
     }
     
@@ -3471,10 +3470,10 @@ function confirmClosePositionModal() {
         
         // Reload UI
         loadPositions();
-        showToast(`✅ Position ${position.ticker} geschlossen! P&L: €${closedPosition.pnl.toFixed(2)}`);
+        showToast(`Position ${position.ticker} geschlossen! P&L: €${closedPosition.pnl.toFixed(2)}`);
     } catch (error) {
         console.error('Fehler:', error);
-        showToast('❌ Fehler beim Schließen der Position!', 'error');
+        showToast('Fehler beim Schließen der Position!', 'error');
     }
 }
 
@@ -3487,8 +3486,8 @@ function displayPositionsScreenshot(base64Data) {
     positionsScreenshotData = base64Data;
     const preview = document.getElementById('positionsScreenshotPreview');
     preview.innerHTML = `
-        <img src="${base64Data}" alt="Position Setup" style="max-width: 100%; height: auto; border-radius: 8px; border: 1px solid rgba(168, 85, 247, 0.3); display: block; margin-top: 10px;">
-        <button type="button" onclick="document.getElementById('positionsScreenshotInput').click()" style="margin-top: 10px; padding: 8px 16px; background: rgba(168, 85, 247, 0.2); border: 1px solid rgba(168, 85, 247, 0.4); color: #cbd5e1; border-radius: 6px; cursor: pointer; font-size: 12px; font-weight: 600;">Bild ändern</button>
+        <img src="${base64Data}" alt="Position Setup" style="max-width: 100%; height: auto; border-radius: 8px; border: 1px solid rgba(124, 92, 240, 0.225); display: block; margin-top: 10px;">
+        <button type="button" onclick="document.getElementById('positionsScreenshotInput').click()" style="margin-top: 10px; padding: 8px 16px; background: rgba(124, 92, 240, 0.15); border: 1px solid rgba(124, 92, 240, 0.3); color: #D5D2E2; border-radius: 6px; cursor: pointer; font-size: 12px; font-weight: 600;">Bild ändern</button>
     `;
 }
 
@@ -3515,7 +3514,7 @@ function displayClosedPositions() {
     
     container.innerHTML = closedPositions.map((pos, idx) => {
         const dateClosed = new Date(pos.dateClosed).toLocaleDateString('de-DE');
-        const pnlColor = pos.pnl >= 0 ? '#10b981' : '#f87171';
+        const pnlColor = pos.pnl >= 0 ? '#34D399' : '#FB7185';
         const pnlSign = pos.pnl >= 0 ? '+' : '';
         
         return `
@@ -3546,11 +3545,11 @@ function displayClosedPositions() {
                 <div class="position-thesis">
                     <strong>These:</strong> ${escapeHtml(pos.thesis)}
                 </div>` : `
-                <div class="position-thesis" style="color:#64748b;">
+                <div class="position-thesis" style="color:#8A86A0;">
                     Keine These hinterlegt — kannst du nachtragen.
                 </div>`}
                 
-                <div class="position-thesis" style="margin-top: 12px; color: #cbd5e1; font-size: 13px; border-top: 1px solid rgba(168, 85, 247, 0.1); padding-top: 12px;">
+                <div class="position-thesis" style="margin-top: 12px; color: #D5D2E2; font-size: 13px; border-top: 1px solid rgba(124, 92, 240, 0.075); padding-top: 12px;">
                     <strong>Grund zum Schließen:</strong> ${escapeHtml(pos.exitReason)}
                 </div>
                 
@@ -3578,7 +3577,7 @@ function deleteClosedPosition(idx) {
     const modalText = document.getElementById('deleteModalText');
     const confirmBtn = document.getElementById('deleteConfirmBtn');
     
-    modalTitle.textContent = '🗑️ Geschlossene Position löschen?';
+    modalTitle.textContent = 'Geschlossene Position löschen?';
     modalText.textContent = `${position.ticker} wird permanent gelöscht.`;
     confirmBtn.textContent = 'Ja, löschen';
     confirmBtn.onclick = () => confirmDeleteClosedPosition();
@@ -3597,7 +3596,7 @@ function confirmDeleteClosedPosition() {
         
         document.getElementById('deleteModal').style.display = 'none';
         displayClosedPositions();
-        showToast(`✅ Geschlossene Position ${removedTicker} gelöscht!`);
+        showToast(`Geschlossene Position ${removedTicker} gelöscht!`);
         closedPositionToDelete = null;
     }
 }
@@ -3608,7 +3607,7 @@ function renderPortfolioCompositionChart(positions) {
     const legendDiv = document.getElementById('portfolioCompositionLegend');
     
     if (!barDiv || !legendDiv || positions.length === 0) {
-        barDiv.innerHTML = '<div style="width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; color: #64748b; font-size: 13px;">Noch keine Positionen</div>';
+        barDiv.innerHTML = '<div style="width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; color: #8A86A0; font-size: 13px;">Noch keine Positionen</div>';
         legendDiv.innerHTML = '';
         return;
     }
@@ -3623,9 +3622,9 @@ function renderPortfolioCompositionChart(positions) {
     
     // Farben - Premium Palette
     const colors = [
-        '#a855f7', '#ec4899', '#3b82f6', '#10b981', '#f59e0b', 
-        '#fb7185', '#6366f1', '#14b8a6', '#f97316', '#8b5cf6',
-        '#06b6d4', '#84cc16', '#ef4444', '#8855ff'
+        '#8B6CF3', '#ec4899', '#3b82f6', '#34D399', '#f59e0b', 
+        '#fb7185', '#6366f1', '#14b8a6', '#f97316', '#7C5CF0',
+        '#06b6d4', '#84cc16', '#F0505F', '#8855ff'
     ];
     
     // Render Stacked Bar
@@ -3670,10 +3669,10 @@ function renderPortfolioCompositionChart(positions) {
             onmouseout="this.style.transform='translateY(0)'; this.style.borderColor='rgba(${parseInt(color.slice(1,3),16)}, ${parseInt(color.slice(3,5),16)}, ${parseInt(color.slice(5,7),16)}, 0.3)'">
                 <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 12px;">
                     <div style="width: 10px; height: 10px; border-radius: 50%; background: ${color}; box-shadow: 0 0 12px ${color}80;"></div>
-                    <div style="font-weight: 700; font-size: 14px; color: #f1f5f9;">${escapeHtml(pos.ticker)}</div>
+                    <div style="font-weight: 700; font-size: 14px; color: #ECEAF4;">${escapeHtml(pos.ticker)}</div>
                 </div>
-                <div style="font-size: 16px; font-weight: 800; color: #f1f5f9; margin-bottom: 4px;">€${pos.size.toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
-                <div style="font-size: 12px; color: #94a3b8; font-weight: 600;">${percentage.toFixed(1)}% des Portfolios</div>
+                <div style="font-size: 16px; font-weight: 700; color: #ECEAF4; margin-bottom: 4px;">€${pos.size.toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
+                <div style="font-size: 12px; color: #A9A5BD; font-weight: 600;">${percentage.toFixed(1)}% des Portfolios</div>
             </div>
         `;
     }).join('');
@@ -3699,10 +3698,10 @@ function renderTradeScoreChart(tradeScore, stats) {
                     Math.min((stats.trades.length / 100) * 30, 30),
                     Math.min((stats.profitFactor / 2) * 20, 20)
                 ],
-                borderColor: '#a855f7',
-                backgroundColor: 'rgba(168, 85, 247, 0.15)',
+                borderColor: '#8B6CF3',
+                backgroundColor: 'rgba(124, 92, 240, 0.112)',
                 borderWidth: 2,
-                pointBackgroundColor: '#a855f7',
+                pointBackgroundColor: '#8B6CF3',
                 pointBorderColor: '#fff',
                 pointRadius: 5,
                 pointHoverRadius: 7
@@ -3715,8 +3714,8 @@ function renderTradeScoreChart(tradeScore, stats) {
             scales: {
                 r: {
                     max: 100,
-                    ticks: { color: '#94a3b8', font: { size: 11 } },
-                    grid: { color: 'rgba(168, 85, 247, 0.1)' }
+                    ticks: { color: '#A9A5BD', font: { size: 11 } },
+                    grid: { color: 'rgba(124, 92, 240, 0.075)' }
                 }
             }
         }
@@ -3743,12 +3742,12 @@ function renderSetupTypeChart(trades) {
             // P&L Daten
             const pnl = parseFloat(stats.totalPnL);
             pnlData.push(pnl);
-            pnlColors.push(pnl >= 0 ? 'rgba(16,185,129,0.7)' : 'rgba(248,113,113,0.7)'); // Grün/Rot
+            pnlColors.push(pnl >= 0 ? 'rgba(52, 211, 153, 0.7)' : 'rgba(251, 113, 133, 0.7)'); // Grün/Rot
             
             // Win-Rate Daten
             const winRate = parseFloat(stats.winRate);
             winRateData.push(winRate);
-            winRateColors.push(winRate >= 50 ? 'rgba(168,85,247,0.7)' : 'rgba(248,113,113,0.7)'); // Purple/Rot
+            winRateColors.push(winRate >= 50 ? 'rgba(124, 92, 240, 0.525)' : 'rgba(251, 113, 133, 0.7)'); // Purple/Rot
         }
     });
     
@@ -3796,7 +3795,7 @@ function renderSetupTypeChart(trades) {
             plugins: {
                 legend: {
                     labels: {
-                        color: '#cbd5e1',
+                        color: '#D5D2E2',
                         font: { size: 13, weight: '600' },
                         padding: 20,
                         usePointStyle: true,
@@ -3804,11 +3803,11 @@ function renderSetupTypeChart(trades) {
                     }
                 },
                 tooltip: {
-                    backgroundColor: 'rgba(15, 15, 30, 0.95)',
-                    borderColor: 'rgba(168,85,247,0.4)',
+                    backgroundColor: 'rgba(19, 18, 28, 0.95)',
+                    borderColor: 'rgba(124, 92, 240, 0.3)',
                     borderWidth: 1,
-                    titleColor: '#d8b4fe',
-                    bodyColor: '#cbd5e1',
+                    titleColor: '#C9B8FF',
+                    bodyColor: '#D5D2E2',
                     padding: 12,
                     titleFont: { size: 13, weight: '600' },
                     bodyFont: { size: 12 },
@@ -3828,7 +3827,7 @@ function renderSetupTypeChart(trades) {
                 x: {
                     stacked: false,
                     ticks: {
-                        color: '#94a3b8',
+                        color: '#A9A5BD',
                         font: { size: 11 },
                         callback: (value, index) => {
                             if (index % 2 === 0 || value === 0) return value;
@@ -3836,17 +3835,17 @@ function renderSetupTypeChart(trades) {
                         }
                     },
                     grid: {
-                        color: 'rgba(168,85,247,0.05)',
+                        color: 'rgba(124, 92, 240, 0.038)',
                         drawBorder: false
                     }
                 },
                 y: {
                     ticks: {
-                        color: '#cbd5e1',
+                        color: '#D5D2E2',
                         font: { size: 12, weight: '600' }
                     },
                     grid: {
-                        color: 'rgba(168,85,247,0.05)',
+                        color: 'rgba(124, 92, 240, 0.038)',
                         drawBorder: false
                     }
                 }
@@ -4181,11 +4180,11 @@ function addTransaction(e) {
         const note = document.getElementById('txNote').value.trim();
 
         if (!Number.isFinite(amount) || amount <= 0) {
-            showToast('❌ Betrag muss groesser als 0 sein!', 'error');
+            showToast('Betrag muss groesser als 0 sein!', 'error');
             return;
         }
         if (!date) {
-            showToast('❌ Bitte ein Datum waehlen!', 'error');
+            showToast('Bitte ein Datum waehlen!', 'error');
             return;
         }
 
@@ -4210,11 +4209,11 @@ function addTransaction(e) {
         if (typeof loadDashboard === 'function') loadDashboard();
 
         showToast(type === 'deposit'
-            ? `✅ Einzahlung über €${amount.toFixed(2)} gespeichert!`
-            : `✅ Auszahlung über €${amount.toFixed(2)} gespeichert!`);
+            ? `Einzahlung über €${amount.toFixed(2)} gespeichert!`
+            : `Auszahlung über €${amount.toFixed(2)} gespeichert!`);
     } catch (err) {
         console.error('Buchung konnte nicht gespeichert werden:', err);
-        showToast('❌ Buchung konnte nicht gespeichert werden!', 'error');
+        showToast('Buchung konnte nicht gespeichert werden!', 'error');
     }
 }
 
@@ -4225,7 +4224,7 @@ function deleteTransaction(id) {
     const text = document.getElementById('deleteModalText');
     const btn = document.getElementById('deleteConfirmBtn');
 
-    title.textContent = '🗑️ Buchung löschen?';
+    title.textContent = 'Buchung löschen?';
     text.textContent = 'Diese Buchung wird permanent gelöscht.';
     btn.textContent = 'Ja, löschen';
     btn.onclick = () => confirmDeleteTransaction();
@@ -4244,7 +4243,7 @@ function confirmDeleteTransaction() {
     transactionToDelete = null;
     loadTransactions();
     if (typeof loadDashboard === 'function') loadDashboard();
-    showToast('✅ Buchung gelöscht!');
+    showToast('Buchung gelöscht!');
 }
 
 function setTransactionDateToday() {
@@ -4278,9 +4277,9 @@ function loadTransactions() {
     };
 
     set('txNetDeposit', fmt(netto));
-    set('txBalance', fmt(stand), stand >= netto ? '#10b981' : '#f87171');
+    set('txBalance', fmt(stand), stand >= netto ? '#34D399' : '#FB7185');
     set('txReturn', (rendite >= 0 ? '+' : '') + rendite.toFixed(2) + '%',
-        rendite >= 0 ? '#3b82f6' : '#f87171');
+        rendite >= 0 ? '#3b82f6' : '#FB7185');
     set('txCount', String(list.length));
 
     const box = document.getElementById('transactionsList');
@@ -4288,7 +4287,7 @@ function loadTransactions() {
 
     if (list.length === 0) {
         box.innerHTML =
-            '<div style="text-align:center;padding:40px 20px;color:#64748b;">' +
+            '<div style="text-align:center;padding:40px 20px;color:#8A86A0;">' +
             '<p style="font-size:14px;">Noch keine Buchung erfasst</p>' +
             '<p style="font-size:13px;margin-top:6px;">Trag deine erste ' +
             'Einzahlung ein, damit Kontostand und Rendite stimmen.</p></div>';
@@ -4297,7 +4296,7 @@ function loadTransactions() {
 
     box.innerHTML = list.map(t => {
         const ein = t.type === 'deposit';
-        const farbe = ein ? '#10b981' : '#fb923c';
+        const farbe = ein ? '#34D399' : '#fb923c';
         const datum = new Date(t.date).toLocaleDateString('de-DE',
             { day: '2-digit', month: '2-digit', year: 'numeric' });
         return `
@@ -4324,8 +4323,8 @@ function loadTransactions() {
 // Idee und Trade und liefert das Chance-Risiko-Verhaeltnis VOR dem Einstieg.
 
 const SETUPS_STATUS = {
-    watching:  { label: 'Beobachten',   color: '#a855f7' },
-    ready:     { label: 'Bereit',       color: '#10b981' },
+    watching:  { label: 'Beobachten',   color: '#8B6CF3' },
+    ready:     { label: 'Bereit',       color: '#34D399' },
     entered:   { label: 'Eingestiegen', color: '#3b82f6' },
     discarded: { label: 'Verworfen',    color: '#fb923c' }
 };
@@ -4442,9 +4441,9 @@ function setupsCalcCrv(direction, entry, stop, target, leverage) {
 }
 
 function setupsCrvColor(crv) {
-    if (crv >= 2) return '#10b981';
+    if (crv >= 2) return '#34D399';
     if (crv >= 1) return '#fbbf24';
-    return '#f87171';
+    return '#FB7185';
 }
 
 function updateSetupsCrvPreview() {
@@ -4470,7 +4469,7 @@ function updateSetupsCrvPreview() {
 
     if (koInfo && koInfo.fehler) {
         box.classList.add('setups-crv-warn');
-        box.innerHTML = '⚠️ ' + escapeHtml(koInfo.fehler);
+        box.innerHTML = '' + escapeHtml(koInfo.fehler);
         return;
     }
 
@@ -4481,7 +4480,7 @@ function updateSetupsCrvPreview() {
     }
     if (!r.ok) {
         box.classList.add('setups-crv-warn');
-        box.innerHTML = '⚠️ ' + escapeHtml(r.reason);
+        box.innerHTML = '' + escapeHtml(r.reason);
         return;
     }
     const c = setupsCrvColor(r.crv);
@@ -4495,16 +4494,16 @@ function updateSetupsCrvPreview() {
     let zeile =
         '<span>Chance-Risiko</span>' +
         '<strong style="color:' + c + ';">1 : ' + r.crv.toFixed(2) + '</strong>' +
-        '<span style="color:#f87171;">Risiko −' + risiko.toFixed(2) + '%</span>' +
-        '<span style="color:#10b981;">Chance +' + r.rewardPct.toFixed(2) + '%</span>' +
+        '<span style="color:#FB7185;">Risiko −' + risiko.toFixed(2) + '%</span>' +
+        '<span style="color:#34D399;">Chance +' + r.rewardPct.toFixed(2) + '%</span>' +
         (r.leverage > 1
-            ? '<span style="color:#d8b4fe;">' + formatLeverage(r.leverage)
+            ? '<span style="color:#C9B8FF;">' + formatLeverage(r.leverage)
               + (koInfo && koInfo.hebel ? ' (gerechnet)' : ' Hebel') + '</span>'
             : '');
 
     if (koInfo && koInfo.abstandPct !== null) {
         const eng = koInfo.abstandPct < 5;
-        zeile += '<span style="color:' + (eng ? '#f87171' : '#fbbf24') + ';">'
+        zeile += '<span style="color:' + (eng ? '#FB7185' : '#fbbf24') + ';">'
               + 'KO-Abstand ' + koInfo.abstandPct.toFixed(1).replace('.', ',')
               + ' %</span>';
     }
@@ -4513,7 +4512,7 @@ function updateSetupsCrvPreview() {
 
     if (total) {
         box.classList.add('setups-crv-warn');
-        box.innerHTML = '⚠️ <strong>Dein Stop liegt jenseits der Schwelle.</strong> '
+        box.innerHTML = '<strong>Dein Stop liegt jenseits der Schwelle.</strong> '
             + 'Der Schein verfällt vorher wertlos — der Stop löst nie aus. '
             + 'Du riskierst nicht ' + r.riskPct.toFixed(0) + ' %, sondern alles. '
             + 'Setz den Stop über ' + ko.toFixed(2).replace('.', ',')
@@ -4521,7 +4520,7 @@ function updateSetupsCrvPreview() {
     } else if (koInfo && koInfo.abstandPct !== null && koInfo.abstandPct < 5) {
         box.classList.add('setups-crv-warn');
         box.innerHTML = zeile
-            + '<span style="color:#f87171;">⚠️ Nur '
+            + '<span style="color:#FB7185;">Nur '
             + koInfo.abstandPct.toFixed(1).replace('.', ',')
             + ' % bis zum Totalverlust</span>';
     }
@@ -4548,26 +4547,26 @@ function addSetupsItem(e) {
             : (levRaw > 0 ? levRaw : 1);
 
         if (!ticker) {
-            showToast('❌ Ticker fehlt!', 'error');
+            showToast('Ticker fehlt!', 'error');
             return;
         }
         if (!(entryFrom > 0) && !(entryTo > 0)) {
-            showToast('❌ Mindestens einen Einstiegspreis angeben!', 'error');
+            showToast('Mindestens einen Einstiegspreis angeben!', 'error');
             return;
         }
         if (levRaw && levRaw < 1) {
-            showToast('❌ Hebel muss mindestens 1 sein!', 'error');
+            showToast('Hebel muss mindestens 1 sein!', 'error');
             return;
         }
         if (koInfo && koInfo.fehler) {
-            showToast('❌ ' + koInfo.fehler, 'error');
+            showToast('' + koInfo.fehler, 'error');
             return;
         }
 
         // Vertauschte Werte speichern wir nicht still - lieber nachfragen
         const check = setupsCalcCrv(direction, setupsEntryPrice(entryFrom, entryTo), stop, target);
         if (!check.ok && check.reason !== 'unvollstaendig') {
-            showToast('❌ ' + check.reason, 'error');
+            showToast('' + check.reason, 'error');
             return;
         }
 
@@ -4590,10 +4589,10 @@ function addSetupsItem(e) {
         document.getElementById('setupsScreenshotPreview').innerHTML = '';
         updateSetupsCrvPreview();
         loadSetups();
-        showToast(`✅ Setup ${ticker} gespeichert!`);
+        showToast(`Setup ${ticker} gespeichert!`);
     } catch (err) {
         console.error('Setup konnte nicht gespeichert werden:', err);
-        showToast('❌ Setup konnte nicht gespeichert werden!', 'error');
+        showToast('Setup konnte nicht gespeichert werden!', 'error');
     }
 }
 
@@ -4614,7 +4613,7 @@ function setSetupsStatus(id, status) {
 function deleteSetupsItem(id) {
     setupsToDelete = id;
     const w = getSetups().find(x => x.id === id);
-    document.getElementById('deleteModalTitle').textContent = '🗑️ Setup löschen?';
+    document.getElementById('deleteModalTitle').textContent = 'Setup löschen?';
     document.getElementById('deleteModalText').textContent =
         (w ? w.ticker : 'Das Setup') + ' wird permanent gelöscht.';
     const btn = document.getElementById('deleteConfirmBtn');
@@ -4624,7 +4623,7 @@ function deleteSetupsItem(id) {
         document.getElementById('deleteModal').style.display = 'none';
         setupsToDelete = null;
         loadSetups();
-        showToast('✅ Setup gelöscht!');
+        showToast('Setup gelöscht!');
     };
     document.getElementById('deleteModal').style.display = 'flex';
 }
@@ -4675,7 +4674,7 @@ function setupsToJournal(id) {
         const exit = document.getElementById('exitPrice');
         if (exit) setTimeout(() => exit.focus(), 400);
 
-        showToast(`✅ ${w.ticker} ins Journal übernommen – Ausstieg und Größe ergänzen`);
+        showToast(`${w.ticker} ins Journal übernommen – Ausstieg und Größe ergänzen`);
     }, 250);
 }
 
@@ -4726,7 +4725,7 @@ function loadSetups() {
             discarded: 'Noch nichts verworfen.',
             all: 'Noch kein Setup erfasst.'
         }[setupsCurrentFilter];
-        box.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:40px 20px;color:#64748b;font-size:14px;">' +
+        box.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:40px 20px;color:#8A86A0;font-size:14px;">' +
                         escapeHtml(msg) + '</div>';
         return;
     }
@@ -4760,8 +4759,8 @@ function loadSetups() {
 
             <div class="setups-levels">
                 <div><span>Einstieg</span><strong>${zone}</strong></div>
-                <div><span>Stop</span><strong style="color:#f87171;">${fmt(w.stop)}</strong></div>
-                <div><span>Ziel</span><strong style="color:#10b981;">${fmt(w.target)}</strong></div>
+                <div><span>Stop</span><strong style="color:#FB7185;">${fmt(w.stop)}</strong></div>
+                <div><span>Ziel</span><strong style="color:#34D399;">${fmt(w.target)}</strong></div>
             </div>
 
             ${r.ok ? `
@@ -4770,8 +4769,8 @@ function loadSetups() {
                 <strong style="color:${setupsCrvColor(r.crv)};">1 : ${r.crv.toFixed(2)}</strong>
             </div>
             <div class="setups-risk-row">
-                <span style="color:#f87171;">Risiko −${r.riskPct.toFixed(2)}%</span>
-                <span style="color:#10b981;">Chance +${r.rewardPct.toFixed(2)}%</span>
+                <span style="color:#FB7185;">Risiko −${r.riskPct.toFixed(2)}%</span>
+                <span style="color:#34D399;">Chance +${r.rewardPct.toFixed(2)}%</span>
             </div>` : ''}
 
             ${w.thesis ? `<div class="setups-thesis">${escapeHtml(w.thesis)}</div>` : ''}
@@ -4799,12 +4798,12 @@ function displaySetupsScreenshot(dataUrl) {
     box.innerHTML =
         '<img src="' + dataUrl + '" alt="Setup" ' +
         'style="max-width:100%;border-radius:8px;margin-top:10px;' +
-        'border:1px solid rgba(168,85,247,0.3);display:block;">' +
+        'border:1px solid rgba(124, 92, 240, 0.225);display:block;">' +
         '<button type="button" onclick="clearSetupsScreenshot()" ' +
-        'style="margin-top:10px;padding:8px 16px;background:rgba(248,113,113,0.12);' +
-        'border:1px solid rgba(248,113,113,0.35);color:#f87171;border-radius:6px;' +
+        'style="margin-top:10px;padding:8px 16px;background:rgba(251, 113, 133, 0.12);' +
+        'border:1px solid rgba(251, 113, 133, 0.35);color:#FB7185;border-radius:6px;' +
         'cursor:pointer;font-size:12px;font-weight:600;">Bild entfernen</button>';
-    showToast('✅ Screenshot eingefügt!');
+    showToast('Screenshot eingefügt!');
 }
 
 function clearSetupsScreenshot() {

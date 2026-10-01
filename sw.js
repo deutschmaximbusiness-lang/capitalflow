@@ -10,7 +10,7 @@
  * Bei jedem Release CACHE_VERSION hochzaehlen.
  */
 
-const CACHE_VERSION = 'cf-v51';
+const CACHE_VERSION = 'cf-v52';
 const CACHE_APP = CACHE_VERSION + '-app';
 const CACHE_ASSETS = CACHE_VERSION + '-assets';
 
@@ -22,6 +22,11 @@ const PRECACHE = [
     './app.html',
     './css/style.css',
     './css/basis.css',
+    './css/thema.css',
+    './fonts/inter-latin-400-normal.woff2',
+    './fonts/inter-latin-500-normal.woff2',
+    './fonts/inter-latin-600-normal.woff2',
+    './fonts/inter-latin-700-normal.woff2',
     './js/keys.js',
     './js/app.js',
     './js/pwa.js',

@@ -287,7 +287,7 @@
         // Hinweis nur, wenn die Daten aus einem frueheren Zugang stammen
         if (kennung !== nutzer.id && bestand.length > 0) {
             setTimeout(function () {
-                meldung('✅ ' + bestand.length + ' Trades aus deinem '
+                meldung('' + bestand.length + ' Trades aus deinem '
                         + 'bisherigen Zugang', 'success');
             }, 1400);
         }
@@ -303,13 +303,13 @@
                         // Im Browser liegt mehr als in der Datenbank -
                         // bis die Schreibwege umgestellt sind, hat der
                         // lokale Stand Vorrang
-                        meldung('⚠️ ' + r.lokal + ' Einträge sind noch nicht '
+                        meldung('' + r.lokal + ' Einträge sind noch nicht '
                                 + 'in der Datenbank – bitte über Daten → '
                                 + 'Sicherung herunterladen', 'error');
                         return;
                     }
                     console.warn('Daten konnten nicht geladen werden:', r.grund);
-                    meldung('⚠️ Zeige den letzten Stand – Datenbank nicht erreichbar',
+                    meldung('Zeige den letzten Stand – Datenbank nicht erreichbar',
                             'error');
                     return;
                 }
@@ -420,7 +420,7 @@
 
         if (error) {
             if (btn) { btn.disabled = false; btn.style.opacity = '1'; }
-            meldung('❌ Anmeldung fehlgeschlagen: ' + error.message, 'error');
+            meldung('Anmeldung fehlgeschlagen: ' + error.message, 'error');
         }
     }
 
@@ -439,7 +439,7 @@
         const key = (typeof cfSchluesselNormalisieren === 'function')
             ? cfSchluesselNormalisieren(feld && feld.value)
             : (feld && feld.value || '').trim();
-        if (!key) { meldung('❌ Bitte deinen Access Key eingeben', 'error'); return; }
+        if (!key) { meldung('Bitte deinen Access Key eingeben', 'error'); return; }
 
         if (btn) { btn.disabled = true; btn.textContent = 'Prüfe…'; }
 
@@ -451,14 +451,14 @@
         if (btn) { btn.disabled = false; btn.textContent = 'Freischalten'; }
 
         if (error) {
-            meldung('❌ Fehler: ' + error.message, 'error');
+            meldung('Fehler: ' + error.message, 'error');
             return;
         }
         if (!data || !data.ok) {
             const grund = (data && data.grund) || 'ungueltig';
             meldung(grund === 'bereits verwendet'
-                ? '❌ Dieser Key gehört bereits zu einem anderen Konto'
-                : '❌ Access Key ungültig', 'error');
+                ? 'Dieser Key gehört bereits zu einem anderen Konto'
+                : 'Access Key ungültig', 'error');
             if (feld) feld.value = '';
             return;
         }

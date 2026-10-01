@@ -23,31 +23,30 @@
 
 /* Inter liegt im Repo statt bei Google: keine Anfrage an Google-Server
    beim Oeffnen (DSGVO), und sie funktioniert offline in der installierten App.
-   Eigener Name "CF Inter", damit sie nicht mit dem Google-Inter kollidiert,
-   das app.html bis M6b noch laedt. Lizenz: fonts/OFL-Inter.txt */
+   Lizenz: fonts/OFL-Inter.txt */
 @font-face {
-    font-family: 'CF Inter';
+    font-family: 'Inter';
     font-style: normal;
     font-weight: 400;
     font-display: swap;
     src: url('../fonts/inter-latin-400-normal.woff2') format('woff2');
 }
 @font-face {
-    font-family: 'CF Inter';
+    font-family: 'Inter';
     font-style: normal;
     font-weight: 500;
     font-display: swap;
     src: url('../fonts/inter-latin-500-normal.woff2') format('woff2');
 }
 @font-face {
-    font-family: 'CF Inter';
+    font-family: 'Inter';
     font-style: normal;
     font-weight: 600;
     font-display: swap;
     src: url('../fonts/inter-latin-600-normal.woff2') format('woff2');
 }
 @font-face {
-    font-family: 'CF Inter';
+    font-family: 'Inter';
     font-style: normal;
     font-weight: 700;
     font-display: swap;
@@ -93,7 +92,7 @@
     --cf-gitter: #1E1C2A;
 
     /* Schrift */
-    --cf-schrift: 'CF Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
+    --cf-schrift: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
     --cf-t-12: 0.75rem;
     --cf-t-13: 0.8125rem;
     --cf-t-14: 0.875rem;

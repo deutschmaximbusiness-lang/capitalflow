@@ -29,7 +29,7 @@
             .toLocaleString('de-DE', { minimumFractionDigits: 2,
                                        maximumFractionDigits: 2 });
     }
-    function farbe(n) { return (parseFloat(n) || 0) >= 0 ? '#4ade80' : '#f87171'; }
+    function farbe(n) { return (parseFloat(n) || 0) >= 0 ? '#4ade80' : '#FB7185'; }
 
     function lokal(key) {
         try {

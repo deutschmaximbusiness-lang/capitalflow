@@ -20,7 +20,7 @@
         gewinnFlaeche: '#12A38F', verlustFlaeche: '#E5484D', warnungFlaeche: '#C98500',
         serie1: '#9F7AEA', serie2: '#22D3EE',
     };
-    const SCHRIFT = "'CF Inter', system-ui, -apple-system, 'Segoe UI', sans-serif";
+    const SCHRIFT = "'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif";
 
     // ------------------------------------------------------------ KO-Zone
     // Eine Stelle fuer die Schwellen. Aenderung hier aendert App und Styleguide.

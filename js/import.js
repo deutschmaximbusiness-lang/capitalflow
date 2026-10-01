@@ -933,9 +933,9 @@
         tickerFeld = {};
         if (a.basiswerte.length) {
             h += '<div style="margin-bottom:12px;">'
-              + '<div style="font-size:12px;font-weight:700;color:#cbd5e1;margin-bottom:4px;">'
+              + '<div style="font-size:12px;font-weight:700;color:#D5D2E2;margin-bottom:4px;">'
               + 'Kürzel je Basiswert</div>'
-              + '<p style="margin:0 0 10px;color:#64748b;font-size:11px;line-height:1.55;">'
+              + '<p style="margin:0 0 10px;color:#8A86A0;font-size:11px;line-height:1.55;">'
               + 'In der Datei steht nur der Klarname. Zwei Zeilen mit demselben '
               + 'Kürzel werden zu einem Basiswert — so gehören Aktie und '
               + 'Knock-out darauf zusammen.</p>'
@@ -944,16 +944,16 @@
             a.basiswerte.forEach(function (n, i) {
                 tickerFeld[n] = vorschlag(n, (a.isinFuer || {})[n]);
                 h += '<div style="display:flex;gap:8px;align-items:center;">'
-                  + '<span style="flex:1;color:#94a3b8;font-size:11.5px;'
+                  + '<span style="flex:1;color:#A9A5BD;font-size:11.5px;'
                   + 'overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">'
                   + esc(n) + '</span>'
                   + '<input type="text" data-basiswert="' + esc(n) + '" '
                   + 'value="' + esc(tickerFeld[n]) + '" maxlength="12" '
                   + 'oninput="cfTrImportKuerzel(this)" '
-                  + 'style="width:96px;background:rgba(168,85,247,0.08);'
-                  + 'border:1px solid rgba(168,85,247,0.2);border-radius:7px;'
-                  + 'padding:6px 9px;color:#f1f5f9;font-size:12px;'
-                  + 'font-family:Inter,sans-serif;text-transform:uppercase;">'
+                  + 'style="width:96px;background:rgba(124, 92, 240, 0.06);'
+                  + 'border:1px solid rgba(124, 92, 240, 0.15);border-radius:7px;'
+                  + 'padding:6px 9px;color:#ECEAF4;font-size:12px;'
+                  + 'font-family:Inter,sans-serif;text-transform:none;">'
                   + '</div>';
             });
             h += '</div></div>';
@@ -963,7 +963,7 @@
             h += '<div style="background:rgba(56,189,248,0.06);'
               + 'border:1px solid rgba(56,189,248,0.18);border-radius:10px;'
               + 'padding:12px 14px;"><ul style="margin:0;padding-left:16px;'
-              + 'color:#a5b4c4;font-size:11.5px;line-height:1.65;">'
+              + 'color:#B3AFC6;font-size:11.5px;line-height:1.65;">'
               + a.hinweise.map(function (x) { return '<li>' + esc(x) + '</li>'; }).join('')
               + '</ul></div>';
         }
@@ -982,7 +982,7 @@
                 tickerFeld[name] = t[name];
                 const f = document.querySelector(
                     '#trImportBericht input[data-basiswert="' + name.replace(/"/g, '\\"') + '"]');
-                if (f) { f.value = t[name]; f.style.borderColor = 'rgba(34,197,94,0.45)'; }
+                if (f) { f.value = t[name]; f.style.borderColor = 'rgba(52, 211, 153, 0.45)'; }
                 n++;
             });
             if (n) status(n + ' Kürzel aus deinen vorhandenen Basiswerten '
@@ -1254,7 +1254,7 @@
                 window.cfAnsichtenAufbauen();
             }
 
-            status('✅ ' + geschrieben + ' übernommen'
+            status('' + geschrieben + ' übernommen'
                 + (doppelt > 0 ? ', ' + doppelt + ' waren schon da' : '')
                 + (geschlossen ? ', ' + geschlossen + ' offene Position(en) '
                     + 'nachträglich geschlossen' : '')
@@ -1269,11 +1269,11 @@
             // Nutzer bekaeme "0 übernommen" ohne zu wissen warum.
             analyse = null;
             if (typeof showToast === 'function') {
-                showToast('✅ ' + geschrieben + ' Trades importiert');
+                showToast('' + geschrieben + ' Trades importiert');
             }
         } catch (e) {
             console.error('TR-Import:', e);
-            status('❌ ' + e.message);
+            status('' + e.message);
             if (btn) { btn.disabled = false; btn.textContent = 'Übernehmen'; }
         } finally {
             laeuft = false;
