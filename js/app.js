@@ -144,7 +144,7 @@ function sha256Hex_selftest() {
 // ===== COUNTDOWN TIMER ===== 
 function initCountdownTimer() {
     const updateCountdown = () => {
-        const targetDate = new Date("2027-01-01T00:00:00").getTime();
+        const targetDate = new Date("2027-03-01T00:00:00").getTime();   // Launch 1. Maerz 2027
         const now = new Date().getTime();
         const timeLeft = targetDate - now;
         
