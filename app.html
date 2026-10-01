@@ -567,11 +567,11 @@
                 <div class="trades-stats">
                     <div class="trades-stat-item">
                         <div class="trades-stat-label">Total P&L</div>
-                        <div id="tradesPnLDisplay" style="font-size: 28px; font-weight: 700; color: #ECEAF4;">€ 0.00</div>
+                        <div id="tradesPnLDisplay" class="trades-stat-wert">€ 0.00</div>
                     </div>
                     <div class="trades-stat-item">
                         <div class="trades-stat-label">Anzahl Trades</div>
-                        <div id="tradeCountDisplay" style="font-size: 28px; font-weight: 700; color: #ECEAF4;">0</div>
+                        <div id="tradeCountDisplay" class="trades-stat-wert">0</div>
                     </div>
                 </div>
             </div>
@@ -1082,11 +1082,13 @@
             </div>
 
             <!-- ---------- 1 ---------- -->
-            <section class="hilfe-block">
+            <section class="hilfe-block hilfe-mit-bild">
                 <div class="hilfe-kopf">
                     <span class="hilfe-nr">1</span>
                     <h3 class="hilfe-titel">Reinkommen</h3>
                 </div>
+                <div class="hilfe-spalten">
+                <div class="hilfe-inhalt">
                 <p class="hilfe-text">
                     Erst <strong>mit Discord anmelden</strong>, danach erscheint das Feld
                     für den Zugangsschlüssel. Vorher gibt es kein Konto, das
@@ -1097,22 +1099,28 @@
                     Groß- und Kleinschreibung, Bindestriche und Leerzeichen sind egal.
                     Kopier ihn einfach so rein, wie du ihn bekommen hast.
                 </p>
-                <figure class="hilfe-bild" onclick="openScreenshotModal('img/anleitung/01-schluessel.webp')" title="Vergrößern">
-                    <img src="img/anleitung/01-schluessel.webp" alt="Das Feld für den Zugangsschlüssel nach der Discord-Anmeldung" loading="lazy">
-                    <figcaption>So sieht es aus, wenn du angemeldet, aber noch nicht freigeschaltet bist.</figcaption>
-                </figure>
                 <div class="hilfe-warn">
                     Jeder Schlüssel gehört zu genau einem Discord-Konto. Einmal
                     eingelöst, funktioniert er bei niemand anderem mehr.
                 </div>
+                </div>
+                <aside class="hilfe-bilder">
+                <figure class="hilfe-bild" onclick="openScreenshotModal('img/anleitung/01-schluessel.webp')" title="Vergrößern">
+                    <img src="img/anleitung/01-schluessel.webp" alt="Das Feld für den Zugangsschlüssel nach der Discord-Anmeldung" loading="lazy">
+                    <figcaption>So sieht es aus, wenn du angemeldet, aber noch nicht freigeschaltet bist.</figcaption>
+                </figure>
+                </aside>
+                </div>
             </section>
 
             <!-- ---------- 2 ---------- -->
-            <section class="hilfe-block">
+            <section class="hilfe-block hilfe-mit-bild">
                 <div class="hilfe-kopf">
                     <span class="hilfe-nr">2</span>
                     <h3 class="hilfe-titel">Deine Trades reinholen</h3>
                 </div>
+                <div class="hilfe-spalten">
+                <div class="hilfe-inhalt">
                 <p class="hilfe-text">
                     Du musst nichts abtippen. Trade Republic gibt dir eine Datei mit
                     allem, was du gehandelt hast — die liest die App ein und baut daraus
@@ -1136,22 +1144,28 @@
                     wurden, wie viele schon da sind, was übersprungen wird.
                     <strong>Gespeichert wird nichts, bevor du auf Übernehmen gehst.</strong>
                 </p>
-                <figure class="hilfe-bild" onclick="openScreenshotModal('img/anleitung/02-import@2x.webp')" title="Vergrößern">
-                    <img src="img/anleitung/02-import.webp" alt="Der Daten-Tab mit Import, Sicherung und Löschen" loading="lazy">
-                    <figcaption>Der Daten-Tab. Hier liegt auch die Sicherung — und der Weg, alles wieder loszuwerden.</figcaption>
-                </figure>
                 <p class="hilfe-text">
                     Denselben Export kannst du jeden Monat neu einlesen. Was schon drin
                     ist, wird erkannt und übersprungen — es entstehen keine Doppelten.
                 </p>
+                </div>
+                <aside class="hilfe-bilder">
+                <figure class="hilfe-bild" onclick="openScreenshotModal('img/anleitung/02-import@2x.webp')" title="Vergrößern">
+                    <img src="img/anleitung/02-import.webp" alt="Der Daten-Tab mit Import, Sicherung und Löschen" loading="lazy">
+                    <figcaption>Der Daten-Tab. Hier liegt auch die Sicherung — und der Weg, alles wieder loszuwerden.</figcaption>
+                </figure>
+                </aside>
+                </div>
             </section>
 
             <!-- ---------- 3 ---------- -->
-            <section class="hilfe-block">
+            <section class="hilfe-block hilfe-mit-bild">
                 <div class="hilfe-kopf">
                     <span class="hilfe-nr">3</span>
                     <h3 class="hilfe-titel">Zwei Zahlen, die alles ändern</h3>
                 </div>
+                <div class="hilfe-spalten">
+                <div class="hilfe-inhalt">
                 <p class="hilfe-text">
                     Das hier ist der Teil, der CapitalFlow von einer Liste deiner Trades
                     unterscheidet — und der einzige, den du von Hand eintragen musst.
@@ -1168,15 +1182,7 @@
                     <strong>Knockout-Preis</strong> und <strong>Hebel</strong>. Aus denen
                     rechnet die App alles andere zurück.
                 </p>
-                <figure class="hilfe-bild" onclick="openScreenshotModal('img/anleitung/03-knockout@2x.webp')" title="Vergrößern">
-                    <img src="img/anleitung/03-knockout.webp" alt="Das Knock-Out-Formular im Journal mit den Feldern für Knockout-Preis, Hebel und Stop" loading="lazy">
-                    <figcaption>Produktart oben auf <em>Knock-Out</em> stellen, dann erscheint dieser Block.</figcaption>
-                </figure>
                 <p class="hilfe-text">Daraus wird, ohne dass du sonst etwas tust:</p>
-                <figure class="hilfe-bild" onclick="openScreenshotModal('img/anleitung/04-kacheln@2x.webp')" title="Vergrößern">
-                    <img src="img/anleitung/04-kacheln.webp" alt="Berechnete Kacheln: Kurs beim Kauf, echter Hebel, KO-Abstand, Risiko in Euro" loading="lazy">
-                                    <figcaption>Was die App aus zwei Zahlen rechnet</figcaption>
-                </figure>
                 <ul class="hilfe-punkte">
                     <li><strong>Kurs beim Kauf</strong> — wo der Basiswert stand. Vergleich das kurz mit deinem Chart; passt es nicht, hast du dich bei einer der beiden Zahlen vertippt.</li>
                     <li><strong>Echter Hebel</strong> — was du wirklich hattest.</li>
@@ -1187,23 +1193,33 @@
                     Alle Felder sind freiwillig. Ohne sie speichert der Trade ganz normal —
                     du bekommst dann eben ein Journal wie jedes andere.
                 </p>
+                </div>
+                <aside class="hilfe-bilder">
+                <figure class="hilfe-bild" onclick="openScreenshotModal('img/anleitung/03-knockout@2x.webp')" title="Vergrößern">
+                    <img src="img/anleitung/03-knockout.webp" alt="Das Knock-Out-Formular im Journal mit den Feldern für Knockout-Preis, Hebel und Stop" loading="lazy">
+                    <figcaption>Produktart oben auf <em>Knock-Out</em> stellen, dann erscheint dieser Block.</figcaption>
+                </figure>
+                <figure class="hilfe-bild" onclick="openScreenshotModal('img/anleitung/04-kacheln@2x.webp')" title="Vergrößern">
+                    <img src="img/anleitung/04-kacheln.webp" alt="Berechnete Kacheln: Kurs beim Kauf, echter Hebel, KO-Abstand, Risiko in Euro" loading="lazy">
+                                    <figcaption>Was die App aus zwei Zahlen rechnet</figcaption>
+                </figure>
+                </aside>
+                </div>
             </section>
 
             <!-- ---------- 4 ---------- -->
-            <section class="hilfe-block">
+            <section class="hilfe-block hilfe-mit-bild">
                 <div class="hilfe-kopf">
                     <span class="hilfe-nr">4</span>
                     <h3 class="hilfe-titel">Nachtragen, was der Import nicht wissen kann</h3>
                 </div>
+                <div class="hilfe-spalten">
+                <div class="hilfe-inhalt">
                 <p class="hilfe-text">
                     Importierte Trades haben keinen Stop, keinen Grund und keine
                     Hebelzahlen — das steht in der TR-Datei schlicht nicht drin. Solche
                     Trades sind im Journal markiert.
                 </p>
-                <figure class="hilfe-bild" onclick="openScreenshotModal('img/anleitung/05-nachtragen.webp')" title="Vergrößern">
-                    <img src="img/anleitung/05-nachtragen.webp" alt="Eine importierte Trade-Karte mit dem Hinweis, was noch fehlt" loading="lazy">
-                    <figcaption>Ein Klick auf <em>Jetzt nachtragen</em> öffnet den Trade im Formular oben.</figcaption>
-                </figure>
                 <p class="hilfe-text">
                     Sobald Stop und Grund drin sind, verschwindet der Hinweis. Bearbeiten
                     kannst du jeden Trade jederzeit, auch von Hand eingetragene — der
@@ -1214,36 +1230,48 @@
                     nach. Das ist mehr wert als alle vierzig, denn die Auswertung wird
                     erst interessant, wenn sie deine Verlierer nach Ursache sortieren kann.
                 </div>
+                </div>
+                <aside class="hilfe-bilder">
+                <figure class="hilfe-bild" onclick="openScreenshotModal('img/anleitung/05-nachtragen.webp')" title="Vergrößern">
+                    <img src="img/anleitung/05-nachtragen.webp" alt="Eine importierte Trade-Karte mit dem Hinweis, was noch fehlt" loading="lazy">
+                    <figcaption>Ein Klick auf <em>Jetzt nachtragen</em> öffnet den Trade im Formular oben.</figcaption>
+                </figure>
+                </aside>
+                </div>
             </section>
 
             <!-- ---------- 5 ---------- -->
-            <section class="hilfe-block">
+            <section class="hilfe-block hilfe-mit-bild">
                 <div class="hilfe-kopf">
                     <span class="hilfe-nr">5</span>
                     <h3 class="hilfe-titel">Eine Trade-Karte lesen</h3>
                 </div>
+                <div class="hilfe-spalten">
+                <div class="hilfe-inhalt">
+                <ul class="hilfe-punkte">
+                    <li><strong>Long / Short</strong> — Richtung. Bei einem Short-Knockout steigt der Schein, wenn der Kurs fällt; die App rechnet das richtig herum.</li>
+                    <li><strong>12×</strong> — der Hebel. Fehlt das Abzeichen bei einem Hebelprodukt, fehlen die zwei Zahlen aus Schritt 3.</li>
+                    <li><strong>KO 8,3&nbsp;%</strong> — Abstand zur Schwelle beim Einstieg. Rot ab unter 5 %.</li>
+                    <li><strong>R:R</strong> — was du gewonnen hast, geteilt durch das, was du riskiert hast. Ohne Stop steht dort 0.</li>
+                </ul>
+                </div>
+                <aside class="hilfe-bilder">
                 <figure class="hilfe-bild" onclick="openScreenshotModal('img/anleitung/06-tradekarte.webp')" title="Vergrößern">
                     <img src="img/anleitung/06-tradekarte.webp" alt="Eine vollständige Trade-Karte im Journal" loading="lazy">
                                     <figcaption>Eine Trade-Karte im Journal</figcaption>
                 </figure>
-                <ul class="hilfe-punkte">
-                    <li><strong>Long / Short</strong> — Richtung. Bei einem Short-Knockout steigt der Schein, wenn der Kurs fällt; die App rechnet das richtig herum.</li>
-                    <li><strong>12×</strong> — der Hebel. Steht dort <em>Hebel&nbsp;?</em>, fehlen die zwei Zahlen aus Schritt 3.</li>
-                    <li><strong>KO 8,3&nbsp;%</strong> — Abstand zur Schwelle beim Einstieg. Rot ab unter 5 %.</li>
-                    <li><strong>R:R</strong> — was du gewonnen hast, geteilt durch das, was du riskiert hast. Ohne Stop steht dort 0.</li>
-                </ul>
+                </aside>
+                </div>
             </section>
 
             <!-- ---------- 6 ---------- -->
-            <section class="hilfe-block">
+            <section class="hilfe-block hilfe-mit-bild">
                 <div class="hilfe-kopf">
                     <span class="hilfe-nr">6</span>
                     <h3 class="hilfe-titel">Was die Zahlen bedeuten</h3>
                 </div>
-                <figure class="hilfe-bild" onclick="openScreenshotModal('img/anleitung/07-auswertung@2x.webp')" title="Vergrößern">
-                    <img src="img/anleitung/07-auswertung.webp" alt="Der Analytics-Tab mit Trefferquote, Profit-Faktor und Erwartungswert" loading="lazy">
-                                    <figcaption>Die Kennzahlen im Analytics-Tab</figcaption>
-                </figure>
+                <div class="hilfe-spalten">
+                <div class="hilfe-inhalt">
                 <ul class="hilfe-punkte">
                     <li><strong>Win Rate</strong> — die Trefferquote: wie viele Trades im Plus waren. Sagt für sich genommen wenig. 70 % Treffer und trotzdem im Minus ist völlig normal, wenn die Verlierer größer sind als die Gewinner.</li>
                     <li><strong>Profit Factor</strong> — alle Gewinne geteilt durch alle Verluste. Über 1 verdienst du, unter 1 zahlst du drauf.</li>
@@ -1260,6 +1288,14 @@
                     guter Trade verschiebt alles. Schau sie dir an, aber bau noch keine
                     Regel darauf.
                 </div>
+                </div>
+                <aside class="hilfe-bilder">
+                <figure class="hilfe-bild" onclick="openScreenshotModal('img/anleitung/07-auswertung@2x.webp')" title="Vergrößern">
+                    <img src="img/anleitung/07-auswertung.webp" alt="Der Analytics-Tab mit Trefferquote, Profit-Faktor und Erwartungswert" loading="lazy">
+                                    <figcaption>Die Kennzahlen im Analytics-Tab</figcaption>
+                </figure>
+                </aside>
+                </div>
             </section>
 
             <!-- ---------- 7 ---------- -->
@@ -1268,6 +1304,8 @@
                     <span class="hilfe-nr">7</span>
                     <h3 class="hilfe-titel">Deine Daten</h3>
                 </div>
+                <div class="hilfe-spalten">
+                <div class="hilfe-inhalt">
                 <ul class="hilfe-punkte">
                     <li><strong>Sicherung</strong> — eine Datei mit allem, was dir gehört. Zieh sie dir, bevor du etwas Größeres änderst.</li>
                     <li><strong>Nur Import löschen</strong> — nimmt alles zurück, was aus einer CSV kam. Von Hand eingetragene Trades bleiben.</li>
@@ -1282,6 +1320,8 @@
                     Etwas funktioniert nicht, eine Zahl sieht falsch aus, ein Wort ist
                     unverständlich? Sag Bescheid. Die meisten Fehler dieser App wurden
                     gefunden, weil jemand gesagt hat &bdquo;das kann so nicht stimmen&ldquo;.
+                </div>
+                </div>
                 </div>
             </section>
         </div>

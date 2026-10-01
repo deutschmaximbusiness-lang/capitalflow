@@ -1304,16 +1304,13 @@ function istHebelTrade(t) {
     return Boolean(t && parseFloat(t.leverage) > 1);
 }
 
-/** Abzeichen fuer den Hebel - mit Fragezeichen, wenn er nicht bekannt ist. */
+/** Abzeichen fuer den Hebel - nur, wenn er bekannt ist. */
 function hebelBadge(t) {
     const lev = parseFloat(t && t.leverage);
     if (lev > 1) return '<span class="trade-leverage-badge">'
         + formatLeverage(lev) + '</span>';
-    if (istHebelTrade(t)) {
-        return '<span class="trade-leverage-badge" title="Hebel unbekannt — '
-            + 'die TR-Datei nennt den Kurs des Basiswerts nicht. '
-            + 'Trag ihn nach, dann wird er gerechnet.">Hebel ?</span>';
-    }
+    // Unbekannter Hebel: kein Abzeichen. Ein lila "Hebel ?" auf jeder
+    // importierten Karte war Laerm - wo er fehlt, sagt der Nachtragen-Hinweis.
     return '';
 }
 
