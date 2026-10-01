@@ -222,6 +222,14 @@
                     bilder[z.id] = await bildAdresse(z.screenshot_path);
                 }));
 
+            // Dasselbe fuer Setups - die wurden vorher ohne Bild geladen
+            const setupBilder = {};
+            await Promise.all((su.data || [])
+                .filter(function (z) { return z.screenshot_path; })
+                .map(async function (z) {
+                    setupBilder[z.id] = await bildAdresse(z.screenshot_path);
+                }));
+
             const sym = function (z) {
                 return z.instruments && z.instruments.symbol;
             };
@@ -297,7 +305,8 @@
                         return abstand > 0 ? Math.round((ein / abstand) * 100) / 100 : 1;
                     })(),
                     thesis: z.thesis || '',
-                    screenshot: null,
+                    screenshot: setupBilder[z.id] || null,
+                    screenshotPfad: z.screenshot_path || null,
                     status: ({ beobachten: 'watching', bereit: 'ready',
                                eingestiegen: 'entered', verworfen: 'discarded'
                              })[z.status] || 'watching',

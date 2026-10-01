@@ -412,6 +412,7 @@
                 stop_loss: s.stop, target: s.target,
                 ko_barrier: s.ko || null,
                 thesis: s.thesis || null,
+                screenshot_path: await screenshotHoch(s.screenshot),
                 status: ({ watching: 'beobachten', ready: 'bereit',
                            entered: 'eingestiegen', discarded: 'verworfen'
                          })[s.status] || 'beobachten',
@@ -459,6 +460,9 @@
                     stop_loss: s.stop, target: s.target,
                     ko_barrier: s.ko || null,
                     thesis: s.thesis || null,
+                    // Das Bild fehlte hier: nach dem Speichern wurde neu aus
+                    // der Datenbank geladen, und der Screenshot war weg.
+                    screenshot_path: await screenshotHoch(s.screenshot),
                     status: STATUS[s.status] || 'beobachten',
                 });
                 pruefe(error, 'Setup anlegen');
