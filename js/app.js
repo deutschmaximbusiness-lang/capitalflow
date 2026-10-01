@@ -2152,7 +2152,7 @@ function loadDashboard() {
             </div>
             <div class="dashboard-card">
                 <div style="color: #A9A5BD; font-size: 11px; margin-bottom: 8px; text-transform: none;">Profit Factor</div>
-                <div style="font-size: 24px; font-weight: 700; color: #ECEAF4;">${stats.profitFactor}</div>
+                <div style="font-size: 24px; font-weight: 700; color: #C9B8FF;">${stats.profitFactor}</div>
                 <div style="color: #A9A5BD; font-size: 11px; margin-top: 8px;">Risk/Reward ratio</div>
             </div>
             <div class="dashboard-card">
@@ -2190,7 +2190,7 @@ function loadDashboard() {
         <!-- BOTTOM STATS -->
         <div class="dashboard-bottom-stats" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 170px), 1fr)); gap: 20px;">
             <div class="dashboard-card">
-                <div style="font-size: 28px; font-weight: 700; color: #ECEAF4;">${uniqueTradingDays}</div>
+                <div style="font-size: 28px; font-weight: 700; color: #C9B8FF;">${uniqueTradingDays}</div>
                 <div style="color: #A9A5BD; font-size: 12px; margin-top: 8px;">Trading Days</div>
             </div>
             <div class="dashboard-card">
@@ -2265,7 +2265,8 @@ function renderDashboardCharts(trades, stats) {
             },
             options: {
                 responsive: true,
-                maintainAspectRatio: true,
+                maintainAspectRatio: false,
+                cutout: '68%',
                 plugins: {
                     legend: { display: false },
                     tooltip: { enabled: false }
@@ -2634,7 +2635,7 @@ function loadAnalytics() {
             </div>
             <div class="analytics-metric-card-small">
                 <div style="font-size: 11px; text-transform: none; color: #A9A5BD; font-weight: 600; margin-bottom: 8px;">Ø Chance : Risiko</div>
-                <div style="font-size: 24px; font-weight: 700; color: #ECEAF4;">${avgRRText}</div>
+                <div style="font-size: 24px; font-weight: 700; color: #C9B8FF;">${avgRRText}</div>
                 <div style="font-size: 11px; color: #8A86A0; margin-top: 4px;">${escapeHtml(avgRRZusatz)}</div>
             </div>
         </div>
@@ -2773,8 +2774,8 @@ function loadAnalytics() {
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
                 <div style="font-size: 14px; font-weight: 600; color: #D5D2E2;">Win/Loss</div>
             </div>
-            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 340px), 1fr)); gap: 30px;">
-                <canvas id="winLossChart"></canvas>
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr)); gap: 30px; align-items: center;">
+                <div style="position: relative; height: 260px; min-width: 0;"><canvas id="winLossChart"></canvas></div>
                 <div style="display: flex; flex-direction: column; justify-content: center;">
                     <div style="display: flex; gap: 20px; margin-bottom: 20px;">
                         <div style="display: flex; align-items: center; gap: 6px;">
@@ -2836,7 +2837,8 @@ function renderAnalyticsCharts(trades, stats, wins, losses, behavioralScore) {
             },
             options: {
                 responsive: true,
-                maintainAspectRatio: true,
+                maintainAspectRatio: false,
+                cutout: '68%',
                 plugins: {
                     legend: { display: false },
                     tooltip: { enabled: true }
@@ -2886,7 +2888,8 @@ function renderAnalyticsCharts(trades, stats, wins, losses, behavioralScore) {
             },
             options: {
                 responsive: true,
-                maintainAspectRatio: true,
+                maintainAspectRatio: false,
+                cutout: '68%',
                 plugins: {
                     legend: { display: false },
                     tooltip: { enabled: true }
@@ -2921,13 +2924,14 @@ function renderAnalyticsCharts(trades, stats, wins, losses, behavioralScore) {
                 datasets: [{
                     data: [wins.length, losses.length],
                     backgroundColor: ['#34D399', '#FB7185'],
-                    borderColor: '#0B0A12',
+                    borderColor: '#13121C',
                     borderWidth: 3
                 }]
             },
             options: {
                 responsive: true,
-                maintainAspectRatio: true,
+                maintainAspectRatio: false,
+                cutout: '68%',
                 plugins: {
                     legend: { display: false },
                     tooltip: { enabled: true }
@@ -3006,13 +3010,17 @@ function renderCharts(trades, stats, winRateByDay, recentTrades) {
                 datasets: [{
                     data: [stats.wins, stats.losses],
                     backgroundColor: ['#34D399', '#FB7185'],
-                    borderColor: '#0B0A12',
-                    borderWidth: 2
+                    borderColor: '#13121C',
+                    borderWidth: 3
                 }]
             },
             options: {
                 responsive: true,
-                plugins: { legend: { position: 'bottom', labels: { color: '#D5D2E2' } } }
+                maintainAspectRatio: false,
+                cutout: '68%',
+                // Legende steht als HTML neben dem Ring. Die Chart.js-Legende
+                // landete bei breitem Rahmen mitten im Ring.
+                plugins: { legend: { display: false } }
             }
         });
     }
@@ -4863,3 +4871,34 @@ function initSetups() {
 }
 
 document.addEventListener('DOMContentLoaded', initSetups);
+
+
+// ===== ZAEHLER IN DER SEITENLEISTE =====
+// Neben Journal, Portfolio Analyse und Setups steht, wie viele Trades,
+// offene Positionen und Setups es gibt. Aktualisiert sich nach jedem
+// Laden/Speichern, weil es an die Ladefunktionen angehaengt ist.
+function cfNavZahlen() {
+    const lies = (k) => { try { const v = JSON.parse(localStorage.getItem(k)); return Array.isArray(v) ? v : []; } catch (e) { return []; } };
+    const setze = (tab, n, wort) => {
+        const e = document.getElementById('navZahl-' + tab);
+        if (!e) return;
+        e.textContent = n > 0 ? String(n) : '';
+        e.setAttribute('aria-label', n > 0 ? n + ' ' + wort : '');
+    };
+    setze('journal', lies('trades').length, 'Trades');
+    setze('positions', lies('positions').length, 'offene Positionen');
+    let setups = 0;
+    try { setups = typeof getSetups === 'function' ? getSetups().length : lies('setups').length; } catch (e) { setups = lies('setups').length; }
+    setze('setups', setups, 'Setups');
+}
+window.cfNavZahlen = cfNavZahlen;
+['loadTrades', 'loadDashboard', 'loadSetups', 'loadPositions', 'handleTabChange'].forEach(function (name) {
+    const f = window[name];
+    if (typeof f !== 'function') return;
+    window[name] = function () {
+        const r = f.apply(this, arguments);
+        try { cfNavZahlen(); } catch (e) { /* Zaehler sind Zugabe, nie ein Grund fuer einen Fehler */ }
+        return r;
+    };
+});
+document.addEventListener('DOMContentLoaded', function () { try { cfNavZahlen(); } catch (e) {} });

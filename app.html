@@ -208,6 +208,7 @@
             <div class="nav-item" data-tab="journal">
                 <svg class="nav-icon" viewBox="0 0 24 24" width="20" height="20"><path fill="currentColor" d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V5h14v14zm-5.04-6.71l-2.75 3.54-2.16-2.66c-.23-.29-.62-.29-.85 0-.29.23-.29.62 0 .85l2.59 3.2c.23.29.62.29.85 0l3.54-4.29c.29-.23.29-.62 0-.85-.23-.29-.62-.29-.85 0z"/></svg>
                 <span>Journal</span>
+                <span class="nav-zahl" id="navZahl-journal" aria-label=""></span>
             </div>
             <div class="nav-item" data-tab="analytics">
                 <svg class="nav-icon" viewBox="0 0 24 24" width="20" height="20"><path fill="currentColor" d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-5 9.5h3v5h-3zm-4-3h3v8h-3zm-4 5h3v3H6z"/></svg>
@@ -216,6 +217,7 @@
             <div class="nav-item" data-tab="positions">
                 <svg class="nav-icon" viewBox="0 0 24 24" width="20" height="20"><path fill="currentColor" d="M3 6c0 1.1.9 2 2 2h4c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v2zm0 12c0 1.1.9 2 2 2h4c1.1 0 2-.9 2-2v-2c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v2zm11-9h7c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2h-7c-1.1 0-2 .9-2 2v2c0 1.1.9 2 2 2zm0 9h7c1.1 0 2-.9 2-2v-2c0-1.1-.9-2-2-2h-7c-1.1 0-2 .9-2 2v2c0 1.1.9 2 2 2z"/></svg>
                 <span>Portfolio Analyse</span>
+                <span class="nav-zahl" id="navZahl-positions" aria-label=""></span>
             </div>
             <div class="nav-item" data-tab="calendar">
                 <svg class="nav-icon" viewBox="0 0 24 24" width="20" height="20"><path fill="currentColor" d="M19 3h-1V1h-2v2H8V1H6v2H5c-1.11 0-1.99.9-1.99 2L3 19c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V8h14v11z"/></svg>
@@ -224,6 +226,7 @@
             <div class="nav-item" data-tab="setups">
                 <svg class="nav-icon" viewBox="0 0 24 24" width="20" height="20"><path fill="currentColor" d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/></svg>
                 <span>Setups</span>
+                <span class="nav-zahl" id="navZahl-setups" aria-label=""></span>
             </div>
             <div class="nav-item nav-gesperrt" data-tab="transactions" title="Wird gerade überarbeitet">
                 <svg class="nav-icon" viewBox="0 0 24 24" width="20" height="20"><path fill="currentColor" d="M4 6h16v2H4zm0 5h16v2H4zm0 5h16v2H4z"/></svg>
@@ -608,25 +611,25 @@
                 <!-- Euro in Positionen -->
                 <div class="dashboard-stat" style="background: linear-gradient(135deg, rgba(124, 92, 240, 0.05) 0%, rgba(124, 92, 240, 0.025) 100%); border: 1px solid rgba(124, 92, 240, 0.1); border-radius: 14px; padding: 20px; backdrop-filter: blur(10px);">
                     <div style="color: #8A86A0; font-size: 12px; letter-spacing: 0; font-weight: 600; margin-bottom: 12px;">Portfolio Exposure</div>
-                    <div id="portfolioTotalValue" style="font-size: 28px; font-weight: 700; color: #ECEAF4; line-height: 1;">€0.00</div>
+                    <div id="portfolioTotalValue" style="font-size: 28px; font-weight: 700; color: #C9B8FF; line-height: 1;">€0.00</div>
                 </div>
 
                 <!-- Offene Positionen -->
                 <div class="dashboard-stat" style="background: linear-gradient(135deg, rgba(59, 130, 246, 0.1) 0%, rgba(59, 130, 246, 0.05) 100%); border: 1px solid rgba(59, 130, 246, 0.2); border-radius: 14px; padding: 20px; backdrop-filter: blur(10px);">
                     <div style="color: #8A86A0; font-size: 12px; letter-spacing: 0; font-weight: 600; margin-bottom: 12px;">Offene Positionen</div>
-                    <div id="portfolioOpenCount" style="font-size: 28px; font-weight: 700; color: #ECEAF4; line-height: 1;">0</div>
+                    <div id="portfolioOpenCount" style="font-size: 28px; font-weight: 700; color: #C9B8FF; line-height: 1;">0</div>
                 </div>
 
                 <!-- Ø Position Size -->
                 <div class="dashboard-stat" style="background: linear-gradient(135deg, rgba(124, 92, 240, 0.075) 0%, rgba(124, 92, 240, 0.038) 100%); border: 1px solid rgba(124, 92, 240, 0.15); border-radius: 14px; padding: 20px; backdrop-filter: blur(10px);">
                     <div style="color: #8A86A0; font-size: 12px; letter-spacing: 0; font-weight: 600; margin-bottom: 12px;">Ø Position Size</div>
-                    <div id="portfolioAvgSize" style="font-size: 28px; font-weight: 700; color: #ECEAF4; line-height: 1;">€0.00</div>
+                    <div id="portfolioAvgSize" style="font-size: 28px; font-weight: 700; color: #C9B8FF; line-height: 1;">€0.00</div>
                 </div>
 
                 <!-- Größte Position -->
                 <div class="dashboard-stat" style="background: linear-gradient(135deg, rgba(251, 146, 60, 0.1) 0%, rgba(251, 146, 60, 0.05) 100%); border: 1px solid rgba(251, 146, 60, 0.2); border-radius: 14px; padding: 20px; backdrop-filter: blur(10px);">
                     <div style="color: #8A86A0; font-size: 12px; letter-spacing: 0; font-weight: 600; margin-bottom: 12px;">Größte Position</div>
-                    <div id="portfolioMaxSize" style="font-size: 28px; font-weight: 700; color: #ECEAF4; line-height: 1;">€0.00</div>
+                    <div id="portfolioMaxSize" style="font-size: 28px; font-weight: 700; color: #C9B8FF; line-height: 1;">€0.00</div>
                 </div>
             </div>
 
@@ -741,7 +744,7 @@
             <div class="stat-grid-4">
                 <div class="dashboard-stat" style="background: linear-gradient(135deg, rgba(124, 92, 240, 0.075) 0%, rgba(124, 92, 240, 0.038) 100%); border: 1px solid rgba(124, 92, 240, 0.15); border-radius: 14px; padding: 20px;">
                     <div style="color: #8A86A0; font-size: 12px; letter-spacing: 0; font-weight: 600; margin-bottom: 12px;">Aktive Setups</div>
-                    <div id="setupsActive" style="font-size: 28px; font-weight: 700; color: #ECEAF4; line-height: 1;">0</div>
+                    <div id="setupsActive" style="font-size: 28px; font-weight: 700; color: #C9B8FF; line-height: 1;">0</div>
                 </div>
                 <div class="dashboard-stat" style="background: linear-gradient(135deg, rgba(52, 211, 153, 0.1) 0%, rgba(52, 211, 153, 0.05) 100%); border: 1px solid rgba(52, 211, 153, 0.2); border-radius: 14px; padding: 20px;">
                     <div style="color: #8A86A0; font-size: 12px; letter-spacing: 0; font-weight: 600; margin-bottom: 12px;">Bereit</div>
@@ -749,11 +752,11 @@
                 </div>
                 <div class="dashboard-stat" style="background: linear-gradient(135deg, rgba(59, 130, 246, 0.1) 0%, rgba(59, 130, 246, 0.05) 100%); border: 1px solid rgba(59, 130, 246, 0.2); border-radius: 14px; padding: 20px;">
                     <div style="color: #8A86A0; font-size: 12px; letter-spacing: 0; font-weight: 600; margin-bottom: 12px;">Ø Chance-Risiko</div>
-                    <div id="setupsAvgCrv" style="font-size: 28px; font-weight: 700; color: #ECEAF4; line-height: 1;">–</div>
+                    <div id="setupsAvgCrv" style="font-size: 28px; font-weight: 700; color: #C9B8FF; line-height: 1;">–</div>
                 </div>
                 <div class="dashboard-stat" style="background: linear-gradient(135deg, rgba(251, 146, 60, 0.1) 0%, rgba(251, 146, 60, 0.05) 100%); border: 1px solid rgba(251, 146, 60, 0.2); border-radius: 14px; padding: 20px;">
                     <div style="color: #8A86A0; font-size: 12px; letter-spacing: 0; font-weight: 600; margin-bottom: 12px;">Verworfen</div>
-                    <div id="setupsDiscarded" style="font-size: 28px; font-weight: 700; color: #ECEAF4; line-height: 1;">0</div>
+                    <div id="setupsDiscarded" style="font-size: 28px; font-weight: 700; color: #C9B8FF; line-height: 1;">0</div>
                 </div>
             </div>
 
@@ -858,7 +861,7 @@
             <div class="stat-grid-4">
                 <div class="dashboard-stat" style="background: linear-gradient(135deg, rgba(124, 92, 240, 0.075) 0%, rgba(124, 92, 240, 0.038) 100%); border: 1px solid rgba(124, 92, 240, 0.15); border-radius: 14px; padding: 20px; backdrop-filter: blur(10px);">
                     <div style="color: #8A86A0; font-size: 12px; letter-spacing: 0; font-weight: 600; margin-bottom: 12px;">Netto eingezahlt</div>
-                    <div id="txNetDeposit" style="font-size: 28px; font-weight: 700; color: #ECEAF4; line-height: 1;">€0.00</div>
+                    <div id="txNetDeposit" style="font-size: 28px; font-weight: 700; color: #C9B8FF; line-height: 1;">€0.00</div>
                 </div>
                 <div class="dashboard-stat" style="background: linear-gradient(135deg, rgba(52, 211, 153, 0.1) 0%, rgba(52, 211, 153, 0.05) 100%); border: 1px solid rgba(52, 211, 153, 0.2); border-radius: 14px; padding: 20px; backdrop-filter: blur(10px);">
                     <div style="color: #8A86A0; font-size: 12px; letter-spacing: 0; font-weight: 600; margin-bottom: 12px;">Kontostand</div>
@@ -866,11 +869,11 @@
                 </div>
                 <div class="dashboard-stat" style="background: linear-gradient(135deg, rgba(59, 130, 246, 0.1) 0%, rgba(59, 130, 246, 0.05) 100%); border: 1px solid rgba(59, 130, 246, 0.2); border-radius: 14px; padding: 20px; backdrop-filter: blur(10px);">
                     <div style="color: #8A86A0; font-size: 12px; letter-spacing: 0; font-weight: 600; margin-bottom: 12px;">Rendite</div>
-                    <div id="txReturn" style="font-size: 28px; font-weight: 700; color: #ECEAF4; line-height: 1;">0.00%</div>
+                    <div id="txReturn" style="font-size: 28px; font-weight: 700; color: #C9B8FF; line-height: 1;">0.00%</div>
                 </div>
                 <div class="dashboard-stat" style="background: linear-gradient(135deg, rgba(251, 146, 60, 0.1) 0%, rgba(251, 146, 60, 0.05) 100%); border: 1px solid rgba(251, 146, 60, 0.2); border-radius: 14px; padding: 20px; backdrop-filter: blur(10px);">
                     <div style="color: #8A86A0; font-size: 12px; letter-spacing: 0; font-weight: 600; margin-bottom: 12px;">Buchungen</div>
-                    <div id="txCount" style="font-size: 28px; font-weight: 700; color: #ECEAF4; line-height: 1;">0</div>
+                    <div id="txCount" style="font-size: 28px; font-weight: 700; color: #C9B8FF; line-height: 1;">0</div>
                 </div>
             </div>
 
@@ -1013,7 +1016,7 @@
                 <!-- Best Day -->
                 <div class="dashboard-stat" style="background: linear-gradient(135deg, rgba(59, 130, 246, 0.1) 0%, rgba(59, 130, 246, 0.05) 100%); border: 1px solid rgba(59, 130, 246, 0.2); border-radius: 14px; padding: 20px; backdrop-filter: blur(10px);">
                     <div style="color: #8A86A0; font-size: 12px; letter-spacing: 0; font-weight: 600; margin-bottom: 12px;">Best Day</div>
-                    <div id="bestDayStat" style="font-size: 28px; font-weight: 700; color: #ECEAF4; line-height: 1;">€0.00</div>
+                    <div id="bestDayStat" style="font-size: 28px; font-weight: 700; color: #C9B8FF; line-height: 1;">€0.00</div>
                     <div id="bestDayDateStat" style="color: #A9A5BD; font-size: 11px; margin-top: 6px;">—</div>
                 </div>
 
@@ -1027,19 +1030,19 @@
                 <!-- Winning Days -->
                 <div class="dashboard-stat" style="background: linear-gradient(135deg, rgba(124, 92, 240, 0.075) 0%, rgba(124, 92, 240, 0.038) 100%); border: 1px solid rgba(124, 92, 240, 0.15); border-radius: 14px; padding: 20px; backdrop-filter: blur(10px);">
                     <div style="color: #8A86A0; font-size: 12px; letter-spacing: 0; font-weight: 600; margin-bottom: 12px;">Winning Days</div>
-                    <div id="winningDaysStat" style="font-size: 28px; font-weight: 700; color: #ECEAF4; line-height: 1;">0%</div>
+                    <div id="winningDaysStat" style="font-size: 28px; font-weight: 700; color: #C9B8FF; line-height: 1;">0%</div>
                 </div>
 
                 <!-- Losing Days -->
                 <div class="dashboard-stat" style="background: linear-gradient(135deg, rgba(124, 92, 240, 0.05) 0%, rgba(124, 92, 240, 0.025) 100%); border: 1px solid rgba(124, 92, 240, 0.1); border-radius: 14px; padding: 20px; backdrop-filter: blur(10px);">
                     <div style="color: #8A86A0; font-size: 12px; letter-spacing: 0; font-weight: 600; margin-bottom: 12px;">Losing Days</div>
-                    <div id="losingDaysStat" style="font-size: 28px; font-weight: 700; color: #ECEAF4; line-height: 1;">0%</div>
+                    <div id="losingDaysStat" style="font-size: 28px; font-weight: 700; color: #C9B8FF; line-height: 1;">0%</div>
                 </div>
 
                 <!-- Avg Daily P&L -->
                 <div class="dashboard-stat" style="background: linear-gradient(135deg, rgba(251, 146, 60, 0.1) 0%, rgba(251, 146, 60, 0.05) 100%); border: 1px solid rgba(251, 146, 60, 0.2); border-radius: 14px; padding: 20px; backdrop-filter: blur(10px);">
                     <div style="color: #8A86A0; font-size: 12px; letter-spacing: 0; font-weight: 600; margin-bottom: 12px;">Avg Daily P&L</div>
-                    <div id="avgDailyPnLStat" style="font-size: 28px; font-weight: 700; color: #ECEAF4; line-height: 1;">€0.00</div>
+                    <div id="avgDailyPnLStat" style="font-size: 28px; font-weight: 700; color: #C9B8FF; line-height: 1;">€0.00</div>
                 </div>
             </div>
 
@@ -1659,6 +1662,7 @@
     <!-- Rechenkern vor app.js: addTrade() greift beim Speichern darauf zu -->
     <script src="js/zertifikate.js"></script>
     <script src="js/basis.js"></script>
+    <script src="js/gross.js"></script>
     <script src="js/app.js"></script>
     <!-- Formular-Verdrahtung nach app.js, damit getAccountBalance steht -->
     <script src="js/produkt.js"></script>

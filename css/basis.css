@@ -585,6 +585,7 @@ select.cf-eingabe {
    Fuer das native <dialog>: Fokus, Esc und Hintergrund-Sperre liefert
    der Browser. Oeffnen mit showModal(). */
 dialog.cf-dialog {
+    margin: auto;   /* gegen "* { margin: 0 }" in style.css, sonst klebt das Fenster oben links */
     width: min(480px, calc(100vw - 32px));
     max-height: calc(100vh - 64px);
     padding: 0;

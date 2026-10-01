@@ -24,8 +24,9 @@ html { background: #0B0A12; }
 body {
     font-family: var(--cf-schrift) !important;
     background:
-        radial-gradient(900px 520px at 0% -8%, rgba(124, 92, 240, 0.10), transparent 70%),
-        radial-gradient(700px 420px at 100% -12%, rgba(236, 72, 153, 0.05), transparent 70%),
+        radial-gradient(1000px 600px at 0% -8%, rgba(124, 92, 240, 0.16), transparent 70%),
+        radial-gradient(800px 500px at 100% -10%, rgba(236, 72, 153, 0.08), transparent 70%),
+        radial-gradient(900px 600px at 70% 110%, rgba(124, 92, 240, 0.07), transparent 70%),
         #0B0A12;
     background-attachment: fixed;
     color: var(--cf-text);
@@ -87,7 +88,25 @@ input, select, textarea, button { font-family: inherit; }
     background: var(--cf-marke-verlauf);
 }
 .nav-item .nav-icon { color: var(--cf-text-leise); opacity: 1; }
-.nav-item.active .nav-icon { color: var(--cf-akzent-text); }
+.nav-item.active .nav-icon, .nav-item:hover .nav-icon { color: var(--cf-akzent-text); }
+.nav-item.active {
+    background: linear-gradient(90deg, rgba(124, 92, 240, 0.22), rgba(124, 92, 240, 0.06)) !important;
+}
+.nav-zahl {
+    margin-left: auto;
+    min-width: 22px;
+    padding: 1px 7px;
+    border-radius: 999px;
+    background: var(--cf-erhoben);
+    border: 1px solid var(--cf-rand);
+    color: var(--cf-text-2);
+    font-size: 11.5px;
+    font-weight: 600;
+    text-align: center;
+    font-variant-numeric: tabular-nums;
+}
+.nav-zahl:empty { display: none; }
+.nav-item.active .nav-zahl { background: rgba(124, 92, 240, 0.25); border-color: transparent; color: #FFFFFF; }
 .sidebar-logout-btn {
     background: transparent;
     border: 1px solid transparent;
@@ -124,10 +143,28 @@ input, select, textarea, button { font-family: inherit; }
 .analytics-metric-card:hover, .analytics-metric-card-small:hover, .premium-stat-card:hover,
 .trade-card:hover, .position-card:hover, .setups-card:hover, .aus-karte:hover,
 .roadmap-card-premium:hover, .completed-card:hover, .in-progress-card:hover, .planned-card:hover,
-.dir-card:hover, .zert-kachel:hover {
-    transform: none !important;
-    border-color: #35324A !important;
-    box-shadow: inset 0 1px 0 var(--cf-schimmer) !important;
+.dir-card:hover, .zert-kachel:hover, .summary-item:hover, .daily-summary-card:hover {
+    transform: translateY(-2px) !important;
+    border-color: rgba(139, 108, 243, 0.45) !important;
+    box-shadow: inset 0 1px 0 var(--cf-schimmer), 0 14px 34px -16px rgba(124, 92, 240, 0.55) !important;
+}
+.dashboard-stat, .top-stat, .dashboard-section, .dashboard-card, .dashboard-big-card,
+.analytics-metric-card, .analytics-metric-card-small, .premium-stat-card, .trade-card, .position-card,
+.setups-card, .aus-karte, .dir-card, .zert-kachel, .summary-item, .daily-summary-card,
+.roadmap-card-premium, .completed-card, .in-progress-card, .planned-card {
+    transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease !important;
+}
+@media (prefers-reduced-motion: reduce) {
+    .dashboard-stat:hover, .top-stat:hover, .dashboard-section:hover, .dashboard-card:hover,
+    .analytics-metric-card:hover, .analytics-metric-card-small:hover, .trade-card:hover, .position-card:hover,
+    .setups-card:hover, .aus-karte:hover, .dir-card:hover { transform: none !important; }
+}
+/* Kennzahl-Karten: feine Markenlinie an der Oberkante */
+.dashboard-stat, .top-stat, .dashboard-big-card, .dashboard-card, .analytics-metric-card, .analytics-metric-card-small, .premium-stat-card, .summary-item {
+    background:
+        linear-gradient(90deg, rgba(168, 85, 247, 0.75), rgba(236, 72, 153, 0.45) 55%, transparent 90%) top left / 100% 2px no-repeat,
+        linear-gradient(180deg, rgba(124, 92, 240, 0.06), transparent 110px),
+        var(--cf-karte) !important;
 }
 .portfolio-summary::before, .dashboard-section::before, .trade-card::before { display: none; }
 /* Setups behalten ihre farbige Statuskante oben */
@@ -154,8 +191,14 @@ input, select, textarea, button { font-family: inherit; }
 /* ------------------------------------------------------------ Ueberschriften */
 .tab-content h2 { color: var(--cf-text); letter-spacing: -0.025em; font-weight: 700; }
 .dash-greeting-title { color: var(--cf-text); letter-spacing: -0.025em; }
-.dash-greeting-name { color: var(--cf-text); }
-.dash-greeting-date { color: var(--cf-text-leise); letter-spacing: 0; }
+.dash-greeting-name {
+    background: var(--cf-marke-verlauf);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    font-weight: inherit !important;
+}
+.dash-greeting-date { color: var(--cf-akzent-text); letter-spacing: 0; }
 .section-title, .admin-karte-titel, .hilfe-titel, .daten-titel { color: var(--cf-text); letter-spacing: -0.01em; }
 .hilfe-nr {
     background: var(--cf-erhoben) !important;
@@ -407,4 +450,46 @@ input, select, textarea, button { font-family: inherit; }
     color: #FFFFFF !important;
     border-radius: var(--cf-r-2) !important;
     box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.18), 0 6px 18px -6px rgba(124, 92, 240, 0.55) !important;
+}
+
+
+/* ------------------------------------------------------------ Grossansicht (js/gross.js) */
+.cf-vergroesserbar { cursor: zoom-in; }
+.cf-gross-knopf {
+    position: absolute;
+    top: 14px; right: 14px;
+    width: 30px; height: 30px;
+    display: inline-flex; align-items: center; justify-content: center;
+    border: 1px solid var(--cf-rand-feld);
+    border-radius: var(--cf-r-2);
+    background: var(--cf-erhoben);
+    color: var(--cf-text-2);
+    cursor: pointer;
+    opacity: 0.75;
+    transition: opacity var(--cf-dauer), color var(--cf-dauer), border-color var(--cf-dauer);
+    z-index: 2;
+}
+.cf-vergroesserbar:hover .cf-gross-knopf, .cf-gross-knopf:focus-visible { opacity: 1; color: var(--cf-akzent-text); border-color: rgba(139, 108, 243, 0.5); }
+dialog.cf-gross {
+    width: min(1100px, calc(100vw - 32px));
+    max-height: calc(100vh - 48px);
+    overflow: auto;
+    padding: 0;
+}
+.cf-gross-kopf { display: flex; justify-content: flex-end; padding: 12px 12px 0; position: sticky; top: 0; z-index: 3; }
+.cf-gross-inhalt {
+    margin: 0 !important;
+    border: 0 !important;
+    box-shadow: none !important;
+    transform: none !important;
+    background: transparent !important;
+    padding: 20px 28px 28px !important;
+    cursor: default;
+    font-size: 15px;
+}
+.cf-gross-inhalt:hover { transform: none !important; box-shadow: none !important; }
+.cf-gross-diagramm { position: relative; height: min(60vh, 520px); min-width: 0; }
+@media (max-width: 640px) {
+    .cf-gross-inhalt { padding: 4px 16px 20px !important; }
+    .cf-gross-diagramm { height: 50vh; }
 }
