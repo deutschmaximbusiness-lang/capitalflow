@@ -516,9 +516,124 @@ footer a:hover { color: var(--hell); }
     .rein { opacity: 1; transform: none; }
     html { scroll-behavior: auto; }
 }
+
+/* ---------------------------------------------------------- Vorhang bis zum Start
+   Bis 1. Dezember 2026 liegt die Seite verschwommen hinter einem Countdown.
+   Danach entfernt ihn das Skript von selbst - kein Push noetig.
+   Mit ?vorschau=1 laesst er sich zum Pruefen ausblenden. */
+.vorhang {
+    position: fixed; inset: 0; z-index: 1000;
+    display: flex; align-items: center; justify-content: center;
+    padding: 24px 16px;
+    background:
+        radial-gradient(ellipse 50% 60% at 50% 45%, rgba(124, 92, 240, 0.22), transparent 75%),
+        radial-gradient(ellipse 35% 45% at 88% 95%, rgba(236, 72, 153, 0.10), transparent 70%),
+        rgba(11, 10, 18, 0.72);
+    -webkit-backdrop-filter: blur(16px) saturate(120%);
+    backdrop-filter: blur(16px) saturate(120%);
+    overflow-y: auto;
+}
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+    .vorhang { background-color: rgba(11, 10, 18, 0.96); }
+}
+body.mit-vorhang { overflow: hidden; }
+.vorhang-karte {
+    width: min(460px, 100%);
+    text-align: center;
+    padding: 40px 32px 32px;
+    border: 1px solid #262433;
+    border-radius: 18px;
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.03), transparent 140px), rgba(19, 18, 28, 0.92);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05), 0 30px 80px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(124, 92, 240, 0.08);
+}
+.vorhang-logo { width: 72px; height: 72px; border-radius: 18px; display: block; margin: 0 auto 18px;
+    box-shadow: 0 0 0 1px rgba(124, 92, 240, 0.25), 0 16px 50px rgba(124, 92, 240, 0.35); }
+.vorhang-marke { font-size: 30px; font-weight: 700; letter-spacing: -0.03em; color: #ECEAF4; line-height: 1.1; }
+.vorhang-marke span {
+    font-weight: inherit;
+    background: linear-gradient(135deg, #A855F7, #EC4899);
+    -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;
+}
+.vorhang-titel { margin: 22px 0 6px; font-size: 18px; font-weight: 600; letter-spacing: -0.01em; color: #ECEAF4; }
+.vorhang-text { margin: 0 auto 22px; max-width: 34ch; font-size: 14px; line-height: 1.6; color: #A9A5BD; }
+.vorhang-uhr { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; margin-bottom: 14px; }
+.vorhang-feld {
+    padding: 14px 4px 10px;
+    border: 1px solid #262433; border-radius: 12px;
+    background: linear-gradient(90deg, rgba(168, 85, 247, 0.7), rgba(236, 72, 153, 0.4) 60%, transparent 95%) top left / 100% 2px no-repeat, #0B0A12;
+}
+.vorhang-zahl { display: block; font-size: 30px; font-weight: 700; line-height: 1; color: #ECEAF4; font-variant-numeric: tabular-nums; letter-spacing: -0.02em; }
+.vorhang-einheit { display: block; margin-top: 6px; font-size: 11.5px; color: #8A86A0; }
+.vorhang-datum { font-size: 13px; color: #B9A6FF; margin-bottom: 24px; }
+.vorhang-link {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 8px 14px; border-radius: 8px;
+    color: #A9A5BD; font-size: 13px; text-decoration: none;
+    border: 1px solid transparent;
+    transition: color 0.15s, border-color 0.15s, background-color 0.15s;
+}
+.vorhang-link:hover { color: #ECEAF4; border-color: #353247; background: #1B1A27; }
+.vorhang-link:focus-visible { outline: none; box-shadow: 0 0 0 2px #0B0A12, 0 0 0 4px #B9A6FF; }
+@media (max-width: 420px) {
+    .vorhang-karte { padding: 32px 18px 24px; }
+    .vorhang-zahl { font-size: 24px; }
+}
 </style>
 </head>
-<body>
+<body class="mit-vorhang">
+
+<!-- Vorhang bis zum Start (1. Dezember 2026). Steht absichtlich im HTML:
+     faellt das Skript aus, bleibt er stehen, statt dass die Seite kurz
+     ungeschuetzt aufblitzt. -->
+<div class="vorhang" id="vorhang" role="dialog" aria-modal="true" aria-labelledby="vorhangTitel">
+    <div class="vorhang-karte">
+        <img class="vorhang-logo" src="img/capitalflow-icon.png" alt="">
+        <div class="vorhang-marke">Capital<span>Flow</span></div>
+        <h1 class="vorhang-titel" id="vorhangTitel">Bald geht es los</h1>
+        <p class="vorhang-text">Das Trading-Journal für Trade Republic. Ab dem 1. Dezember ist die Seite offen.</p>
+        <div class="vorhang-uhr" aria-live="off">
+            <div class="vorhang-feld"><span class="vorhang-zahl" id="vhTage">–</span><span class="vorhang-einheit">Tage</span></div>
+            <div class="vorhang-feld"><span class="vorhang-zahl" id="vhStd">–</span><span class="vorhang-einheit">Std.</span></div>
+            <div class="vorhang-feld"><span class="vorhang-zahl" id="vhMin">–</span><span class="vorhang-einheit">Min.</span></div>
+            <div class="vorhang-feld"><span class="vorhang-zahl" id="vhSek">–</span><span class="vorhang-einheit">Sek.</span></div>
+        </div>
+        <div class="vorhang-datum">1. Dezember 2026</div>
+        <a class="vorhang-link" href="app.html">Schon Tester? Zur App</a>
+    </div>
+</div>
+<script>
+(function () {
+    'use strict';
+    var ZIEL = new Date(2026, 11, 1, 0, 0, 0).getTime();   // 1. Dezember 2026, 00:00 Ortszeit
+    var v = document.getElementById('vorhang');
+    var huelle = document.querySelector('.huelle');
+    function weg() {
+        if (v && v.parentNode) v.parentNode.removeChild(v);
+        document.body.classList.remove('mit-vorhang');
+        if (huelle) { huelle.removeAttribute('inert'); huelle.removeAttribute('aria-hidden'); }
+    }
+    window.cfVorhangWeg = weg;
+    if (/[?&]vorschau=1/.test(location.search) || Date.now() >= ZIEL) { weg(); return; }
+    var zwei = function (n) { return (n < 10 ? '0' : '') + n; };
+    function ticken() {
+        var rest = ZIEL - Date.now();
+        if (rest <= 0) { weg(); clearInterval(t); return; }
+        var s = Math.floor(rest / 1000);
+        document.getElementById('vhTage').textContent = String(Math.floor(s / 86400));
+        document.getElementById('vhStd').textContent = zwei(Math.floor(s % 86400 / 3600));
+        document.getElementById('vhMin').textContent = zwei(Math.floor(s % 3600 / 60));
+        document.getElementById('vhSek').textContent = zwei(s % 60);
+    }
+    // Inhalt dahinter fuer Tastatur und Screenreader sperren
+    document.addEventListener('DOMContentLoaded', function () {
+        huelle = document.querySelector('.huelle');
+        if (v && v.parentNode && huelle) { huelle.setAttribute('inert', ''); huelle.setAttribute('aria-hidden', 'true'); }
+    });
+    ticken();
+    var t = setInterval(ticken, 1000);
+})();
+</script>
+
 
 <div class="hg" aria-hidden="true">
     <div class="hg-schein hg-1"></div>
