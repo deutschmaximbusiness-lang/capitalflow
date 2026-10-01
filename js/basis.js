@@ -14,13 +14,13 @@
     // Canvas kann keine CSS-Variablen lesen, deshalb stehen die Werte hier
     // noch einmal. test_basis.mjs prueft, dass sie mit basis.css uebereinstimmen.
     const FARBEN = {
-        seite: '#0F1218', karte: '#161A22', erhoben: '#1D222C',
-        rand: '#2A303C', randFeld: '#3A4252', gitter: '#232834',
-        text: '#E7EAF0', text2: '#A3ACBB', textLeise: '#848D9D',
+        seite: '#0B0A12', karte: '#13121C', erhoben: '#1B1A27',
+        rand: '#262433', randFeld: '#353247', gitter: '#1E1C2A',
+        text: '#ECEAF4', text2: '#A9A5BD', textLeise: '#8A86A0',
         gewinnFlaeche: '#12A38F', verlustFlaeche: '#E5484D', warnungFlaeche: '#C98500',
-        serie1: '#3987E5', serie2: '#D4A5FF',
+        serie1: '#9F7AEA', serie2: '#22D3EE',
     };
-    const SCHRIFT = "'IBM Plex Sans', system-ui, -apple-system, 'Segoe UI', sans-serif";
+    const SCHRIFT = "'CF Inter', system-ui, -apple-system, 'Segoe UI', sans-serif";
 
     // ------------------------------------------------------------ KO-Zone
     // Eine Stelle fuer die Schwellen. Aenderung hier aendert App und Styleguide.
@@ -234,16 +234,32 @@
         return mischen(o, einstellungen.extra);
     }
 
-    /* Datensatz fuer Serie 1 oder 2. Mehr als zwei gibt es absichtlich nicht. */
-    function serie(nr, label, daten) {
+    /* Datensatz fuer Serie 1 oder 2. Mehr als zwei gibt es absichtlich nicht.
+       Serie 1 bekommt unter der Linie eine Flaeche, die nach unten ausblendet
+       (abschaltbar mit { flaeche: false }); Serie 2 ist gestrichelt. */
+    function serie(nr, label, daten, einstellungen) {
         if (nr !== 1 && nr !== 2) throw new Error('Hoechstens zwei Serien pro Diagramm (Designsprache).');
         const farbe = nr === 1 ? FARBEN.serie1 : FARBEN.serie2;
-        return {
+        const flaeche = nr === 1 && !(einstellungen && einstellungen.flaeche === false);
+        const ds = {
             label: label, data: daten,
             borderColor: farbe, backgroundColor: farbe,
             pointBackgroundColor: farbe, pointHoverBackgroundColor: farbe,
             borderDash: nr === 2 ? [5, 4] : [],
+            fill: false,
         };
+        if (flaeche) {
+            ds.fill = 'start';
+            ds.backgroundColor = function (ctx) {
+                const c = ctx.chart, a = c.chartArea;
+                if (!a) return 'transparent';
+                const g = c.ctx.createLinearGradient(0, a.top, 0, a.bottom);
+                g.addColorStop(0, 'rgba(159, 122, 234, 0.26)');
+                g.addColorStop(1, 'rgba(159, 122, 234, 0)');
+                return g;
+            };
+        }
+        return ds;
     }
 
     /* Balken, bei denen das Vorzeichen die Aussage ist: gruen/rot. */

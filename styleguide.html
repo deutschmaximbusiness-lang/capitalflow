@@ -10,7 +10,7 @@
 <style>
 /* Nur das Geruest dieser Seite. Alles, was in der App gebraucht wird,
    steht in css/basis.css. */
-html { background: #0F1218; }
+html { background: #0B0A12; }
 body { margin: 0; }
 .sg { max-width: 1120px; margin: 0 auto; padding: 32px 24px 96px; }
 .sg-abschnitt { margin-top: 56px; }
@@ -25,7 +25,7 @@ body { margin: 0; }
 .sg-marke img { width: 32px; height: 32px; border-radius: 8px; }
 .sg-marke span { font-size: 1rem; font-weight: 600; }
 .sg-farben { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 12px; }
-.sg-farbe { border: 1px solid var(--cf-rand); border-radius: 8px; overflow: hidden; background: var(--cf-karte); }
+.sg-farbe { border: 1px solid var(--cf-rand); border-radius: 12px; overflow: hidden; background: var(--cf-karte); }
 .sg-farbe i { display: block; height: 44px; }
 .sg-farbe div { padding: 10px 12px; font-size: 0.8125rem; }
 .sg-farbe b { display: block; font-weight: 500; color: var(--cf-text); }
@@ -34,11 +34,11 @@ body { margin: 0; }
 .sg-schrift small { flex: 0 0 90px; color: var(--cf-text-leise); font-size: 0.75rem; }
 .sg-formular { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
 .sg-formular .sg-breit { grid-column: 1 / -1; }
-.sg-app { display: grid; grid-template-columns: 220px minmax(0, 1fr); gap: 0; border: 1px solid var(--cf-rand); border-radius: 8px; overflow: hidden; }
+.sg-app { display: grid; grid-template-columns: 220px minmax(0, 1fr); gap: 0; border: 1px solid var(--cf-rand); border-radius: 12px; overflow: hidden; }
 .sg-app-leiste { padding: 16px 12px; background: var(--cf-karte); border-right: 1px solid var(--cf-rand); }
 .sg-app-marke { display: flex; align-items: center; gap: 10px; padding: 4px 12px 16px; font-weight: 600; }
 .sg-app-marke img { width: 24px; height: 24px; border-radius: 6px; }
-.sg-app-inhalt { padding: 24px; background: var(--cf-seite); min-width: 0; }
+.sg-app-inhalt { padding: 24px; background: transparent; min-width: 0; }
 @media (max-width: 860px) {
     .sg-raster-2, .sg-raster-3, .sg-formular, .sg-app { grid-template-columns: minmax(0, 1fr); }
     .sg-app-leiste { border-right: 0; border-bottom: 1px solid var(--cf-rand); }
@@ -50,8 +50,8 @@ body { margin: 0; }
 
     <header class="cf-seitenkopf">
         <div>
-            <div class="sg-marke"><img src="img/capitalflow-icon.png" alt=""><span>CapitalFlow</span></div>
-            <h1 class="cf-seitenkopf-titel" style="margin-top:16px">Designsprache</h1>
+            <span class="cf-wortmarke"><img src="img/capitalflow-icon.png" alt=""><span>Capital<span class="cf-wortmarke-verlauf">Flow</span></span></span>
+            <h1 class="cf-seitenkopf-titel" style="margin-top:20px">Designsprache</h1>
             <p class="cf-seitenkopf-unter">Alle Bausteine aus css/basis.css, mit echten Inhalten. Was hier nicht steht, gibt es in der App nicht.</p>
         </div>
     </header>
@@ -59,30 +59,31 @@ body { margin: 0; }
     <!-- ============================================================ Farbe -->
     <section class="sg-abschnitt" id="farbe">
         <h2>Farbe</h2>
-        <p class="sg-zweck">Jeder Ton hat eine Aufgabe. Violett heißt „ausgewählt oder Hauptaktion“, Grün und Rot heißen Ergebnis, Bernstein heißt „nah an der Schwelle“. Deko-Farbe gibt es nicht.</p>
+        <p class="sg-zweck">Das Violett-Pink der Marke bleibt, aber nur an drei Stellen: Wortmarke, aktiver Navigationspunkt, Hauptknopf. Grün und Rot heißen Ergebnis, Bernstein heißt „nah an der Schwelle“. Kein Leuchten, keine Verlaufsschrift in Überschriften.</p>
         <div class="sg-farben">
-            <div class="sg-farbe"><i style="background:#0F1218"></i><div><b>Seite</b><code>#0F1218</code></div></div>
-            <div class="sg-farbe"><i style="background:#161A22"></i><div><b>Karte</b><code>#161A22</code></div></div>
-            <div class="sg-farbe"><i style="background:#1D222C"></i><div><b>Erhoben, Knopf</b><code>#1D222C</code></div></div>
-            <div class="sg-farbe"><i style="background:#2A303C"></i><div><b>Rand</b><code>#2A303C</code></div></div>
-            <div class="sg-farbe"><i style="background:#E7EAF0"></i><div><b>Text</b><code>#E7EAF0</code></div></div>
-            <div class="sg-farbe"><i style="background:#A3ACBB"></i><div><b>Text zweitrangig</b><code>#A3ACBB</code></div></div>
-            <div class="sg-farbe"><i style="background:#6D5AE6"></i><div><b>Hauptknopf, Auswahl</b><code>#6D5AE6 · Text #A596F7</code></div></div>
-            <div class="sg-farbe"><i style="background:#12A38F"></i><div><b>Gewinn</b><code>#12A38F · Text #3CC4A8</code></div></div>
-            <div class="sg-farbe"><i style="background:#E5484D"></i><div><b>Verlust</b><code>#E5484D · Text #F4777B</code></div></div>
+            <div class="sg-farbe"><i style="background:#0B0A12"></i><div><b>Seite</b><code>#0B0A12</code></div></div>
+            <div class="sg-farbe"><i style="background:#13121C"></i><div><b>Karte</b><code>#13121C</code></div></div>
+            <div class="sg-farbe"><i style="background:#1B1A27"></i><div><b>Erhoben, Knopf</b><code>#1B1A27</code></div></div>
+            <div class="sg-farbe"><i style="background:#262433"></i><div><b>Rand</b><code>#262433</code></div></div>
+            <div class="sg-farbe"><i style="background:#ECEAF4"></i><div><b>Text</b><code>#ECEAF4</code></div></div>
+            <div class="sg-farbe"><i style="background:#A9A5BD"></i><div><b>Text zweitrangig</b><code>#A9A5BD</code></div></div>
+            <div class="sg-farbe"><i style="background:linear-gradient(135deg,#A855F7,#EC4899)"></i><div><b>Markenverlauf</b><code>nur Wortmarke, aktiver Punkt</code></div></div>
+            <div class="sg-farbe"><i style="background:linear-gradient(180deg,#7C5CF0,#7257EE)"></i><div><b>Hauptknopf, Auswahl</b><code>#7257EE · Text #B9A6FF</code></div></div>
+            <div class="sg-farbe"><i style="background:#12A38F"></i><div><b>Gewinn</b><code>#12A38F · Text #34D399</code></div></div>
+            <div class="sg-farbe"><i style="background:#E5484D"></i><div><b>Verlust</b><code>#E5484D · Text #FB7185</code></div></div>
             <div class="sg-farbe"><i style="background:#C98500"></i><div><b>Nah an der Schwelle</b><code>#C98500 · Text #E8AE4F</code></div></div>
-            <div class="sg-farbe"><i style="background:#3987E5"></i><div><b>Serie 1</b><code>#3987E5</code></div></div>
-            <div class="sg-farbe"><i style="background:#D4A5FF"></i><div><b>Serie 2, gestrichelt</b><code>#D4A5FF</code></div></div>
+            <div class="sg-farbe"><i style="background:#9F7AEA"></i><div><b>Serie 1, mit Fläche</b><code>#9F7AEA</code></div></div>
+            <div class="sg-farbe"><i style="background:#22D3EE"></i><div><b>Serie 2, gestrichelt</b><code>#22D3EE</code></div></div>
         </div>
     </section>
 
     <!-- ============================================================ Schrift -->
     <section class="sg-abschnitt" id="schrift">
         <h2>Schrift</h2>
-        <p class="sg-zweck">IBM Plex Sans, drei Schnitte. Ziffern sind überall gleich breit, damit Beträge in Spalten untereinander stehen. Beschriftungen in normaler Schreibweise, keine Großbuchstaben-Etiketten.</p>
+        <p class="sg-zweck">Inter wie bisher, aber aus dem Repo statt von Google. Ziffern sind überall gleich breit, damit Beträge in Spalten untereinander stehen. Beschriftungen in normaler Schreibweise, keine Großbuchstaben-Etiketten.</p>
         <div class="sg-schrift">
-            <div><small>32 · 600</small><span style="font-size:2rem;font-weight:600;letter-spacing:-0.01em">+1.284,50 €</span></div>
-            <div><small>24 · 600</small><span style="font-size:1.5rem;font-weight:600">Auswertung</span></div>
+            <div><small>32 · 700</small><span style="font-size:2rem;font-weight:700;letter-spacing:-0.025em">+1.284,50 €</span></div>
+            <div><small>28 · 700</small><span style="font-size:1.75rem;font-weight:700;letter-spacing:-0.025em">Auswertung</span></div>
             <div><small>16 · 600</small><span style="font-size:1rem;font-weight:600">Offene Positionen</span></div>
             <div><small>14 · 400</small><span>Dein Transaktionsexport aus Trade Republic, als CSV.</span></div>
             <div><small>13 · 500</small><span style="font-size:0.8125rem;font-weight:500;color:var(--cf-text-2)">Trefferquote</span></div>
@@ -178,7 +179,7 @@ body { margin: 0; }
         <p class="sg-zweck">Seitenleiste mit Symbol und Namen. Der aktive Bereich ist hinterlegt, sonst nichts. Auf dem Handy wird daraus eine Leiste, die man seitlich wischt.</p>
         <div class="sg-app">
             <div class="sg-app-leiste">
-                <div class="sg-app-marke"><img src="img/capitalflow-icon.png" alt="">CapitalFlow</div>
+                <div class="sg-app-marke"><span class="cf-wortmarke"><img src="img/capitalflow-icon.png" alt=""><span>Capital<span class="cf-wortmarke-verlauf">Flow</span></span></span></div>
                 <nav class="cf-nav" aria-label="Hauptnavigation">
                     <p class="cf-nav-gruppe">Übersicht</p>
                     <a class="cf-nav-punkt" href="#navigation" aria-current="page"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="9" rx="1"/><rect x="14" y="3" width="7" height="5" rx="1"/><rect x="14" y="12" width="7" height="9" rx="1"/><rect x="3" y="16" width="7" height="5" rx="1"/></svg>Dashboard</a>
