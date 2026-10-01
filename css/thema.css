@@ -559,3 +559,80 @@ dialog.cf-gross {
     .trades-stats { width: 100%; flex-direction: row !important; }
     .trades-stat-item { flex: 1 1 0; min-width: 0; }
 }
+
+/* ------------------------------------------------------------ Knopf-Animationen wie im alten Design
+   Werte aus der alten style.css: Hauptknoepfe heben sich 2 px und
+   leuchten violett, dazu der Lichtstreifen, der beim Ueberfahren durch
+   den Knopf zieht (vorher nur beim Login). Nebenknoepfe: Rand und Schrift
+   werden violett, leichtes Anheben. */
+.submit-btn, .btn-primary, .setups-btn-primary, .admin-btn-primary, .dtab-btn-primaer,
+.modal-btn-confirm, .newkey-btn, #closePositionModal button[onclick*="confirm"] {
+    position: relative;
+    overflow: hidden;
+    transition: transform 0.25s ease, box-shadow 0.25s ease, background 0.25s ease !important;
+}
+.submit-btn::after, .btn-primary::after, .setups-btn-primary::after, .admin-btn-primary::after,
+.dtab-btn-primaer::after, .modal-btn-confirm::after, .newkey-btn::after, #closePositionModal button[onclick*="confirm"]::after {
+    content: '';
+    position: absolute;
+    top: 0; left: -80%;
+    width: 60%; height: 100%;
+    background: linear-gradient(120deg, transparent 0%, rgba(255, 255, 255, 0.28) 50%, transparent 100%);
+    transform: skewX(-20deg);
+    transition: left 0.6s ease;
+    pointer-events: none;
+}
+.submit-btn:hover::after, .btn-primary:hover::after, .setups-btn-primary:hover::after, .admin-btn-primary:hover::after,
+.dtab-btn-primaer:hover::after, .modal-btn-confirm:hover::after, .newkey-btn:hover::after,
+#closePositionModal button[onclick*="confirm"]:hover::after { left: 130%; }
+
+.submit-btn:hover, .btn-primary:hover, .setups-btn-primary:hover, .admin-btn-primary:hover, .dtab-btn-primaer:hover,
+.modal-btn-confirm:hover, .newkey-btn:hover, .login-btn:hover, #closePositionModal button[onclick*="confirm"]:hover {
+    transform: translateY(-2px) !important;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.18), 0 8px 30px rgba(168, 85, 247, 0.5) !important;
+}
+.submit-btn:active, .btn-primary:active, .setups-btn-primary:active, .admin-btn-primary:active, .dtab-btn-primaer:active,
+.modal-btn-confirm:active, .newkey-btn:active, .login-btn:active, #closePositionModal button[onclick*="confirm"]:active {
+    transform: translateY(0) !important;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.18), 0 0 14px rgba(168, 85, 247, 0.35) !important;
+}
+
+.btn-secondary, .modal-btn-cancel, .setups-btn-ghost, .login-btn-secondary, .dtab-btn, .trade-edit,
+.trade-nachtragen-btn, .key-btn-copy, .admin-zeile-btn, .position-close-btn, .calendar-btn, .pnl-nav-btn, .daten-btn,
+#logoutModal button[onclick="cancelLogout()"], #deleteModal button[onclick="cancelDelete()"], #closePositionModal button[onclick*="closeModal"] {
+    transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease, color 0.2s ease, background 0.2s ease !important;
+}
+.btn-secondary:hover, .modal-btn-cancel:hover, .setups-btn-ghost:hover, .login-btn-secondary:hover, .dtab-btn:hover, .trade-edit:hover,
+.trade-nachtragen-btn:hover, .key-btn-copy:hover, .admin-zeile-btn:hover, .position-close-btn:hover, .calendar-btn:hover,
+.pnl-nav-btn:hover, .daten-btn:hover,
+#logoutModal button[onclick="cancelLogout()"]:hover, #deleteModal button[onclick="cancelDelete()"]:hover,
+#closePositionModal button[onclick*="closeModal"]:hover {
+    transform: translateY(-1px) !important;
+    color: #DDD3FF !important;
+    border-color: rgba(168, 85, 247, 0.45) !important;
+    background: rgba(168, 85, 247, 0.16) !important;
+    box-shadow: 0 6px 22px rgba(168, 85, 247, 0.22) !important;
+}
+
+.filter-btn:hover, .setup-type-filter-btn:hover, .produkt-btn:hover, .direction-btn:hover, .setups-status-btn:hover, .login-mode-btn:hover {
+    background: rgba(168, 85, 247, 0.2) !important;
+    border-color: rgba(168, 85, 247, 0.5) !important;
+    color: #ECEAF4 !important;
+}
+
+.trade-delete, .position-delete-btn, .setups-btn-delete, .key-btn-delete, .btn-gefahr, #deleteConfirmBtn, #logoutModal button[onclick="confirmLogout()"] {
+    transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease !important;
+}
+.trade-delete:hover, .position-delete-btn:hover, .setups-btn-delete:hover, .key-btn-delete:hover, .btn-gefahr:hover:not(:disabled),
+#deleteConfirmBtn:hover, #logoutModal button[onclick="confirmLogout()"]:hover {
+    transform: translateY(-1px) !important;
+    box-shadow: 0 8px 25px rgba(244, 63, 94, 0.35) !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .submit-btn::after, .btn-primary::after, .setups-btn-primary::after, .admin-btn-primary::after,
+    .dtab-btn-primaer::after, .modal-btn-confirm::after, .newkey-btn::after { display: none; }
+    .submit-btn:hover, .btn-primary:hover, .setups-btn-primary:hover, .admin-btn-primary:hover, .dtab-btn-primaer:hover,
+    .modal-btn-confirm:hover, .newkey-btn:hover, .login-btn:hover, .btn-secondary:hover, .trade-edit:hover, .daten-btn:hover,
+    .trade-delete:hover, .setups-btn-delete:hover { transform: none !important; }
+}
