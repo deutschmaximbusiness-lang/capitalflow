@@ -55,17 +55,17 @@
 
 :root {
     /* Flaechen: Schwarz mit einem Hauch Violett */
-    --cf-seite: #0B0A12;
-    --cf-karte: #13121C;
-    --cf-erhoben: #1B1A27;
-    --cf-rand: #262433;
-    --cf-rand-feld: #353247;
+    --cf-seite: #09090B;
+    --cf-karte: #121215;
+    --cf-erhoben: #1A1A1F;
+    --cf-rand: #26262C;
+    --cf-rand-feld: #34343C;
     --cf-schimmer: rgba(255, 255, 255, 0.045);   /* Lichtkante oben an Karten */
 
     /* Text */
-    --cf-text: #ECEAF4;
-    --cf-text-2: #A9A5BD;
-    --cf-text-leise: #8A86A0;
+    --cf-text: #F4F4F5;
+    --cf-text-2: #A1A1AA;
+    --cf-text-leise: #8B8B94;
 
     /* Marke und Akzent */
     --cf-marke-verlauf: linear-gradient(135deg, #A855F7 0%, #EC4899 100%);
@@ -89,7 +89,7 @@
     /* Diagramm-Serien (validiert gegen #13121C, siehe styleguide.html) */
     --cf-serie-1: #9F7AEA;
     --cf-serie-2: #22D3EE;
-    --cf-gitter: #1E1C2A;
+    --cf-gitter: #1E1E23;
 
     /* Schrift */
     --cf-schrift: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
@@ -112,9 +112,10 @@
     --cf-a-7: 48px;
 
     /* Radius: klein fuer Marken, mittel fuer Bedienelemente, gross fuer Karten */
-    --cf-r-1: 6px;
-    --cf-r-2: 8px;
-    --cf-r-3: 12px;
+    --cf-r-1: 999px;   /* Marken: Pille */
+    --cf-r-2: 999px;   /* Knoepfe, Felder: Pille */
+    --cf-r-3: 22px;    /* Karten */
+    --cf-r-4: 14px;    /* innere Flaechen, Textfelder */
 
     --cf-fokus: 0 0 0 2px var(--cf-seite), 0 0 0 4px var(--cf-akzent-text);
     --cf-dauer: 140ms;
@@ -313,7 +314,7 @@
 .cf-eingabe::placeholder { color: var(--cf-text-leise); }
 .cf-eingabe:hover { border-color: #47435E; }
 .cf-eingabe:focus { outline: none; border-color: var(--cf-akzent-text); box-shadow: 0 0 0 3px var(--cf-akzent-grund); }
-textarea.cf-eingabe { padding: var(--cf-a-2) var(--cf-a-3); min-height: 80px; line-height: 1.5; resize: vertical; }
+textarea.cf-eingabe { padding: var(--cf-a-2) var(--cf-a-3); min-height: 80px; line-height: 1.5; resize: vertical; border-radius: var(--cf-r-4); }
 select.cf-eingabe {
     appearance: none;
     padding-right: 32px;
@@ -427,7 +428,7 @@ select.cf-eingabe {
     padding: var(--cf-a-3) var(--cf-a-4);
     border: 1px solid var(--cf-rand);
     border-left-width: 3px;
-    border-radius: var(--cf-r-2);
+    border-radius: var(--cf-r-4);
     background: var(--cf-karte);
     color: var(--cf-text-2);
     font-size: var(--cf-t-14);

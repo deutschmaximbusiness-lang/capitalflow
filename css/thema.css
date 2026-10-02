@@ -636,3 +636,239 @@ dialog.cf-gross {
     .modal-btn-confirm:hover, .newkey-btn:hover, .login-btn:hover, .btn-secondary:hover, .trade-edit:hover, .daten-btn:hover,
     .trade-delete:hover, .setups-btn-delete:hover { transform: none !important; }
 }
+
+/* ==========================================================================
+   STIL "GLAS" (02.10.)
+   Vorbild: dunkles Dashboard mit fast schwarzer, neutraler Flaeche, grossen
+   runden Karten mit Verlaufskante, Pillen-Knoepfen, violettem Leuchten nur
+   an der Hauptaktion und feinen Umlauf-Linien im Hintergrund.
+   Steht am Ende, damit es alles darueber ersetzt.
+   ========================================================================== */
+:root {
+    --g-kante: linear-gradient(180deg, rgba(255, 255, 255, 0.13), rgba(255, 255, 255, 0.035) 45%, rgba(255, 255, 255, 0.06));
+    --g-kante-hover: linear-gradient(180deg, rgba(167, 139, 250, 0.55), rgba(124, 92, 240, 0.18) 50%, rgba(255, 255, 255, 0.08));
+    --g-flaeche: linear-gradient(180deg, #16161A, #111114);
+    --g-flaeche-tief: #0D0D10;
+    --g-pille-rand: rgba(255, 255, 255, 0.10);
+    --g-glow: 0 0 0 1px rgba(167, 139, 250, 0.35), 0 8px 28px -6px rgba(124, 92, 240, 0.65), 0 0 22px rgba(124, 92, 240, 0.35);
+    --card-bg: #121215;
+    --border-color: #26262C;
+}
+
+/* ------------------------------------------------ Hintergrund: Umlaufbahnen und Sterne, ruhig */
+html { background: #09090B; }
+body {
+    background:
+        radial-gradient(1px 1px at 12% 18%, rgba(255, 255, 255, 0.55), transparent 60%),
+        radial-gradient(1px 1px at 78% 9%, rgba(255, 255, 255, 0.45), transparent 60%),
+        radial-gradient(1px 1px at 91% 41%, rgba(255, 255, 255, 0.35), transparent 60%),
+        radial-gradient(1px 1px at 33% 72%, rgba(255, 255, 255, 0.35), transparent 60%),
+        radial-gradient(1px 1px at 64% 88%, rgba(255, 255, 255, 0.4), transparent 60%),
+        radial-gradient(1.5px 1.5px at 52% 31%, rgba(167, 139, 250, 0.7), transparent 60%),
+        radial-gradient(1.5px 1.5px at 22% 92%, rgba(167, 139, 250, 0.6), transparent 60%),
+        /* zwei feine Umlaufbahnen */
+        radial-gradient(ellipse 70% 55% at 8% 18%, transparent 98.4%, rgba(255, 255, 255, 0.07) 98.8%, transparent 99.2%),
+        radial-gradient(ellipse 85% 70% at 108% 110%, transparent 98.6%, rgba(255, 255, 255, 0.06) 98.9%, transparent 99.2%),
+        /* Licht oben, sehr weich */
+        radial-gradient(900px 420px at 50% -12%, rgba(124, 92, 240, 0.12), transparent 70%),
+        #09090B !important;
+    background-attachment: fixed !important;
+}
+
+/* ------------------------------------------------ Kopfzeile */
+.navbar {
+    background: rgba(9, 9, 11, 0.72) !important;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05) !important;
+    backdrop-filter: blur(16px) saturate(140%);
+    -webkit-backdrop-filter: blur(16px) saturate(140%);
+}
+.navbar-phase, .daten-btn {
+    border-radius: 999px !important;
+    background: rgba(255, 255, 255, 0.03) !important;
+    border: 1px solid var(--g-pille-rand) !important;
+    color: #D4D4D8 !important;
+}
+
+/* ------------------------------------------------ Seitenleiste: schwebende Karte */
+.sidebar {
+    top: 88px !important;
+    left: 16px !important;
+    width: 248px !important;
+    height: calc(100vh - 104px) !important;
+    padding: 18px 12px !important;
+    border-radius: 24px !important;
+    border: 1px solid transparent !important;
+    background: var(--g-flaeche) padding-box, var(--g-kante) border-box !important;
+    box-shadow: 0 30px 60px -30px rgba(0, 0, 0, 0.8);
+}
+.main-wrapper { margin-left: 280px; }
+.nav-item {
+    border-radius: 999px !important;
+    padding: 10px 16px !important;
+    border: 1px solid transparent !important;
+    color: #A1A1AA !important;
+}
+.nav-item:hover { background: rgba(255, 255, 255, 0.04) !important; color: #F4F4F5 !important; }
+.nav-item.active {
+    background: rgba(255, 255, 255, 0.06) !important;
+    border-color: rgba(255, 255, 255, 0.10) !important;
+    color: #F4F4F5 !important;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06);
+}
+/* aktiver Punkt: kurzer violetter Lichtstrich unten statt Kante links */
+.nav-item.active::before {
+    left: 50% !important; right: auto !important;
+    top: auto !important; bottom: -1px !important;
+    width: 34px !important; height: 2px !important;
+    transform: translateX(-50%);
+    border-radius: 2px !important;
+    background: linear-gradient(90deg, transparent, #A78BFA, transparent) !important;
+    box-shadow: 0 0 10px 1px rgba(167, 139, 250, 0.7);
+}
+.nav-zahl { background: rgba(255, 255, 255, 0.05) !important; border-color: var(--g-pille-rand) !important; }
+.nav-item.active .nav-zahl { background: linear-gradient(180deg, #7C5CF0, #5B3FD9) !important; color: #fff !important; }
+.sidebar-logout-btn { border-radius: 999px !important; }
+
+/* ------------------------------------------------ Karten: Flaeche + Verlaufskante */
+.dashboard-stat, .top-stat, .dashboard-section, .dashboard-card, .dashboard-big-card,
+.analytics-metric-card, .analytics-metric-card-small, .premium-stat-card, .trade-score-card,
+.daily-summary-card, .trade-card, .position-card, .setups-card, .setup-type-stat-card,
+.aus-karte, .daten-karte, .admin-karte, .admin-section, .hilfe-block, .form-section,
+.portfolio-summary, .summary-item, .zert-block, .newkey-card, .start-kasten,
+.roadmap-card-premium, .completed-card, .in-progress-card, .planned-card,
+.equity-section, .dir-card, .zert-kachel, .admin-key-karte, .bereich-sperre-karte, .trades-stat-item {
+    border: 1px solid transparent !important;
+    border-radius: 22px !important;
+    background: var(--g-flaeche) padding-box, var(--g-kante) border-box !important;
+    box-shadow: 0 24px 48px -28px rgba(0, 0, 0, 0.9) !important;
+}
+/* kleine Kacheln etwas weniger rund */
+.dashboard-card, .analytics-metric-card-small, .zert-kachel, .summary-item, .trades-stat-item { border-radius: 18px !important; }
+/* Setups behalten die farbige Statusmarke, jetzt als Punktlinie oben */
+.setups-card { box-shadow: inset 0 2px 0 var(--st), 0 24px 48px -28px rgba(0, 0, 0, 0.9) !important; }
+.dir-card-long { box-shadow: inset 3px 0 0 #12A38F, 0 24px 48px -28px rgba(0, 0, 0, 0.9) !important; }
+.dir-card-short { box-shadow: inset 3px 0 0 #E5484D, 0 24px 48px -28px rgba(0, 0, 0, 0.9) !important; }
+
+/* Hover: Anheben wie frueher, dazu wird die Kante violett */
+.dashboard-big-card:hover, .dashboard-section:hover, .dashboard-stat:hover, .top-stat:hover,
+.analytics-metric-card:hover, .premium-stat-card:hover, .trade-card:hover, .position-card:hover,
+.setups-card:hover, .aus-karte:hover, .dir-card:hover, .daily-summary-card:hover, .trades-stat-item:hover,
+.roadmap-card-premium:hover, .completed-card:hover, .in-progress-card:hover, .planned-card:hover,
+.dashboard-card:hover, .analytics-metric-card-small:hover, .zert-kachel:hover, .summary-item:hover {
+    background: var(--g-flaeche) padding-box, var(--g-kante-hover) border-box !important;
+    border-color: transparent !important;
+    box-shadow: 0 30px 80px rgba(124, 92, 240, 0.16), 0 24px 48px -28px rgba(0, 0, 0, 0.9) !important;
+}
+.cf-gross-inhalt, .cf-gross-inhalt:hover { background: transparent !important; box-shadow: none !important; border: 0 !important; }
+
+/* Warn-/Tippflaechen: weich gerundet, nicht pillenfoermig */
+.hilfe-warn, .zert-warnung, .bereich-warnung, .admin-key-warn, .newkey-warn,
+.hilfe-tipp, .zert-hinweis, .edit-hinweis { border-radius: 14px !important; }
+
+/* ------------------------------------------------ Knoepfe: Pillen */
+.submit-btn, .btn-primary, .login-btn, .setups-btn-primary, .admin-btn-primary, .dtab-btn-primaer,
+.modal-btn-confirm, .newkey-btn, #closePositionModal button[onclick*="confirm"] {
+    border-radius: 999px !important;
+    background: linear-gradient(180deg, #7C5CF0 0%, #5B3FD9 100%) !important;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.22), var(--g-glow) !important;
+}
+.submit-btn:hover, .btn-primary:hover, .login-btn:hover, .setups-btn-primary:hover, .admin-btn-primary:hover,
+.dtab-btn-primaer:hover, .modal-btn-confirm:hover, .newkey-btn:hover, #closePositionModal button[onclick*="confirm"]:hover {
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.25), 0 0 0 1px rgba(167, 139, 250, 0.5), 0 10px 34px -4px rgba(124, 92, 240, 0.8), 0 0 30px rgba(124, 92, 240, 0.45) !important;
+}
+.btn-secondary, .modal-btn-cancel, .setups-btn-ghost, .login-btn-secondary, .dtab-btn, .trade-edit,
+.trade-nachtragen-btn, .key-btn-copy, .admin-zeile-btn, .position-close-btn, .calendar-btn, .pnl-nav-btn,
+.trade-delete, .position-delete-btn, .setups-btn-delete, .key-btn-delete, .btn-gefahr,
+#logoutModal button, #deleteModal button, #closePositionModal button, .discord-btn, .sidebar-logout-btn, .cf-gross-knopf {
+    border-radius: 999px !important;
+}
+.btn-secondary, .modal-btn-cancel, .setups-btn-ghost, .login-btn-secondary, .dtab-btn, .trade-edit,
+.trade-nachtragen-btn, .key-btn-copy, .admin-zeile-btn, .position-close-btn, .calendar-btn, .pnl-nav-btn,
+#logoutModal button[onclick="cancelLogout()"], #deleteModal button[onclick="cancelDelete()"], #closePositionModal button[onclick*="closeModal"] {
+    background: rgba(255, 255, 255, 0.03) !important;
+    border: 1px solid var(--g-pille-rand) !important;
+    color: #F4F4F5 !important;
+}
+/* Auswahl (Filter, Tabs, Richtung): Pillen, aktive mit hellerer Flaeche */
+.filter-btn, .tab-button, .setup-type-filter-btn, .produkt-btn, .direction-btn, .setups-status-btn, .login-mode-btn {
+    border-radius: 999px !important;
+    background: rgba(255, 255, 255, 0.02) !important;
+    border: 1px solid var(--g-pille-rand) !important;
+    color: #A1A1AA !important;
+}
+.filter-btn.active, .tab-button.active, .setup-type-filter-btn.active, .produkt-btn.active,
+.setups-status-btn.active, .login-mode-btn.active {
+    background: rgba(255, 255, 255, 0.08) !important;
+    border-color: rgba(255, 255, 255, 0.16) !important;
+    color: #F4F4F5 !important;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08), 0 6px 18px -8px rgba(124, 92, 240, 0.6) !important;
+}
+/* Leiste, in der die Filterknoepfe stehen: selbst eine Pille */
+.trades-filter { gap: 6px !important; }
+
+/* ------------------------------------------------ Felder */
+.form-group input, .form-group select, .login-input, .admin-input, .custom-select-header,
+.trades-filter select, .trades-filter input {
+    border-radius: 999px !important;
+    background: rgba(255, 255, 255, 0.03) !important;
+    border: 1px solid var(--g-pille-rand) !important;
+    padding-left: 18px !important;
+}
+.form-group textarea { border-radius: 16px !important; background: rgba(255, 255, 255, 0.03) !important; border: 1px solid var(--g-pille-rand) !important; }
+.custom-select-dropdown { border-radius: 16px !important; background: #16161A !important; }
+.screenshot-paste-area { border-radius: 18px !important; background: rgba(255, 255, 255, 0.02) !important; }
+
+/* ------------------------------------------------ Kleinteile */
+.setup-type-badge, .trade-leverage-badge, .trade-ko-badge, .dir-badge, .session-badge, .setups-status-pill, .nav-zahl {
+    border-radius: 999px !important;
+}
+.calendar-day { border-radius: 16px !important; background: var(--g-flaeche) padding-box, var(--g-kante) border-box !important; border: 1px solid transparent !important; }
+.calendar-day.profit { background: linear-gradient(180deg, rgba(52, 211, 153, 0.12), rgba(52, 211, 153, 0.02)) padding-box, linear-gradient(180deg, rgba(52, 211, 153, 0.5), rgba(52, 211, 153, 0.08)) border-box !important; }
+.calendar-day.loss { background: linear-gradient(180deg, rgba(251, 113, 133, 0.12), rgba(251, 113, 133, 0.02)) padding-box, linear-gradient(180deg, rgba(251, 113, 133, 0.5), rgba(251, 113, 133, 0.08)) border-box !important; }
+.cf-gross-knopf { width: 34px; height: 34px; background: rgba(255, 255, 255, 0.04); border-color: var(--g-pille-rand); }
+
+/* ------------------------------------------------ Fenster */
+.modal-content, .screenshot-modal-content, dialog.cf-dialog {
+    border-radius: 26px !important;
+    border: 1px solid transparent !important;
+    background: var(--g-flaeche) padding-box, var(--g-kante) border-box !important;
+}
+.toast { border-radius: 999px !important; }
+
+/* ------------------------------------------------ Login */
+.login-container {
+    border-radius: 28px !important;
+    border: 1px solid transparent !important;
+    background: var(--g-flaeche) padding-box, var(--g-kante) border-box !important;
+}
+.login-screen {
+    background-color: #09090B !important;
+    background-image:
+        radial-gradient(1px 1px at 14% 22%, rgba(255, 255, 255, 0.55), transparent 60%),
+        radial-gradient(1px 1px at 82% 14%, rgba(255, 255, 255, 0.45), transparent 60%),
+        radial-gradient(1.5px 1.5px at 70% 78%, rgba(167, 139, 250, 0.7), transparent 60%),
+        radial-gradient(ellipse 70% 60% at 0% 10%, transparent 98.3%, rgba(255, 255, 255, 0.08) 98.7%, transparent 99.1%),
+        radial-gradient(ellipse 80% 70% at 110% 105%, transparent 98.5%, rgba(255, 255, 255, 0.07) 98.85%, transparent 99.2%),
+        radial-gradient(ellipse 46% 56% at 50% 46%, rgba(124, 92, 240, 0.16), transparent 75%) !important;
+    background-size: auto !important;
+}
+
+/* ------------------------------------------------ Schmal */
+@media (max-width: 768px) {
+    .sidebar { top: 72px !important; left: 0 !important; width: 280px !important; height: calc(100vh - 72px) !important; border-radius: 0 24px 24px 0 !important; }
+    .main-wrapper { margin-left: 0; }
+}
+/* Filterleiste selbst als Pille, so breit wie ihr Inhalt */
+.trades-filter {
+    display: inline-flex !important;
+    flex-wrap: wrap;
+    width: auto !important;
+    max-width: 100%;
+    padding: 5px !important;
+    border-radius: 999px !important;
+    background: rgba(255, 255, 255, 0.02) !important;
+    border: 1px solid var(--g-pille-rand) !important;
+    box-shadow: none !important;
+}
+.trades-filter .filter-btn:not(.active) { border-color: transparent !important; background: transparent !important; }
+@media (max-width: 640px) { .trades-filter { border-radius: 22px !important; } }

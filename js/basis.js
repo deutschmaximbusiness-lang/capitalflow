@@ -14,9 +14,9 @@
     // Canvas kann keine CSS-Variablen lesen, deshalb stehen die Werte hier
     // noch einmal. test_basis.mjs prueft, dass sie mit basis.css uebereinstimmen.
     const FARBEN = {
-        seite: '#0B0A12', karte: '#13121C', erhoben: '#1B1A27',
-        rand: '#262433', randFeld: '#353247', gitter: '#1E1C2A',
-        text: '#ECEAF4', text2: '#A9A5BD', textLeise: '#8A86A0',
+        seite: '#09090B', karte: '#121215', erhoben: '#1A1A1F',
+        rand: '#26262C', randFeld: '#34343C', gitter: '#1E1E23',
+        text: '#F4F4F5', text2: '#A1A1AA', textLeise: '#8B8B94',
         gewinnFlaeche: '#12A38F', verlustFlaeche: '#E5484D', warnungFlaeche: '#C98500',
         serie1: '#9F7AEA', serie2: '#22D3EE',
     };
