@@ -1062,6 +1062,7 @@ function tradeBearbeiten(id) {
 
     bearbeitungsLeiste(trade);
 
+    cfKlapp('auf', 'tradeFormHuelle', { fokus: null });
     const form = document.getElementById('tradeForm');
     if (form) form.scrollIntoView({ behavior: 'smooth', block: 'start' });
 
@@ -1079,6 +1080,7 @@ function bearbeitenAbbrechen() {
     document.querySelectorAll('.setup-type-checkbox').forEach(cb => { cb.checked = false; });
     if (window.cfProduktZuruecksetzen) window.cfProduktZuruecksetzen();
     bearbeitungsLeiste(null);
+    cfKlapp('zu', 'tradeFormHuelle');
     showToast('Bearbeitung abgebrochen — nichts geändert.');
 }
 
@@ -1238,6 +1240,7 @@ function addTrade(e) {
         clearScreenshot();
         if (window.cfProduktZuruecksetzen) window.cfProduktZuruecksetzen();
         loadTrades();
+        cfKlapp('gespeichert', 'tradeFormHuelle');
 
     } catch (error) {
         console.error('Error adding trade:', error);
@@ -1277,6 +1280,13 @@ function formatLeverage(value) {
  * zeigten damit "+€-421". Wer das Vorzeichen in die Vorlage schreibt,
  * schreibt eine Behauptung hin statt eines Werts.
  */
+/** Eingeklappte Formulare (js/aufklapp.js) - ohne die Datei kein Fehler. */
+function cfKlapp(was, id, arg) {
+    if (window.cfAufklapp && typeof window.cfAufklapp[was] === 'function') {
+        window.cfAufklapp[was](id, arg);
+    }
+}
+
 function eurMitVorzeichen(n) {
     const z = parseFloat(n);
     if (!Number.isFinite(z)) return '—';
@@ -1636,32 +1646,32 @@ function renderDailyCalendar(trades, container) {
     
     let allDates = [];
     const today = new Date();
-    
-    if (Object.keys(groupedByDate).length > 0) {
-        const dates = Object.keys(groupedByDate).map(d => new Date(d.split('.').reverse().join('-')));
-        const maxDate = new Date(Math.max(...dates));
-        
-        const startDate = new Date(maxDate.getFullYear(), maxDate.getMonth(), 1);
-        const endDate = new Date(maxDate.getFullYear(), maxDate.getMonth() + 1, 0);
-        
-        for (let d = new Date(startDate); d <= endDate; d.setDate(d.getDate() + 1)) {
-            const day = String(d.getDate()).padStart(2, '0');
-            const month = String(d.getMonth() + 1).padStart(2, '0');
-            const year = d.getFullYear();
-            allDates.push(`${day}.${month}.${year}`);
-        }
-    } else {
-        const startDate = new Date(today.getFullYear(), today.getMonth(), 1);
-        const endDate = new Date(today.getFullYear(), today.getMonth() + 1, 0);
-        
-        for (let d = new Date(startDate); d <= endDate; d.setDate(d.getDate() + 1)) {
-            const day = String(d.getDate()).padStart(2, '0');
-            const month = String(d.getMonth() + 1).padStart(2, '0');
-            const year = d.getFullYear();
-            allDates.push(`${day}.${month}.${year}`);
-        }
+    const heuteEnde = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+
+    // Gezeigt werden die letzten 30 Tage bis heute - nicht mehr der
+    // Kalendermonat des juengsten Trades. Der zeigte am Monatsanfang zwei
+    // Kacheln und liess die Vorwoche verschwinden; davor war der halbe
+    // Monat graue Zukunftstage, die nichts bedeuten konnten.
+    // Liegt der juengste Trade laenger zurueck, enden die 30 Tage
+    // bei ihm statt bei heute. Ein Tag mit Trades bleibt immer sichtbar,
+    // auch mit vertipptem Datum in der Zukunft.
+    const TAGE = 30;
+    const gueltig = Object.keys(groupedByDate)
+        .map(d => new Date(d.split('.').reverse().join('-') + 'T00:00:00'))
+        .filter(d => !isNaN(d.getTime()));
+    const juengster = gueltig.length ? new Date(Math.max(...gueltig)) : heuteEnde;
+    const grenze = new Date(heuteEnde); grenze.setDate(grenze.getDate() - (TAGE - 1));
+    const endDate = juengster < grenze ? juengster : heuteEnde;
+    const startDate = new Date(endDate); startDate.setDate(startDate.getDate() - (TAGE - 1));
+    const schluessel = (d) => `${String(d.getDate()).padStart(2, '0')}.${String(d.getMonth() + 1).padStart(2, '0')}.${d.getFullYear()}`;
+    for (let d = new Date(startDate); d <= endDate; d.setDate(d.getDate() + 1)) {
+        allDates.push(schluessel(d));
     }
-    
+    gueltig.forEach(d => {
+        if (d > endDate) allDates.push(schluessel(d));
+    });
+
+    // Neuester Tag zuerst, also oben links.
     const sortedDates = allDates.sort((a, b) => new Date(b.split('.').reverse().join('-')) - new Date(a.split('.').reverse().join('-')));
     
     // Berechne Stats
@@ -1713,7 +1723,7 @@ function renderDailyCalendar(trades, container) {
                 return `
                     <div class="calendar-day ${status}" ${isSpecial} title="${date}: ${dayTrades.length} Trades, €${dayPnL.toFixed(2)}">
                         <div class="calendar-day-header">${date}</div>
-                        <div class="calendar-day-pnl">${dayTrades.length > 0 ? `€${Math.abs(dayPnL).toFixed(0)}` : '—'}</div>
+                        <div class="calendar-day-pnl">${dayTrades.length > 0 ? `${dayPnL < 0 ? '−' : '+'}€${Math.abs(dayPnL).toFixed(0)}` : '—'}</div>
                         <div class="calendar-day-trades">${dayTrades.length} T.</div>
                     </div>
                 `;
@@ -1794,15 +1804,24 @@ function renderMonthlyCalendar(trades, container) {
     const today = new Date();
     const currentYear = today.getFullYear();
     
-    // Generiere ALLE 12 Monate des aktuellen Jahres (Jan - Dez)
+    // Monate bis einschliesslich heute - keine leeren Zukunftsmonate.
+    // Zurueck bis Januar oder bis zum fruehesten Trade, je nachdem was
+    // weiter zurueckliegt; vorher fielen Trades aus dem Vorjahr einfach
+    // heraus. Monate mit Trades bleiben immer drin.
+    const heuteKey = `${currentYear}-${String(today.getMonth() + 1).padStart(2, '0')}`;
+    const mitTrades = Object.keys(groupedByMonth).filter(k => /^\d{4}-\d{2}$/.test(k)).sort();
+    let vonKey = `${currentYear}-01`;
+    if (mitTrades.length && mitTrades[0] < vonKey) vonKey = mitTrades[0];
     const allMonths = [];
-    for (let month = 1; month <= 12; month++) {
-        const monthKey = `${currentYear}-${String(month).padStart(2, '0')}`;
-        allMonths.push(monthKey);
+    let [jj, mm] = vonKey.split('-').map(Number);
+    while (`${jj}-${String(mm).padStart(2, '0')}` <= heuteKey) {
+        allMonths.push(`${jj}-${String(mm).padStart(2, '0')}`);
+        mm++; if (mm > 12) { mm = 1; jj++; }
     }
-    
-    // Sortiere absteigend (Dez zuerst, dann Nov, etc.)
-    allMonths.reverse();
+    mitTrades.forEach(k => { if (!allMonths.includes(k)) allMonths.push(k); });
+
+    // Neuester Monat zuerst, also oben links.
+    allMonths.sort().reverse();
     
     // Berechne Stats
     const allTrades = trades;
@@ -1859,7 +1878,7 @@ function renderMonthlyCalendar(trades, container) {
                 return `
                     <div class="calendar-day ${status}" ${isSpecial} title="${getMonthName(monthKey)}: ${monthTrades.length} Trades, €${monthPnL.toFixed(2)}">
                         <div class="calendar-day-header">${getMonthName(monthKey)}</div>
-                        <div class="calendar-day-pnl">${monthTrades.length > 0 ? `€${Math.abs(monthPnL).toFixed(0)}` : '—'}</div>
+                        <div class="calendar-day-pnl">${monthTrades.length > 0 ? `${monthPnL < 0 ? '−' : '+'}€${Math.abs(monthPnL).toFixed(0)}` : '—'}</div>
                         <div class="calendar-day-trades">${monthTrades.length} T.</div>
                     </div>
                 `;
@@ -1931,8 +1950,11 @@ function buildDashboardGreeting(trades, stats) {
         weekday: 'long', day: 'numeric', month: 'long'
     });
 
-    // Trades von heute
-    const heute = jetzt.toISOString().slice(0, 10);
+    // Trades von heute. Die Trades tragen TT.MM.JJJJ - vorher stand hier
+    // toISOString() (JJJJ-MM-TT, dazu in UTC), damit passte nie ein Trade
+    // und die Zeile "X Trades heute" erschien nie.
+    const heute = jetzt.toLocaleDateString('de-DE',
+        { year: 'numeric', month: '2-digit', day: '2-digit' });
     const heutige = trades.filter(t => t.date === heute);
     const heutePnl = heutige.reduce((sum, t) => sum + (t.pnl || 0), 0);
 
@@ -1991,9 +2013,15 @@ function leererStart(anzahlTrades) {
                         onclick="handleTabChange('anleitung')">Erst die Anleitung lesen</button>
             </div>
             <p class="start-fuss">
-                Oder trag deinen ersten Trade von Hand im Journal ein.
+                Oder <button type="button" class="start-link" onclick="cfTradeVonHand()">trag deinen ersten Trade von Hand ein</button>.
             </p>
         </div>`;
+}
+
+/** Aus dem Leer-Kasten heraus: ins Journal und das Formular aufklappen. */
+function cfTradeVonHand() {
+    if (currentTab !== 'journal') handleTabChange('journal');
+    cfKlapp('auf', 'tradeFormHuelle');
 }
 
 function loadDashboard() {
@@ -2020,13 +2048,24 @@ function loadDashboard() {
         if (drawdown > largestDrawdown) largestDrawdown = drawdown;
     });
     
+    // Serien nach DATUM, nicht nach Reihenfolge im Speicher: importierte
+    // Trades liegen dort in der Reihenfolge der Datei, nachgetragene am
+    // Ende. Gleiches Datum behaelt die gespeicherte Reihenfolge.
+    const zeitVon = (t) => {
+        const [d, m, j] = String(t.date || '').split('.');
+        return new Date(`${j}-${m}-${d}`).getTime() || 0;
+    };
+    const chronologisch = trades.map((t, i) => ({ t, i }))
+        .sort((a, b) => zeitVon(a.t) - zeitVon(b.t) || a.i - b.i)
+        .map(x => x.t);
+
     // Consecutive Wins/Losses
     let maxConsecutiveWins = 0;
     let maxConsecutiveLosses = 0;
     let currentWins = 0;
     let currentLosses = 0;
     
-    trades.forEach(t => {
+    chronologisch.forEach(t => {
         if (t.pnl > 0) {
             currentWins++;
             currentLosses = 0;
@@ -2038,6 +2077,25 @@ function loadDashboard() {
         }
     });
     
+    // Laufende Serie: vom juengsten Trade rueckwaerts, solange das
+    // Vorzeichen gleich bleibt. Vorher hiess die laengste Gewinnserie
+    // "Current Streak" und die laengste Verlustserie "Longest Streak" -
+    // beide Beschriftungen waren falsch.
+    let serie = 0, serieArt = null;
+    for (let i = chronologisch.length - 1; i >= 0; i--) {
+        const p = parseFloat(chronologisch[i].pnl) || 0;
+        if (p === 0) continue;
+        const art = p > 0 ? 'gewinn' : 'verlust';
+        if (serieArt === null) serieArt = art;
+        if (art !== serieArt) break;
+        serie++;
+    }
+    const serieText = serie === 0 ? '—'
+        : serie + ' ' + (serieArt === 'gewinn'
+            ? (serie === 1 ? 'Gewinn' : 'Gewinne')
+            : (serie === 1 ? 'Verlust' : 'Verluste'));
+    const serieFarbe = serieArt === 'verlust' ? '#FB7185' : '#34D399';
+
     // Trading Days (unique days mit Trades)
     const uniqueTradingDays = new Set(trades.map(t => t.date)).size;
     
@@ -2099,75 +2157,73 @@ function loadDashboard() {
         ? Math.round(100 * wocheTrades.filter(t => t.pnl > 0).length / wocheTrades.length)
         : 0;
 
+    const tagNamen = { Mon: 'Montag', Tue: 'Dienstag', Wed: 'Mittwoch', Thu: 'Donnerstag',
+                       Fri: 'Freitag', Sat: 'Samstag', Sun: 'Sonntag' };
+    const groessterGewinn = bestTradeData.pnl > 0 ? bestTradeData : null;
+    const monatsName = jetzt.toLocaleDateString('de-DE', { month: 'long' });
+    const imMonat = trades.filter(t => {
+        const [, m, j] = String(t.date || '').split('.');
+        return parseInt(m, 10) === jetzt.getMonth() + 1 && parseInt(j, 10) === jetzt.getFullYear();
+    }).length;
+    const kachel = (titel, wert, farbe, zusatz) => `
+            <div class="dashboard-card">
+                <div class="dash-kachel-titel">${titel}</div>
+                <div class="dash-kachel-wert" style="color: ${farbe};">${wert}</div>
+                <div class="dash-kachel-zusatz">${zusatz}</div>
+            </div>`;
+    const gross = (titel, wert, zusatz) => `
+            <div class="dashboard-big-card">
+                <div class="dash-kachel-titel">${titel}</div>
+                <div class="dash-gross-wert" style="color: ${wert >= 0 ? '#34D399' : '#FB7185'};">${eurMitVorzeichen(wert)}</div>
+                <div class="dash-kachel-zusatz">${zusatz}</div>
+            </div>`;
+
+    // Reihenfolge nach Wichtigkeit: erst die Zahlen, wegen derer man
+    // das Dashboard oeffnet, dann die Einordnung, ganz unten Score und
+    // Aktivitaet. Die Begruessung ist eine Zeile, kein Kopfbereich mehr -
+    // vorher brauchte sie mit Filter darunter das halbe erste Bild.
     const dashboardContent = document.getElementById('dashboard');
     dashboardContent.innerHTML = `
         ${leererStart(allTrades.length)}
-        ${buildDashboardGreeting(trades, stats)}
+        <div class="dash-kopf">
+            ${buildDashboardGreeting(trades, stats)}
+            <div class="trades-filter dash-filter" role="group" aria-label="Welche Trades zählen">
+                <button class="filter-btn ${currentFilter === 'all' ? 'active' : ''}" data-filter="all">Alle Trades</button>
+                <button class="filter-btn ${currentFilter === 'leverage' ? 'active' : ''}" data-filter="leverage">Nur Hebel</button>
+                <button class="filter-btn ${currentFilter === 'normal' ? 'active' : ''}" data-filter="normal">Nur Normal</button>
+            </div>
+        </div>
 
-        <!-- ===== FILTER BUTTONS ===== -->
-        <div class="trades-filter" style="margin-bottom: 30px;">
-            <button class="filter-btn ${currentFilter === 'all' ? 'active' : ''}" data-filter="all">Alle Trades</button>
-            <button class="filter-btn ${currentFilter === 'leverage' ? 'active' : ''}" data-filter="leverage">Nur Hebel</button>
-            <button class="filter-btn ${currentFilter === 'normal' ? 'active' : ''}" data-filter="normal">Nur Normal</button>
+        <!-- Gesamt, Woche, Heute. Hier stand frueher der Kontostand -
+             raus, weil er ohne offene Positionen und Kursbewegungen nie
+             mit dem Depot uebereinstimmt. -->
+        <div class="dashboard-top-cards dash-raster-3">
+            ${gross('Gesamt', stats.totalPnL, `${stats.trades.length} Trades • ${stats.winRate}% Treffer`)}
+            ${gross('Diese Woche', wocheSumme, `${wocheTrades.length} Trades${wocheTrades.length ? ' • ' + wocheQuote + '% Treffer' : ''}`)}
+            ${gross('Heute', stats.todayPnL, stats.todayTrades.length ? `${stats.todayTrades.length} Trades • ${stats.todayWinRate}% Treffer` : 'Heute noch kein Trade')}
         </div>
-        
-        <!-- TOP 3 BIG CARDS -->
-        <div class="dashboard-top-cards" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr)); gap: 20px; margin-bottom: 30px;">
-            <div class="dashboard-big-card">
-                <div style="color: #A9A5BD; font-size: 12px; margin-bottom: 8px;">Heute</div>
-                <div style="font-size: 28px; font-weight: 700; color: ${stats.todayPnL >= 0 ? '#34D399' : '#FB7185'};">${eurMitVorzeichen(stats.todayPnL)}</div>
-                <div style="color: #A9A5BD; font-size: 12px; margin-top: 8px;">${stats.todayTrades.length} Trades • ${stats.todayWinRate}% Treffer</div>
-            </div>
-            <!-- Hier stand der Kontostand.
-                 Raus, weil er mit Trade Republic konkurriert und
-                 verliert: offene Positionen und Kursbewegungen zaehlen
-                 hier nicht mit, also steht in der App immer ein anderer
-                 Betrag als im Depot. Zwei Zahlen, die dasselbe
-                 behaupten und sich unterscheiden, kosten das Vertrauen
-                 in beide.
-                 Stattdessen die laufende Woche - die schliesst die
-                 Luecke zwischen "heute" und "gesamt" und steht so
-                 nirgendwo sonst. -->
-            <div class="dashboard-big-card">
-                <div style="color: #A9A5BD; font-size: 12px; margin-bottom: 8px;">Diese Woche</div>
-                <div style="font-size: 28px; font-weight: 700; color: ${wocheSumme >= 0 ? '#34D399' : '#FB7185'};">${eurMitVorzeichen(wocheSumme)}</div>
-                <div style="color: #A9A5BD; font-size: 12px; margin-top: 8px;">${wocheTrades.length} Trades${wocheTrades.length ? ' • ' + wocheQuote + '% Treffer' : ''}</div>
-            </div>
-            <div class="dashboard-big-card">
-                <div style="color: #A9A5BD; font-size: 12px; margin-bottom: 8px;">Gesamt</div>
-                <div style="font-size: 28px; font-weight: 700; color: ${stats.totalPnL >= 0 ? '#34D399' : '#FB7185'};">${eurMitVorzeichen(stats.totalPnL)}</div>
-                <div style="color: #A9A5BD; font-size: 12px; margin-top: 8px;">${stats.trades.length} Trades • ${stats.winRate}% Treffer</div>
-            </div>
+
+        <div class="dashboard-mid-cards dash-raster-4">
+            ${kachel('Aktuelle Serie', serieText, serie ? serieFarbe : '#A1A1AA', serie ? 'in Folge, jüngster Trade zuerst' : 'Noch keine Serie')}
+            ${kachel('Profit Factor', stats.profitFactor, '#C9B8FF', 'Gewinne geteilt durch Verluste')}
+            ${kachel('Größter Gewinn', groessterGewinn ? '€' + groessterGewinn.pnl.toFixed(2) : '—', '#34D399',
+                groessterGewinn ? escapeHtml(String(groessterGewinn.ticker || '')) + ' • ' + escapeHtml(String(groessterGewinn.date || '')) : 'Noch kein Gewinn')}
+            ${kachel('Bester Wochentag', gehandelt.length ? (bestDay.pnl >= 0 ? '+' : '−') + '€' + Math.abs(bestDay.pnl).toFixed(2) : '—',
+                bestDay.pnl >= 0 ? '#34D399' : '#FB7185',
+                gehandelt.length ? `${tagNamen[bestDay.day]} • ${bestDay.total} Trades • ${bestDay.rate}% Treffer` : 'Noch keine Trades')}
         </div>
-        
-        <!-- MID 4 CARDS -->
-        <div class="dashboard-mid-cards" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 170px), 1fr)); gap: 20px; margin-bottom: 30px;">
-            <div class="dashboard-card">
-                <div style="color: #A9A5BD; font-size: 11px; margin-bottom: 8px; text-transform: none;">Streak</div>
-                <div style="font-size: 24px; font-weight: 700; color: #34D399;">${maxConsecutiveWins} wins</div>
-                <div style="color: #A9A5BD; font-size: 11px; margin-top: 8px;">Current momentum </div>
-            </div>
-            <div class="dashboard-card">
-                <div style="color: #A9A5BD; font-size: 11px; margin-bottom: 8px; text-transform: none;">Profit Factor</div>
-                <div style="font-size: 24px; font-weight: 700; color: #C9B8FF;">${stats.profitFactor}</div>
-                <div style="color: #A9A5BD; font-size: 11px; margin-top: 8px;">Risk/Reward ratio</div>
-            </div>
-            <div class="dashboard-card">
-                <div style="color: #A9A5BD; font-size: 11px; margin-bottom: 8px; text-transform: none;">Biggest Win</div>
-                <div style="font-size: 24px; font-weight: 700; color: #34D399;">€${bestTradeData.pnl.toFixed(2)}</div>
-                <div style="color: #A9A5BD; font-size: 11px; margin-top: 8px;">Single trade best</div>
-            </div>
-            <div class="dashboard-card">
-                <div style="color: #A9A5BD; font-size: 11px; margin-bottom: 8px; text-transform: none;">Bester Wochentag</div>
-                <div style="font-size: 24px; font-weight: 700; color: ${bestDay.pnl >= 0 ? '#34D399' : '#FB7185'};">${bestDay.pnl >= 0 ? '+' : '−'}€${Math.abs(bestDay.pnl).toFixed(2)}</div>
-                <div style="color: #A9A5BD; font-size: 11px; margin-top: 8px;">${bestDay.day} • ${bestDay.total} Trades • ${bestDay.rate}% Treffer</div>
-            </div>
+
+        <div class="dashboard-bottom-stats dash-raster-4">
+            ${kachel('Handelstage', uniqueTradingDays, '#C9B8FF', 'Tage mit mindestens einem Trade')}
+            ${kachel('Längste Gewinnserie', maxConsecutiveWins, '#34D399', 'Gewinne hintereinander')}
+            ${kachel('Längste Verlustserie', maxConsecutiveLosses, '#FB7185', 'Verluste hintereinander')}
+            ${kachel('Ø je Trade', eurMitVorzeichen(stats.expectancy), stats.expectancy >= 0 ? '#34D399' : '#FB7185', 'Ergebnis geteilt durch Anzahl')}
         </div>
-        
-        <!-- TRADE SCORE + ACTIVITY GRID -->
-        <div class="dashboard-zwei" style="display: grid; grid-template-columns: 1fr 1.2fr; gap: 20px; margin-bottom: 30px;">
-            <!-- Trade Score Card -->
-            <div class="dashboard-section" style="background: linear-gradient(135deg, rgba(124, 92, 240, 0.06) 0%, rgba(124, 92, 240, 0.025) 100%); border: 1px solid rgba(124, 92, 240, 0.15); border-radius: 16px; padding: 24px;">
+
+        <!-- Score und Aktivitaet zuletzt: beide ordnen ein, keine von
+             beiden ist eine Zahl, wegen der man nachsieht. -->
+        <div class="dashboard-zwei" style="display: grid; grid-template-columns: 1fr 1.2fr; gap: 20px;">
+            <div class="dashboard-section" style="padding: 24px;">
                 <div style="text-align: center; margin-bottom: 20px;">
                     <div class="trade-score-label" style="color: #A9A5BD; font-size: 12px; margin-bottom: 8px;">Trade Score</div>
                     <div class="trade-score-value" id="tradeScoreValue" style="font-size: 48px; font-weight: 700; color: #ECEAF4;">0</div>
@@ -2175,32 +2231,11 @@ function loadDashboard() {
                 </div>
                 <canvas id="tradeScoreChart" style="max-height: 250px;"></canvas>
             </div>
-            
-            <!-- Trading Activity Heatmap -->
-            <div class="dashboard-section" style="background: linear-gradient(135deg, rgba(124, 92, 240, 0.06) 0%, rgba(124, 92, 240, 0.025) 100%); border: 1px solid rgba(124, 92, 240, 0.15); border-radius: 16px; padding: 24px;">
-                <div style="color: #D5D2E2; font-size: 14px; font-weight: 600; margin-bottom: 16px;">Trading Activity</div>
-                <div style="color: #A9A5BD; font-size: 12px; margin-bottom: 16px;">${stats.trades.length} trades in 2026</div>
+
+            <div class="dashboard-section" style="padding: 24px;">
+                <div style="color: #D5D2E2; font-size: 14px; font-weight: 600; margin-bottom: 16px;">Aktivität im ${escapeHtml(monatsName)}</div>
+                <div style="color: #A9A5BD; font-size: 12px; margin-bottom: 16px;">${imMonat} ${imMonat === 1 ? 'Trade' : 'Trades'} in diesem Monat</div>
                 <div id="activityHeatmap" style="overflow-x: auto;"></div>
-            </div>
-        </div>
-        
-        <!-- BOTTOM STATS -->
-        <div class="dashboard-bottom-stats" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 170px), 1fr)); gap: 20px;">
-            <div class="dashboard-card">
-                <div style="font-size: 28px; font-weight: 700; color: #C9B8FF;">${uniqueTradingDays}</div>
-                <div style="color: #A9A5BD; font-size: 12px; margin-top: 8px;">Trading Days</div>
-            </div>
-            <div class="dashboard-card">
-                <div style="font-size: 28px; font-weight: 700; color: #34D399;">${maxConsecutiveWins}</div>
-                <div style="color: #A9A5BD; font-size: 12px; margin-top: 8px;">Current Streak</div>
-            </div>
-            <div class="dashboard-card">
-                <div style="font-size: 28px; font-weight: 700; color: #FB7185;">${maxConsecutiveLosses}</div>
-                <div style="color: #A9A5BD; font-size: 12px; margin-top: 8px;">Longest Streak</div>
-            </div>
-            <div class="dashboard-card">
-                <div style="font-size: 28px; font-weight: 700; color: ${stats.totalPnL >= 0 ? '#34D399' : '#FB7185'};">€${stats.totalPnL.toFixed(0)}</div>
-                <div style="color: #A9A5BD; font-size: 12px; margin-top: 8px;">Total P&L</div>
             </div>
         </div>
     `;
@@ -2311,8 +2346,12 @@ function renderActivityHeatmap(trades) {
     let currentWeek = [];
     
     // Get day of week for first day
-    const firstDay = new Date(`${currentYear}-${currentMonth}-01`);
-    const startDayOfWeek = firstDay.getDay();
+    // Woche beginnt am Montag, wie die Spaltenkoepfe. Vorher zaehlte
+    // getDay() ab Sonntag, und jeder Tag stand eine Spalte zu weit rechts
+    // (der 1. Oktober 2026, ein Donnerstag, unter "Fr"). Ausserdem lokal
+    // statt "JJJJ-MM-TT" - das wird als UTC gelesen.
+    const firstDay = new Date(currentYear, parseInt(currentMonth, 10) - 1, 1);
+    const startDayOfWeek = (firstDay.getDay() + 6) % 7;
     
     // Add empty cells for days before month starts
     for (let i = 0; i < startDayOfWeek; i++) {
@@ -2336,9 +2375,9 @@ function renderActivityHeatmap(trades) {
         weeks.push(currentWeek);
     }
     
-    const dayHeaders = ['Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa', 'Su'];
+    const dayHeaders = ['Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa', 'So'];
     
-    let html = `<div style="margin-bottom: 8px; color: #A9A5BD; font-size: 11px;">${String(parseInt(currentMonth)).padStart(2, '0')}/2026 — ${daysInMonth} days</div>`;
+    let html = '';
     html += '<div style="display: flex; gap: 8px; flex-direction: column;">';
     
     // Day headers
@@ -2362,8 +2401,8 @@ function renderActivityHeatmap(trades) {
                     else if (data.losses > data.wins) color = '#f8717166';
                     else color = '#a855f766';
                 }
-                const tradeCount = data ? (data.wins + data.losses) : '-';
-                html += `<div title="${day.day}.${currentMonth}: ${tradeCount} trade(s)" style="width: 24px; height: 24px; background: ${color}; border-radius: 3px; font-size: 9px; display: flex; align-items: center; justify-content: center; color: #D5D2E2; border: 1px solid rgba(124, 92, 240, 0.15); cursor: pointer; font-weight: 500; transition: all 0.2s ease;" onmouseover="this.style.borderColor='rgba(124, 92, 240, 0.45)'; this.style.transform='scale(1.15)';" onmouseout="this.style.borderColor='rgba(124, 92, 240, 0.15)'; this.style.transform='scale(1)';">${day.day}</div>`;
+                const tradeCount = data ? (data.wins + data.losses) : 0;
+                html += `<div title="${day.day}.${currentMonth}.: ${tradeCount} ${tradeCount === 1 ? 'Trade' : 'Trades'}" style="justify-self: center; width: 24px; height: 24px; background: ${color}; border-radius: 3px; font-size: 9px; display: flex; align-items: center; justify-content: center; color: #D5D2E2; border: 1px solid rgba(124, 92, 240, 0.15); cursor: pointer; font-weight: 500; transition: all 0.2s ease;" onmouseover="this.style.borderColor='rgba(124, 92, 240, 0.45)'; this.style.transform='scale(1.15)';" onmouseout="this.style.borderColor='rgba(124, 92, 240, 0.15)'; this.style.transform='scale(1)';">${day.day}</div>`;
             }
         });
         html += '</div>';
@@ -2560,24 +2599,36 @@ function loadAnalytics() {
         consistency: Math.min(100, (1 - (stdDev / Math.abs(avgReturn + 1))) * 100)
     };
     
+    // Vorher stand unter jedem Profit Factor fest "Excellent" - auch
+    // unter 0,4. Ein Urteil, das nie wechselt, ist keins.
+    const pf = parseFloat(stats.profitFactor) || 0;
+    const pfUrteil = trades.length === 0 ? { text: 'Noch keine Trades', farbe: '#8B8B94' }
+        : pf >= 2 ? { text: 'Stark', farbe: '#34D399' }
+        : pf >= 1.5 ? { text: 'Gut', farbe: '#34D399' }
+        : pf >= 1 ? { text: 'Knapp im Plus', farbe: '#E8AE4F' }
+        : { text: 'Verluste überwiegen', farbe: '#FB7185' };
+
     const analyticsContent = document.getElementById('analytics');
     analyticsContent.innerHTML = `
-        <div style="margin-bottom: 40px;">
-            <h2 style="margin-bottom: 8px;">Analytics</h2>
-            <p style="color: #A9A5BD; font-size: 14px;">Deep dive into your trading performance</p>
-        </div>
-
-        ${buildDirectionBreakdown(trades)}
-        
+        <div class="cf-tabkopf">
+            <div>
+                <h2>Analytics</h2>
+                <p>Was deine Trades über dich verraten</p>
+            </div>
         <!-- ===== FILTER BUTTONS ===== -->
-        <div class="trades-filter" style="margin-bottom: 40px;">
+        <div class="trades-filter" role="group" aria-label="Welche Trades zählen">
             <button class="filter-btn ${currentFilter === 'all' ? 'active' : ''}" data-filter="all">Alle Trades</button>
             <button class="filter-btn ${currentFilter === 'leverage' ? 'active' : ''}" data-filter="leverage">Nur Hebel</button>
             <button class="filter-btn ${currentFilter === 'normal' ? 'active' : ''}" data-filter="normal">Nur Normal</button>
         </div>
-        
+        </div>
+
+        <!-- Reihenfolge nach Wichtigkeit: Kennzahlen, dann die Saetze, die
+             sie erklaeren, dann die Kurven. Platzhalter (Coming Soon,
+             Behavioral Score) stehen gesammelt unten als Ausblick - oben
+             verdraengten sie echte Zahlen. -->
         <!-- TOP 4 KEY METRICS -->
-        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 170px), 1fr)); gap: 20px; margin-bottom: 40px;">
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 170px), 1fr)); gap: 20px; margin-bottom: 30px;">
             <div class="analytics-metric-card">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
                     <div style="font-size: 12px; text-transform: none; color: #A9A5BD; font-weight: 600;">Win Rate</div>
@@ -2592,14 +2643,14 @@ function loadAnalytics() {
                     <div style="font-size: 12px; text-transform: none; color: #A9A5BD; font-weight: 600;">Profit Factor</div>
                 </div>
                 <div style="font-size: 32px; font-weight: 700; color: #ECEAF4; margin-bottom: 8px;">${stats.profitFactor}</div>
-                <div style="font-size: 12px; color: #fbbf24;">Excellent</div>
+                <div style="font-size: 12px; color: ${pfUrteil.farbe};">${pfUrteil.text}</div>
             </div>
             
             <div class="analytics-metric-card">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
                     <div style="font-size: 12px; text-transform: none; color: #A9A5BD; font-weight: 600;">Expectancy</div>
                 </div>
-                <div style="font-size: 32px; font-weight: 700; color: #34D399; margin-bottom: 8px;">€${stats.expectancy.toFixed(2)}</div>
+                <div style="font-size: 32px; font-weight: 700; color: ${farbeFuer(stats.expectancy)}; margin-bottom: 8px;">${eurMitVorzeichen(stats.expectancy)}</div>
                 <div style="font-size: 12px; color: #A9A5BD;">Per trade average</div>
             </div>
             
@@ -2607,13 +2658,76 @@ function loadAnalytics() {
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
                     <div style="font-size: 12px; text-transform: none; color: #A9A5BD; font-weight: 600;">Total P&L</div>
                 </div>
-                <div style="font-size: 32px; font-weight: 700; color: ${stats.totalPnL >= 0 ? '#34D399' : '#FB7185'}; margin-bottom: 8px;">€${stats.totalPnL.toFixed(2)}</div>
+                <div style="font-size: 32px; font-weight: 700; color: ${stats.totalPnL >= 0 ? '#34D399' : '#FB7185'}; margin-bottom: 8px;">${eurMitVorzeichen(stats.totalPnL)}</div>
                 <div style="font-size: 12px; color: #A9A5BD;">${trades.length} trades</div>
             </div>
         </div>
-        
+
+        <!-- Die eigenen Auswertungen stehen VOR dem Win/Loss-Diagramm.
+             Sie beantworten eine Frage; das Ringdiagramm zeigt eine
+             Quote, die drei Zeilen weiter oben schon steht. Was etwas
+             erklaert, gehoert nach oben. -->
+        <div id="cfAuswertung"></div>
+
+        <div class="ana-reihe ana-eins">
+            <!-- LEFT: Equity Curve -->
+            <div class="dashboard-section" style="background: linear-gradient(135deg, rgba(124, 92, 240, 0.06) 0%, rgba(124, 92, 240, 0.025) 100%); border: 1px solid rgba(124, 92, 240, 0.15); border-radius: 16px; padding: 24px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+                    <div style="font-size: 14px; font-weight: 600; color: #D5D2E2;">Equity curve</div>
+                    <div style="display: flex; gap: 12px; font-size: 11px; margin-right: 44px;">
+                        <span style="color: #D5D2E2; padding: 4px 8px; background: rgba(124, 92, 240, 0.15); border-radius: 4px; cursor: pointer;">Portfolio</span>
+                        <span style="color: #A9A5BD; cursor: pointer;">Benchmark</span>
+                    </div>
+                </div>
+                <p style="color: #A9A5BD; font-size: 12px; margin-bottom: 16px;">Track your growth with live-updating equity curves that reveal your true edge over time.</p>
+                <canvas id="equityChart" style="max-height: 250px;"></canvas>
+            </div>
+        </div>
+
+        <div class="ana-reihe ana-zwei">
+        <!-- Win/Loss Donut -->
+        <div class="dashboard-section" style="background: linear-gradient(135deg, rgba(124, 92, 240, 0.06) 0%, rgba(124, 92, 240, 0.025) 100%); border: 1px solid rgba(124, 92, 240, 0.15); border-radius: 16px; padding: 24px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                <div style="font-size: 14px; font-weight: 600; color: #D5D2E2;">Win/Loss</div>
+            </div>
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr)); gap: 30px; align-items: center;">
+                <div style="position: relative; height: 260px; min-width: 0;"><canvas id="winLossChart"></canvas></div>
+                <div style="display: flex; flex-direction: column; justify-content: center;">
+                    <div style="display: flex; gap: 20px; margin-bottom: 20px;">
+                        <div style="display: flex; align-items: center; gap: 6px;">
+                            <div style="width: 12px; height: 12px; background: #34D399; border-radius: 2px;"></div>
+                            <span style="color: #D5D2E2; font-size: 12px;">Wins</span>
+                        </div>
+                        <div style="display: flex; align-items: center; gap: 6px;">
+                            <div style="width: 12px; height: 12px; background: #FB7185; border-radius: 2px;"></div>
+                            <span style="color: #D5D2E2; font-size: 12px;">Losses</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+            <!-- Additional Stats -->
+            <div class="dashboard-section ana-keystats" style="padding: 24px;">
+                <div style="font-size: 14px; font-weight: 600; color: #D5D2E2; margin-bottom: 8px;">Key stats</div>
+                <div class="ana-keystats-liste">
+                    <div style="display: flex; justify-content: space-between;">
+                        <span style="color: #A9A5BD;">Bester Tag</span>
+                        <span style="color: ${farbeFuer(besterTag.pnl)}; font-weight: 600;" title="${besterTag.datum || ''}">${besterTag.datum ? eurMitVorzeichen(besterTag.pnl) : '—'}</span>
+                    </div>
+                    <div style="display: flex; justify-content: space-between;">
+                        <span style="color: #A9A5BD;">Ø je Trade</span>
+                        <span style="color: ${farbeFuer(stats.expectancy)}; font-weight: 600;">${eurMitVorzeichen(stats.expectancy)}</span>
+                    </div>
+                    <div style="display: flex; justify-content: space-between;">
+                        <span style="color: #A9A5BD;" title="Größter Rückgang vom Kontohöchststand">Max. Rückgang</span>
+                        <span style="color: #FB7185; font-weight: 600;">−€${maxDD.toFixed(2)}${maxDDProzent !== null ? ' · ' + maxDDProzent.toFixed(1) + ' %' : ''}</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <!-- 5 SECONDARY METRICS -->
-        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 150px), 1fr)); gap: 20px; margin-bottom: 40px;">
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 150px), 1fr)); gap: 20px; margin-bottom: 30px;">
             <div class="analytics-metric-card-small">
                 <div style="font-size: 11px; text-transform: none; color: #A9A5BD; font-weight: 600; margin-bottom: 8px;">Avg Win</div>
                 <div style="font-size: 24px; font-weight: 700; color: #34D399;">€${avgWin.toFixed(2)}</div>
@@ -2636,22 +2750,11 @@ function loadAnalytics() {
                 <div style="font-size: 11px; color: #8A86A0; margin-top: 4px;">${escapeHtml(avgRRZusatz)}</div>
             </div>
         </div>
-        
-        <!-- CHARTS GRID - 2 COLUMNS -->
-        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 340px), 1fr)); gap: 30px; margin-bottom: 40px;">
-            <!-- LEFT: Equity Curve -->
-            <div class="dashboard-section" style="background: linear-gradient(135deg, rgba(124, 92, 240, 0.06) 0%, rgba(124, 92, 240, 0.025) 100%); border: 1px solid rgba(124, 92, 240, 0.15); border-radius: 16px; padding: 24px;">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
-                    <div style="font-size: 14px; font-weight: 600; color: #D5D2E2;">Equity curve</div>
-                    <div style="display: flex; gap: 12px; font-size: 11px;">
-                        <span style="color: #D5D2E2; padding: 4px 8px; background: rgba(124, 92, 240, 0.15); border-radius: 4px; cursor: pointer;">Portfolio</span>
-                        <span style="color: #A9A5BD; cursor: pointer;">Benchmark</span>
-                    </div>
-                </div>
-                <p style="color: #A9A5BD; font-size: 12px; margin-bottom: 16px;">Track your growth with live-updating equity curves that reveal your true edge over time.</p>
-                <canvas id="equityChart" style="max-height: 250px;"></canvas>
-            </div>
-            
+
+        ${buildDirectionBreakdown(trades)}
+
+        <h3 class="ana-ausblick-titel">Ausblick</h3>
+        <div class="ana-reihe ana-drei">
             <!-- RIGHT: Behavioral Score -->
             <div class="dashboard-section" style="background: linear-gradient(135deg, rgba(124, 92, 240, 0.06) 0%, rgba(124, 92, 240, 0.025) 100%); border: 1px solid rgba(124, 92, 240, 0.15); border-radius: 16px; padding: 24px;">
                 <div style="text-align: center; margin-bottom: 16px;">
@@ -2683,7 +2786,7 @@ function loadAnalytics() {
                     </div>
                     <div style="text-align: center;">
                         <div style="color: #A9A5BD; margin-bottom: 4px;">Avg R:R</div>
-                        <div style="font-size: 20px; font-weight: 700; color: #D5D2E2;">1:2.1</div>
+                        <div style="font-size: 20px; font-weight: 700; color: #D5D2E2;">${avgRRText}</div>
                     </div>
                     <div style="text-align: center;">
                         <div style="color: #A9A5BD; margin-bottom: 4px;">Sharpe</div>
@@ -2691,17 +2794,12 @@ function loadAnalytics() {
                     </div>
                 </div>
             </div>
-        </div>
-        
-        <!-- BOTTOM GRID - 3 COLUMNS -->
-        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr)); gap: 30px; margin-bottom: 40px;">
             <!-- Trades Logged -->
             <div class="dashboard-section" style="background: linear-gradient(135deg, rgba(124, 92, 240, 0.06) 0%, rgba(124, 92, 240, 0.025) 100%); border: 1px solid rgba(124, 92, 240, 0.15); border-radius: 16px; padding: 24px;">
                 <div style="font-size: 13px; text-transform: none; color: #A9A5BD; font-weight: 600; margin-bottom: 16px;">Trades logged</div>
                 <div style="font-size: 48px; font-weight: 700; color: #ECEAF4; margin-bottom: 8px;">${trades.length}+</div>
                 <div style="font-size: 12px; color: #A9A5BD;">metrics per trade</div>
             </div>
-            
             <!-- Geographic Performance -->
             <div style="position: relative;">
                 <!-- Blurred Background -->
@@ -2739,54 +2837,8 @@ function loadAnalytics() {
                 <!-- Coming Soon Overlay (OUTSIDE blur!) -->
                 <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: rgba(20, 20, 35, 0.85); padding: 12px 20px; border-radius: 8px; color: #ECEAF4; font-weight: 700; font-size: 12px; letter-spacing: 0; z-index: 100; white-space: nowrap; border: 1.5px solid #8B6CF3; box-shadow: 0 0 12px rgba(124, 92, 240, 0.225);">Coming Soon</div>
             </div>
-            
-            <!-- Additional Stats -->
-            <div class="dashboard-section" style="background: linear-gradient(135deg, rgba(124, 92, 240, 0.06) 0%, rgba(124, 92, 240, 0.025) 100%); border: 1px solid rgba(124, 92, 240, 0.15); border-radius: 16px; padding: 24px;">
-                <div style="font-size: 13px; text-transform: none; color: #A9A5BD; font-weight: 600; margin-bottom: 16px;">Key stats</div>
-                <div style="font-size: 12px; color: #D5D2E2; line-height: 2;">
-                    <div style="display: flex; justify-content: space-between;">
-                        <span style="color: #A9A5BD;">Bester Tag</span>
-                        <span style="color: ${farbeFuer(besterTag.pnl)}; font-weight: 600;" title="${besterTag.datum || ''}">${besterTag.datum ? eurMitVorzeichen(besterTag.pnl) : '—'}</span>
-                    </div>
-                    <div style="display: flex; justify-content: space-between;">
-                        <span style="color: #A9A5BD;">Ø je Trade</span>
-                        <span style="color: ${farbeFuer(stats.expectancy)}; font-weight: 600;">${eurMitVorzeichen(stats.expectancy)}</span>
-                    </div>
-                    <div style="display: flex; justify-content: space-between;">
-                        <span style="color: #A9A5BD;" title="Größter Rückgang vom Kontohöchststand">Max. Rückgang</span>
-                        <span style="color: #FB7185; font-weight: 600;">−€${maxDD.toFixed(2)}${maxDDProzent !== null ? ' · ' + maxDDProzent.toFixed(1) + ' %' : ''}</span>
-                    </div>
-                </div>
-            </div>
         </div>
-        
-        <!-- Die eigenen Auswertungen stehen VOR dem Win/Loss-Diagramm.
-             Sie beantworten eine Frage; das Ringdiagramm zeigt eine
-             Quote, die drei Zeilen weiter oben schon steht. Was etwas
-             erklaert, gehoert nach oben. -->
-        <div id="cfAuswertung"></div>
 
-        <!-- Win/Loss Donut -->
-        <div class="dashboard-section" style="background: linear-gradient(135deg, rgba(124, 92, 240, 0.06) 0%, rgba(124, 92, 240, 0.025) 100%); border: 1px solid rgba(124, 92, 240, 0.15); border-radius: 16px; padding: 24px; margin-bottom: 40px;">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-                <div style="font-size: 14px; font-weight: 600; color: #D5D2E2;">Win/Loss</div>
-            </div>
-            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr)); gap: 30px; align-items: center;">
-                <div style="position: relative; height: 260px; min-width: 0;"><canvas id="winLossChart"></canvas></div>
-                <div style="display: flex; flex-direction: column; justify-content: center;">
-                    <div style="display: flex; gap: 20px; margin-bottom: 20px;">
-                        <div style="display: flex; align-items: center; gap: 6px;">
-                            <div style="width: 12px; height: 12px; background: #34D399; border-radius: 2px;"></div>
-                            <span style="color: #D5D2E2; font-size: 12px;">Wins</span>
-                        </div>
-                        <div style="display: flex; align-items: center; gap: 6px;">
-                            <div style="width: 12px; height: 12px; background: #FB7185; border-radius: 2px;"></div>
-                            <span style="color: #D5D2E2; font-size: 12px;">Losses</span>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
     `;
     
     // Render charts
@@ -3106,6 +3158,7 @@ function updatePortfolioSummary() {
 function loadPositions() {
     const positions = JSON.parse(localStorage.getItem('positions')) || [];
     const container = document.getElementById('positionsContainer');
+    cfKlapp('leer', 'positionsFormHuelle', positions.length === 0);
     
     if (positions.length === 0) {
         container.innerHTML = `
@@ -3349,6 +3402,7 @@ function addPosition(event) {
         if (pdir) pdir.value = 'long';
         
         loadPositions();
+        cfKlapp('gespeichert', 'positionsFormHuelle');
         showToast(`Position ${ticker} geöffnet!`);
     } catch (error) {
         console.error('Fehler beim Öffnen der Position:', error);
@@ -4594,6 +4648,7 @@ function addSetupsItem(e) {
         document.getElementById('setupsScreenshotPreview').innerHTML = '';
         updateSetupsCrvPreview();
         loadSetups();
+        cfKlapp('gespeichert', 'setupsFormHuelle');
         showToast(`Setup ${ticker} gespeichert!`);
     } catch (err) {
         console.error('Setup konnte nicht gespeichert werden:', err);
@@ -4674,6 +4729,7 @@ function setupsToJournal(id) {
 
         setSetupsStatus(id, 'entered');
 
+        cfKlapp('auf', 'tradeFormHuelle', { fokus: null });
         const form = document.getElementById('tradeForm');
         if (form) form.scrollIntoView({ behavior: 'smooth', block: 'start' });
         const exit = document.getElementById('exitPrice');
@@ -4685,6 +4741,7 @@ function setupsToJournal(id) {
 
 function loadSetups() {
     const all = getSetups();
+    cfKlapp('leer', 'setupsFormHuelle', all.length === 0);
 
     // Kennzahlen
     const active = all.filter(w => w.status === 'watching' || w.status === 'ready');

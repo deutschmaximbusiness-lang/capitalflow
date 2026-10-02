@@ -879,3 +879,136 @@ body {
 .dtab-btn-primaer::after, .modal-btn-confirm::after, .newkey-btn::after,
 #closePositionModal button[onclick*="confirm"]::after,
 .login-btn::before, .login-btn-secondary::before { content: none !important; display: none !important; }
+
+/* ================================================ ANORDNUNG (02.10.)
+   Das Wichtigste nach oben: Kennzahlen zuerst, Formulare eingeklappt,
+   Platzhalter gesammelt als Ausblick unten. */
+
+/* Kopfzeile eines Tabs: Titel links, Hauptaktion rechts */
+.cf-tabkopf {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 16px;
+    flex-wrap: wrap;
+    margin: 0 0 24px 0;
+}
+.cf-tabkopf h2 { margin: 0 0 6px 0 !important; font-size: 30px !important; line-height: 1.15; }
+.cf-tabkopf p { margin: 0; color: var(--cf-text-2); font-size: 14px; }
+.cf-tabkopf .trades-filter { margin: 0 !important; }
+.cf-abschnitt { font-size: 18px; font-weight: 600; margin: 8px 0 16px 0; color: var(--cf-text); }
+
+/* Journal: die Kopfzeile steht jetzt ganz oben */
+#journal > .trades-header { margin-top: 0 !important; }
+#journal > .trades-header > h2 { margin-right: auto; }
+#journal > .trades-header .trades-stats { order: 2; }
+#journal > .trades-header .cf-auf-knopf { order: 3; }
+
+/* Knopf "+ Trade eintragen": Hauptaktion des Tabs, violett wie Speichern */
+.cf-auf-knopf {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    height: 44px;
+    padding: 0 20px 0 16px;
+    border: 0;
+    border-radius: 999px;
+    font: inherit;
+    font-size: 14px;
+    font-weight: 600;
+    color: #fff;
+    cursor: pointer;
+    white-space: nowrap;
+    background: linear-gradient(180deg, #7C5CF0 0%, #5B3FD9 100%);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.22), var(--g-glow);
+    transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+}
+.cf-auf-knopf:hover {
+    transform: translateY(-2px);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.25), 0 0 0 1px rgba(167, 139, 250, 0.5), 0 10px 34px -4px rgba(124, 92, 240, 0.8), 0 0 30px rgba(124, 92, 240, 0.45);
+}
+.cf-auf-knopf:focus-visible { outline: 2px solid #C9B8FF; outline-offset: 3px; }
+/* Offen: ruhiger, damit "Speichern" im Formular die Hauptaktion ist */
+.cf-auf-knopf[aria-expanded="true"] {
+    background: rgba(255, 255, 255, 0.04);
+    box-shadow: inset 0 0 0 1px var(--g-pille-rand);
+    color: var(--cf-text);
+}
+.cf-auf-zeichen { position: relative; width: 12px; height: 12px; flex: none; transition: transform 0.25s ease; }
+.cf-auf-zeichen::before, .cf-auf-zeichen::after {
+    content: ''; position: absolute; left: 50%; top: 50%;
+    width: 12px; height: 2px; border-radius: 2px; background: currentColor;
+    transform: translate(-50%, -50%);
+}
+.cf-auf-zeichen::after { transform: translate(-50%, -50%) rotate(90deg); }
+.cf-auf-knopf[aria-expanded="true"] .cf-auf-zeichen { transform: rotate(45deg); }
+
+.cf-aufklapp[hidden] { display: none !important; }
+.cf-aufklapp { margin-bottom: 28px; scroll-margin-top: 96px; }
+.cf-aufklapp > .form-section, .cf-aufklapp > .form { margin-bottom: 0 !important; }
+.cf-aufklapp-neu { animation: cf-aufklapp-ein 0.28s ease-out; }
+@keyframes cf-aufklapp-ein {
+    from { opacity: 0; transform: translateY(-8px); }
+    to   { opacity: 1; transform: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+    .cf-aufklapp-neu { animation: none; }
+    .cf-auf-zeichen, .cf-auf-knopf { transition: none; }
+}
+
+/* Leer-Kasten: der Satz am Ende ist jetzt ein Knopf */
+.start-link {
+    background: none; border: 0; padding: 0; font: inherit; cursor: pointer;
+    color: #C9B8FF; text-decoration: underline; text-underline-offset: 3px;
+}
+.start-link:hover { color: #fff; }
+
+/* Dashboard: Begruessung und Filter in einer Zeile */
+.dash-kopf {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 16px;
+    flex-wrap: wrap;
+    margin-bottom: 20px;
+}
+.dash-kopf .dash-greeting { margin: 0; min-width: 0; }
+.dash-kopf .dash-greeting-date { margin-bottom: 6px; }
+.dash-kopf .dash-greeting-title { font-size: 24px !important; margin-bottom: 4px; }
+.dash-kopf .dash-greeting-note { font-size: 13px; }
+.dash-kopf .dash-filter { margin: 0 !important; }
+.dash-raster-3, .dash-raster-4 { display: grid; gap: 16px; margin-bottom: 16px; }
+.dash-raster-3 { grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr)); }
+.dash-raster-4 { grid-template-columns: repeat(auto-fit, minmax(min(100%, 170px), 1fr)); }
+.dashboard-bottom-stats { margin-bottom: 24px; }
+.dash-kachel-titel { color: var(--cf-text-2); font-size: 12px; margin-bottom: 8px; }
+.dash-kachel-wert { font-size: 24px; font-weight: 700; line-height: 1.15; font-variant-numeric: tabular-nums; }
+.dash-gross-wert { font-size: 32px; font-weight: 700; line-height: 1.1; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; }
+.dash-kachel-zusatz { color: var(--cf-text-leise); font-size: 12px; margin-top: 8px; }
+
+/* Analytics */
+.ana-reihe { display: grid; gap: 20px; margin-bottom: 30px; }
+.ana-eins { grid-template-columns: minmax(0, 1fr); }
+.ana-zwei { grid-template-columns: repeat(auto-fit, minmax(min(100%, 340px), 1fr)); }
+.ana-drei { grid-template-columns: repeat(auto-fit, minmax(min(100%, 260px), 1fr)); }
+.ana-eins #equityChart { max-height: 300px !important; }
+.ana-ausblick-titel { font-size: 18px; font-weight: 600; margin: 12px 0 16px 0; color: var(--cf-text-2); }
+.dash-kopf .dash-greeting { flex: 1 1 320px; }
+.dash-kopf .dash-filter { flex: none; }
+.ana-reihe > .dashboard-section, .ana-reihe > div { margin-bottom: 0 !important; }
+.ana-keystats { display: flex; flex-direction: column; }
+.ana-keystats-liste { flex: 1; display: flex; flex-direction: column; justify-content: space-evenly; }
+.ana-keystats-liste > div {
+    display: flex; justify-content: space-between; align-items: baseline; gap: 12px;
+    padding: 16px 0; border-bottom: 1px solid var(--cf-rand);
+}
+.ana-keystats-liste > div:last-child { border-bottom: 0; }
+.ana-keystats-liste > div > span:first-child { font-size: 13px; }
+.ana-keystats-liste > div > span:last-child { font-size: 22px; font-weight: 700; font-variant-numeric: tabular-nums; }
+/* Grosse Werte in Analytics nicht umbrechen ("+" allein in einer Zeile) */
+.analytics-metric-card > div:nth-child(2) { white-space: nowrap; }
+@media (max-width: 640px) {
+    .analytics-metric-card > div:nth-child(2) { font-size: 24px !important; }
+    #journal > .trades-header .cf-auf-knopf, .cf-tabkopf .cf-auf-knopf { width: 100%; justify-content: center; }
+    #journal > .trades-header .trades-stats { width: 100%; }
+}
