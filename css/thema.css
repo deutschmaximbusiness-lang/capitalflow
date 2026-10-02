@@ -872,3 +872,10 @@ body {
 }
 .trades-filter .filter-btn:not(.active) { border-color: transparent !important; background: transparent !important; }
 @media (max-width: 640px) { .trades-filter { border-radius: 22px !important; } }
+
+/* Kein Lichtstreifen mehr beim Ueberfahren (02.10., Wunsch). Anheben und
+   violettes Leuchten bleiben. Gilt auch fuer den Login-Knopf. */
+.submit-btn::after, .btn-primary::after, .setups-btn-primary::after, .admin-btn-primary::after,
+.dtab-btn-primaer::after, .modal-btn-confirm::after, .newkey-btn::after,
+#closePositionModal button[onclick*="confirm"]::after,
+.login-btn::before, .login-btn-secondary::before { content: none !important; display: none !important; }
