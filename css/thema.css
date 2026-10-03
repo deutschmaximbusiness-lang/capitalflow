@@ -1012,3 +1012,25 @@ body {
     #journal > .trades-header .cf-auf-knopf, .cf-tabkopf .cf-auf-knopf { width: 100%; justify-content: center; }
     #journal > .trades-header .trades-stats { width: 100%; }
 }
+
+/* ================================================ RUHIGER TABWECHSEL (03.10.)
+   Ein Tab blendet als Ganzes kurz ein. Die Karten darin bewegen sich nicht
+   mehr einzeln - jede Karte flog bei jedem Wechsel 20 px von unten herein,
+   und das sah aus, als sortiere sich die Seite erst. */
+.dashboard-stat, .top-stat, .dashboard-section, .recent-trade-item, .daily-summary-card,
+.dashboard-card, .dashboard-big-card, .analytics-metric-card, .analytics-metric-card-small {
+    animation: none !important;
+}
+.tab-content.active { animation: cf-tab-ein 0.16s ease-out !important; }
+@keyframes cf-tab-ein { from { opacity: 0; } to { opacity: 1; } }
+@media (prefers-reduced-motion: reduce) { .tab-content.active { animation: none !important; } }
+
+/* Diagramme bekommen ihre Hoehe vom Behaelter, nicht erst vom Diagramm -
+   sonst springt die Karte, sobald Chart.js gezeichnet hat. */
+.cf-diagramm { position: relative; width: 100%; min-width: 0; }
+.cf-diagramm > canvas { position: absolute; inset: 0; max-height: none !important; }
+
+/* Waehrend die Anmeldung geprueft wird: weder Login noch App zeigen.
+   Sonst blitzt beim Neuladen kurz der falsche Bildschirm auf. */
+html.cf-pruefe #loginScreen, html.cf-pruefe #adminPanel,
+html.cf-pruefe .navbar, html.cf-pruefe .sidebar, html.cf-pruefe .container { visibility: hidden !important; }

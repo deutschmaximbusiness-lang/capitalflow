@@ -869,40 +869,33 @@ function handleTabChange(tabId) {
     // weil er mit "Portfolio Analyse" kollidiert hat und Nutzern nur
     // gezeigt hat, was fehlt. Investoren-Features kommen in v2.
 
-    // Lade spezielle Inhalte
-    if (tabId === 'calendar') {
-        setTimeout(() => loadCalendar(), 100);
-    }
-    if (tabId === 'dashboard') {
-        setTimeout(() => loadDashboard(), 100);
-    }
-    if (tabId === 'analytics') {
-        setTimeout(() => loadAnalytics(), 100);
-    }
-    if (tabId === 'journal') {
-        setTimeout(() => loadTrades(), 100);
-    }
-    if (tabId === 'positions') {
-        setTimeout(() => loadPositions(), 100);
-    }
-    if (tabId === 'transactions') {
-        setTimeout(() => loadTransactions(), 100);
-    }
-    if (tabId === 'setups') {
-        setTimeout(() => loadSetups(), 100);
+    // Inhalte im SELBEN Durchgang rendern, in dem der Tab sichtbar wird.
+    // Vorher kam das Rendern 100 ms spaeter: man sah kurz den alten Stand
+    // oder "Loading...", dann sprang alles an seinen Platz. Der Browser
+    // zeichnet erst, wenn diese Funktion fertig ist - so erscheint der
+    // Tab gleich im fertigen Zustand.
+    const laden = {
+        calendar: typeof loadCalendar === 'function' ? loadCalendar : null,
+        dashboard: typeof loadDashboard === 'function' ? loadDashboard : null,
+        analytics: typeof loadAnalytics === 'function' ? loadAnalytics : null,
+        journal: typeof loadTrades === 'function' ? loadTrades : null,
+        positions: typeof loadPositions === 'function' ? loadPositions : null,
+        transactions: typeof loadTransactions === 'function' ? loadTransactions : null,
+        setups: typeof loadSetups === 'function' ? loadSetups : null,
+    }[tabId];
+    if (laden) {
+        try { laden(); } catch (e) { console.error('Tab ' + tabId + ':', e); }
     }
     if (tabId === 'admin' && typeof cfAdminOeffnen === 'function') {
-        setTimeout(() => cfAdminOeffnen(), 100);
+        cfAdminOeffnen();
     }
     if (tabId === 'daten') {
         // Der Migrationsblock erscheint nur, wenn es lokal ueberhaupt
         // etwas zu uebertragen gibt - sonst steht dort eine Aufgabe,
         // die niemand hat.
-        setTimeout(() => {
-            if (typeof window.cfMigrationsblockPruefen === 'function') {
-                window.cfMigrationsblockPruefen();
-            }
-        }, 100);
+        if (typeof window.cfMigrationsblockPruefen === 'function') {
+            window.cfMigrationsblockPruefen();
+        }
     }
 }
 
@@ -2229,7 +2222,7 @@ function loadDashboard() {
                     <div class="trade-score-value" id="tradeScoreValue" style="font-size: 48px; font-weight: 700; color: #ECEAF4;">0</div>
                     <div class="trade-score-status" id="tradeScoreStatus" style="color: #fbbf24; font-size: 13px; margin-top: 4px;">-</div>
                 </div>
-                <canvas id="tradeScoreChart" style="max-height: 250px;"></canvas>
+                <div class="cf-diagramm" style="height: 250px;"><canvas id="tradeScoreChart"></canvas></div>
             </div>
 
             <div class="dashboard-section" style="padding: 24px;">
@@ -2240,11 +2233,10 @@ function loadDashboard() {
         </div>
     `;
     
-    // Render Charts + Heatmap
-    setTimeout(() => {
-        renderDashboardCharts(trades, stats);
-        renderActivityHeatmap(trades);
-    }, 50);
+    // Sofort zeichnen, nicht nach einer Pause: mit Verzoegerung stand
+    // die Seite erst ohne Diagramme da und sortierte sich dann um.
+    renderDashboardCharts(trades, stats);
+    renderActivityHeatmap(trades);
 }
 
 function renderDashboardCharts(trades, stats) {
@@ -2680,7 +2672,7 @@ function loadAnalytics() {
                     </div>
                 </div>
                 <p style="color: #A9A5BD; font-size: 12px; margin-bottom: 16px;">Track your growth with live-updating equity curves that reveal your true edge over time.</p>
-                <canvas id="equityChart" style="max-height: 250px;"></canvas>
+                <div class="cf-diagramm" style="height: 300px;"><canvas id="equityChart"></canvas></div>
             </div>
         </div>
 
@@ -2770,9 +2762,7 @@ function loadAnalytics() {
                      Sichtbar bleibt sie als Ausblick, bis das Playbook
                      aus M3 echte Werte liefert. -->
                 <div style="position: relative; margin-bottom: 16px;">
-                    <div style="opacity: 0.35; filter: blur(3px); pointer-events: none;">
-                        <canvas id="behavioralChart" style="max-height: 250px;"></canvas>
-                    </div>
+                    <div class="cf-diagramm" style="height: 250px; opacity: 0.35; filter: blur(3px); pointer-events: none;"><canvas id="behavioralChart"></canvas></div>
                     <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: rgba(20, 20, 35, 0.9); padding: 10px 18px; border-radius: 8px; color: #ECEAF4; font-weight: 700; font-size: 11px; letter-spacing: 0; border: 1.5px solid #8B6CF3; white-space: nowrap;">Kommt mit dem Playbook</div>
                 </div>
                 <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; font-size: 12px;">
@@ -2841,15 +2831,14 @@ function loadAnalytics() {
 
     `;
     
-    // Render charts
-    setTimeout(() => {
-        renderAnalyticsCharts(trades, stats, wins, losses, behavioralScore);
-        // Der Behaelter steht jetzt fest im Markup oben - hier wird er
-        // nur noch gefuellt.
-        if (typeof window.cfAuswertungAufbauen === 'function') {
-            window.cfAuswertungAufbauen();
-        }
-    }, 50);
+    // Erst die Auswertungen (sie stehen oben und bestimmen, wo alles
+    // darunter landet), dann die Diagramme - beides im selben Durchgang.
+    // Vorher kamen sie 50 ms spaeter und schoben die Equity-Kurve sichtbar
+    // nach unten.
+    if (typeof window.cfAuswertungAufbauen === 'function') {
+        window.cfAuswertungAufbauen();
+    }
+    renderAnalyticsCharts(trades, stats, wins, losses, behavioralScore);
 }
 
 function renderAnalyticsCharts(trades, stats, wins, losses, behavioralScore) {

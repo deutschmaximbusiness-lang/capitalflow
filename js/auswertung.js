@@ -263,6 +263,23 @@
 
     // ----------------------------------------------------------- Bau
 
+    // Was aus der Datenbank kam (Gebuehren, KO-Abstand), fuer den naechsten
+    // Tabwechsel. Ohne das kamen diese zwei Karten bei JEDEM Wechsel erst
+    // nach der Netzanfrage dazu und schoben alles darunter nach unten.
+    let netzZuletzt = { schluessel: null, html: '' };
+
+    // Direkt ins Raster, ohne Huelle - die Regel "letzte Karte bei
+    // ungerader Anzahl volle Breite" zaehlt die Kinder des Rasters.
+    function netzEinsetzen(raster, html) {
+        if (!raster) return;
+        raster.querySelectorAll('[data-netz]').forEach(function (e) { e.remove(); });
+        if (!html) return;
+        const t = document.createElement('template');
+        t.innerHTML = html;
+        Array.prototype.forEach.call(t.content.children, function (e) { e.setAttribute('data-netz', ''); });
+        raster.appendChild(t.content);
+    }
+
     window.cfAuswertungAufbauen = async function () {
         const ziel = document.getElementById('cfAuswertung');
         if (!ziel) return;
@@ -272,18 +289,28 @@
         });
         if (!trades.length) { ziel.innerHTML = ''; return; }
 
-        // Erst das, was ohne Netz geht - damit sofort etwas dasteht
+        const schluessel = trades.length + '|' + trades.reduce(function (s, t) {
+            return s + (parseFloat(t.pnl) || 0);
+        }, 0).toFixed(2);
+        const gemerkt = netzZuletzt.schluessel === schluessel ? netzZuletzt.html : '';
+
+        // Erst das, was ohne Netz geht (plus das zuletzt Geholte) - damit
+        // sofort alles dasteht
         ziel.innerHTML = '<h2 class="aus-ueberschrift">Was deine Zahlen sagen</h2>'
             + '<div class="aus-raster">'
             + haltedauer(trades)
             + hebelVergleich(trades)
             + '</div>';
+        const raster = ziel.querySelector('.aus-raster');
+        netzEinsetzen(raster, gemerkt);
 
         try {
             const [g, k] = await Promise.all([gebuehren(), koAbstand()]);
-            if (g || k) {
-                ziel.querySelector('.aus-raster').innerHTML += g + k;
-            }
+            const neu = (g || '') + (k || '');
+            netzZuletzt = { schluessel: schluessel, html: neu };
+            // Nur anfassen, wenn sich etwas geaendert hat - sonst wuerde
+            // jeder Wechsel die Karten neu aufbauen
+            if (neu !== gemerkt && raster.isConnected) netzEinsetzen(raster, neu);
         } catch (e) { /* Auswertungen sind nie kritisch */ }
     };
 })();

@@ -16,6 +16,24 @@
     <meta name="mobile-web-app-capable" content="yes">
     <!-- Neue Designsprache (M6a). Enthaelt nur cf-Klassen, aendert also
          nichts, bis ein Bildschirm sie benutzt. Siehe styleguide.html. -->
+    <!-- Liegt eine Anmeldung vor, nichts zeigen, bis sie geprueft ist
+         (js/auth.js nimmt die Klasse weg). Sonst sieht ein angemeldeter
+         Nutzer bei jedem Laden kurz den Login-Bildschirm. Hoechstens
+         2,5 s - dann zeigt die Seite auf jeden Fall etwas. -->
+    <script>
+        (function () {
+            try {
+                var da = false;
+                for (var i = 0; i < localStorage.length; i++) {
+                    if ((localStorage.key(i) || '').indexOf('capitalflow_auth') === 0) { da = true; break; }
+                }
+                if (da) {
+                    document.documentElement.classList.add('cf-pruefe');
+                    setTimeout(function () { document.documentElement.classList.remove('cf-pruefe'); }, 2500);
+                }
+            } catch (e) { /* ohne Speicher: einfach anzeigen */ }
+        })();
+    </script>
     <link rel="stylesheet" href="css/basis.css">
     <link rel="stylesheet" href="css/style.css">
     <link rel="stylesheet" href="css/thema.css">
@@ -69,6 +87,19 @@
                 <div style="height: 1px; background: rgba(124, 92, 240, 0.075); margin-top: 14px;"></div>
                 <p style="color: #8A86A0; font-size: 11px; margin: 10px 0 0 0; font-weight: 500;">1. März 2027</p>
             </div>
+            <!-- Sofort fuellen, nicht erst wenn app.js geladen ist - sonst
+                 steht beim Oeffnen kurz "0 0 0 0" da. app.js zaehlt weiter. -->
+            <script>
+                (function () {
+                    var t = new Date('2027-03-01T00:00:00').getTime() - Date.now();
+                    if (!(t > 0)) t = 0;
+                    var w = [Math.floor(t / 864e5), Math.floor(t % 864e5 / 36e5), Math.floor(t % 36e5 / 6e4), Math.floor(t % 6e4 / 1e3)];
+                    ['countdownDays', 'countdownHours', 'countdownMinutes', 'countdownSeconds'].forEach(function (id, i) {
+                        var e = document.getElementById(id);
+                        if (e) e.textContent = String(w[i]).padStart(2, '0');
+                    });
+                })();
+            </script>
 
             <!-- Login Form -->
             <div class="login-form" id="normalLoginForm">
@@ -129,7 +160,10 @@
     </div>
     
     <!-- ===== ADMIN PANEL ===== -->
-    <div class="admin-panel" id="adminPanel">
+    <!-- Standardmaessig versteckt: vorher war es sichtbar, bis ein Skript
+         es ausblendete - beim Neuladen (etwa nach dem Logout) blitzte es
+         kurz ueber allem auf. -->
+    <div class="admin-panel hidden" id="adminPanel">
         <div class="admin-header">
             <div>
                 <div class="admin-title">Admin Panel</div>

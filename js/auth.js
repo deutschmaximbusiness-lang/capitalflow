@@ -52,7 +52,14 @@
         return document.querySelectorAll('.navbar, .sidebar, .container');
     }
 
-    function loginScreenAn() {
+    function pruefungFertig() {
+        document.documentElement.classList.remove('cf-pruefe');
+    }
+
+    function loginScreenAn(vorlaeufig) {
+        // Beim Start nur vorbereiten: ob wirklich der Login kommt, weiss
+        // erst pruefen(). Bis dahin bleibt alles unsichtbar (cf-pruefe).
+        if (!vorlaeufig) pruefungFertig();
         const s = el('loginScreen');
         if (s) { s.classList.remove('hidden'); s.style.opacity = '1'; }
         alleBereiche().forEach(function (e) { e.style.display = 'none'; });
@@ -61,6 +68,7 @@
     }
 
     function appAn() {
+        pruefungFertig();
         const s = el('loginScreen');
         if (s) s.classList.add('hidden');
         alleBereiche().forEach(function (e) {
@@ -518,7 +526,7 @@
             return;
         }
         verdrahten();
-        loginScreenAn();
+        loginScreenAn(true);
         zeige('authPanelLogin');
 
         // Nach der Rueckkehr von Discord steht das Token in der URL.
