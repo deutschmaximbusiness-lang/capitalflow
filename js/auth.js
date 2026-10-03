@@ -256,6 +256,11 @@
 
         window.cfRawStorage.set('capitalflow_current_key', kennung);
         window.cfRawStorage.set('capitalflow_current_name', name);
+        const bildUrl = (profil && profil.avatar_url) || meta.avatar_url || '';
+        if (bildUrl) window.cfRawStorage.set('capitalflow_current_avatar', bildUrl);
+        else window.cfRawStorage.remove('capitalflow_current_avatar');
+        window.cfRawStorage.set('capitalflow_login_art', 'discord');
+        if (typeof window.cfNutzerblock === 'function') window.cfNutzerblock();
         localStorage.setItem('capitalflow_logged_in', 'true');
 
         appAn();
@@ -490,6 +495,8 @@
 
         window.cfRawStorage.remove('capitalflow_current_key');
         window.cfRawStorage.remove('capitalflow_current_name');
+        window.cfRawStorage.remove('capitalflow_current_avatar');
+        window.cfRawStorage.remove('capitalflow_login_art');
         localStorage.removeItem('capitalflow_logged_in');
         sessionStorage.removeItem('capitalflow_altdaten_spaeter');
         window.location.reload();

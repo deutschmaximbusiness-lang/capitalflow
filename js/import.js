@@ -458,7 +458,7 @@
         }
         const gebSumme = trades.reduce(function (s, t) { return s + t.gebuehren; }, 0);
         if (gebSumme > 0) {
-            hinweise.push('Ordergebühren von ' + gebSumme.toFixed(2) + ' € sind vom '
+            hinweise.push('Ordergebühren von ' + window.cfGeld(gebSumme) + ' sind vom '
                 + 'Ergebnis abgezogen — die meisten Journale lassen sie weg.');
         }
         const ignoriertListe = Object.keys(ignoriert).map(function (k) {
@@ -543,8 +543,7 @@
     }
     function eur(n) {
         return (n === null || n === undefined) ? '—'
-            : n.toLocaleString('de-DE', { minimumFractionDigits: 2,
-                                          maximumFractionDigits: 2 }) + ' €';
+            : window.cfGeld(n);
     }
 
     /* ------------------------------------------------------------------

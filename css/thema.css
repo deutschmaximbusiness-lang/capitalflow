@@ -1034,3 +1034,254 @@ body {
    Sonst blitzt beim Neuladen kurz der falsche Bildschirm auf. */
 html.cf-pruefe #loginScreen, html.cf-pruefe #adminPanel,
 html.cf-pruefe .navbar, html.cf-pruefe .sidebar, html.cf-pruefe .container { visibility: hidden !important; }
+
+/* ================================================ ZWEITFARBE + GLAS (03.10.)
+   Zweite Farbe ist ein tiefes Violett, #36255C (CMYK 41/60/0/64). Es
+   traegt die Flaechen: Hintergrundlicht, Glaskarten, aktive Auswahl. Das
+   helle Violett (#7C5CF0) bleibt der Hauptaktion vorbehalten.
+
+   Glas heisst: halbdurchsichtige Flaeche, feiner heller Rand, Lichtkante
+   oben, und dahinter etwas, das man verschwommen sieht. Dafuer bekommt
+   der Hintergrund grosse, weiche Farbfelder.
+
+   Unschaerfe (backdrop-filter) nur auf grossen Flaechen: Seitenleiste,
+   Kopfzeile, Abschnittskarten, Fenster. Auf 30 Kalenderkacheln gleichzeitig
+   kostet sie beim Scrollen spuerbar Leistung - und vor einem weichen
+   Verlauf sieht man den Unterschied ohnehin nicht. */
+:root {
+    --g-violett: #36255C;
+    --g-glas: linear-gradient(160deg, rgba(54, 37, 92, 0.36) 0%, rgba(24, 19, 38, 0.60) 55%, rgba(14, 12, 22, 0.70) 100%);
+    --g-glas-klein: linear-gradient(160deg, rgba(54, 37, 92, 0.30) 0%, rgba(18, 15, 28, 0.66) 100%);
+    --g-glas-hover: linear-gradient(160deg, rgba(54, 37, 92, 0.58) 0%, rgba(30, 23, 48, 0.62) 60%, rgba(16, 13, 26, 0.70) 100%);
+    --g-glas-rand: rgba(255, 255, 255, 0.09);
+    --g-glas-licht: inset 0 1px 0 rgba(255, 255, 255, 0.09);
+    --g-blur: blur(18px) saturate(150%);
+}
+
+/* ------------------------------------------------ Hintergrund mit Farbfeldern */
+body {
+    background:
+        radial-gradient(1px 1px at 12% 18%, rgba(255, 255, 255, 0.55), transparent 60%),
+        radial-gradient(1px 1px at 78% 9%, rgba(255, 255, 255, 0.45), transparent 60%),
+        radial-gradient(1px 1px at 91% 41%, rgba(255, 255, 255, 0.35), transparent 60%),
+        radial-gradient(1px 1px at 33% 72%, rgba(255, 255, 255, 0.35), transparent 60%),
+        radial-gradient(1px 1px at 64% 88%, rgba(255, 255, 255, 0.4), transparent 60%),
+        radial-gradient(1.5px 1.5px at 52% 31%, rgba(167, 139, 250, 0.7), transparent 60%),
+        radial-gradient(1.5px 1.5px at 22% 92%, rgba(167, 139, 250, 0.6), transparent 60%),
+        radial-gradient(ellipse 70% 55% at 8% 18%, transparent 98.4%, rgba(255, 255, 255, 0.08) 98.8%, transparent 99.2%),
+        radial-gradient(ellipse 85% 70% at 108% 110%, transparent 98.6%, rgba(255, 255, 255, 0.07) 98.9%, transparent 99.2%),
+        /* Farbfelder in der Zweitfarbe, dazu ein Hauch Hauptviolett */
+        radial-gradient(760px 560px at 88% 12%, rgba(54, 37, 92, 0.75), transparent 70%),
+        radial-gradient(680px 620px at 6% 88%, rgba(54, 37, 92, 0.62), transparent 70%),
+        radial-gradient(520px 420px at 58% 58%, rgba(124, 92, 240, 0.10), transparent 70%),
+        radial-gradient(900px 420px at 50% -12%, rgba(124, 92, 240, 0.12), transparent 70%),
+        #09090B !important;
+    background-attachment: fixed !important;
+}
+
+/* ------------------------------------------------ Kopfzeile und Seitenleiste */
+.navbar {
+    background: rgba(12, 10, 20, 0.55) !important;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06) !important;
+    backdrop-filter: var(--g-blur) !important;
+    -webkit-backdrop-filter: var(--g-blur) !important;
+}
+.sidebar {
+    background: var(--g-glas) !important;
+    border: 1px solid var(--g-glas-rand) !important;
+    box-shadow: var(--g-glas-licht), 0 30px 60px -30px rgba(0, 0, 0, 0.8) !important;
+    backdrop-filter: var(--g-blur) !important;
+    -webkit-backdrop-filter: var(--g-blur) !important;
+}
+.nav-item.active {
+    background: linear-gradient(90deg, rgba(54, 37, 92, 0.95), rgba(54, 37, 92, 0.45)) !important;
+    border-color: rgba(167, 139, 250, 0.28) !important;
+}
+.nav-item:hover:not(.active) { background: rgba(54, 37, 92, 0.35) !important; }
+.nav-zahl { background: rgba(54, 37, 92, 0.8) !important; border-color: rgba(167, 139, 250, 0.25) !important; color: #E4DBFF !important; }
+
+/* ------------------------------------------------ Karten aus Glas */
+.dashboard-stat, .top-stat, .dashboard-section, .dashboard-card, .dashboard-big-card,
+.analytics-metric-card, .analytics-metric-card-small, .premium-stat-card, .trade-score-card,
+.daily-summary-card, .trade-card, .position-card, .setups-card, .setup-type-stat-card,
+.aus-karte, .daten-karte, .admin-karte, .admin-section, .hilfe-block, .form-section,
+.portfolio-summary, .summary-item, .zert-block, .newkey-card, .start-kasten,
+.roadmap-card-premium, .completed-card, .in-progress-card, .planned-card,
+.equity-section, .dir-card, .zert-kachel, .admin-key-karte, .bereich-sperre-karte, .trades-stat-item {
+    background: var(--g-glas) !important;
+    border: 1px solid var(--g-glas-rand) !important;
+    box-shadow: var(--g-glas-licht), 0 24px 48px -28px rgba(0, 0, 0, 0.9) !important;
+}
+/* kleine Kacheln: etwas dichter, ohne Unschaerfe */
+.dashboard-card, .analytics-metric-card-small, .zert-kachel, .summary-item, .trades-stat-item, .dashboard-stat {
+    background: var(--g-glas-klein) !important;
+}
+/* grosse Flaechen: echte Unschaerfe */
+/* Listenkarten (Trades, Positionen, Setups) bewusst ohne: davon kann es
+   Hunderte geben, und jede einzelne Unschaerfe kostet beim Scrollen. */
+.dashboard-big-card, .dashboard-section, .analytics-metric-card, .aus-karte, .form-section,
+.dir-card, .hilfe-block, .daten-karte, .start-kasten, .zert-block {
+    backdrop-filter: var(--g-blur) !important;
+    -webkit-backdrop-filter: var(--g-blur) !important;
+}
+.dashboard-big-card:hover, .dashboard-section:hover, .dashboard-stat:hover, .top-stat:hover,
+.analytics-metric-card:hover, .premium-stat-card:hover, .trade-card:hover, .position-card:hover,
+.setups-card:hover, .aus-karte:hover, .dir-card:hover, .daily-summary-card:hover, .trades-stat-item:hover,
+.roadmap-card-premium:hover, .completed-card:hover, .in-progress-card:hover, .planned-card:hover,
+.dashboard-card:hover, .analytics-metric-card-small:hover, .zert-kachel:hover, .summary-item:hover {
+    background: var(--g-glas-hover) !important;
+    border-color: rgba(167, 139, 250, 0.42) !important;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.12), 0 30px 80px rgba(54, 37, 92, 0.55), 0 0 0 1px rgba(124, 92, 240, 0.12) !important;
+}
+/* farbige Marken behalten */
+.setups-card { box-shadow: inset 0 2px 0 var(--st), var(--g-glas-licht), 0 24px 48px -28px rgba(0, 0, 0, 0.9) !important; }
+.dir-card-long { box-shadow: inset 3px 0 0 #12A38F, var(--g-glas-licht), 0 24px 48px -28px rgba(0, 0, 0, 0.9) !important; }
+.dir-card-short { box-shadow: inset 3px 0 0 #E5484D, var(--g-glas-licht), 0 24px 48px -28px rgba(0, 0, 0, 0.9) !important; }
+.calendar-day.neutral {
+    background: var(--g-glas-klein) padding-box, linear-gradient(180deg, rgba(255, 255, 255, 0.10), rgba(255, 255, 255, 0.03)) border-box !important;
+}
+
+/* ------------------------------------------------ Auswahl und Nebenknoepfe in der Zweitfarbe */
+.filter-btn.active, .tab-button.active, .setup-type-filter-btn.active, .produkt-btn.active,
+.setups-status-btn.active, .login-mode-btn.active, .calendar-btn.active {
+    background: linear-gradient(180deg, rgba(74, 52, 124, 0.95), rgba(54, 37, 92, 0.95)) !important;
+    border-color: rgba(167, 139, 250, 0.35) !important;
+    color: #F4F4F5 !important;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.10), 0 6px 18px -8px rgba(54, 37, 92, 0.9) !important;
+}
+.trades-filter { background: rgba(54, 37, 92, 0.18) !important; border-color: rgba(255, 255, 255, 0.08) !important; }
+.btn-secondary, .modal-btn-cancel, .setups-btn-ghost, .login-btn-secondary, .dtab-btn, .trade-edit,
+.trade-nachtragen-btn, .key-btn-copy, .admin-zeile-btn, .position-close-btn, .pnl-nav-btn {
+    background: rgba(54, 37, 92, 0.30) !important;
+    border-color: rgba(255, 255, 255, 0.10) !important;
+}
+.btn-secondary:hover, .setups-btn-ghost:hover, .trade-edit:hover, .position-close-btn:hover {
+    background: rgba(54, 37, 92, 0.6) !important;
+    border-color: rgba(168, 85, 247, 0.45) !important;
+    transform: translateY(-1px);
+}
+.form-group input, .form-group select, .form-group textarea, .custom-select-header, .login-input, .admin-input {
+    background: rgba(9, 8, 15, 0.45) !important;
+    border-color: rgba(255, 255, 255, 0.10) !important;
+}
+.form-group input:focus, .form-group select:focus, .form-group textarea:focus {
+    border-color: rgba(167, 139, 250, 0.6) !important;
+    box-shadow: 0 0 0 3px rgba(54, 37, 92, 0.7) !important;
+}
+.custom-select-dropdown { background: rgba(24, 19, 38, 0.92) !important; backdrop-filter: var(--g-blur) !important; -webkit-backdrop-filter: var(--g-blur) !important; }
+
+/* ------------------------------------------------ Fenster und Login */
+.modal-content, .screenshot-modal-content, dialog.cf-dialog, .login-container {
+    background: var(--g-glas) !important;
+    border: 1px solid rgba(255, 255, 255, 0.11) !important;
+    box-shadow: var(--g-glas-licht), 0 40px 90px -30px rgba(0, 0, 0, 0.9) !important;
+    backdrop-filter: blur(24px) saturate(150%) !important;
+    -webkit-backdrop-filter: blur(24px) saturate(150%) !important;
+}
+.login-screen {
+    background-image:
+        radial-gradient(1px 1px at 14% 22%, rgba(255, 255, 255, 0.55), transparent 60%),
+        radial-gradient(1px 1px at 82% 14%, rgba(255, 255, 255, 0.45), transparent 60%),
+        radial-gradient(1.5px 1.5px at 70% 78%, rgba(167, 139, 250, 0.7), transparent 60%),
+        radial-gradient(ellipse 70% 60% at 0% 10%, transparent 98.3%, rgba(255, 255, 255, 0.08) 98.7%, transparent 99.1%),
+        radial-gradient(ellipse 80% 70% at 110% 105%, transparent 98.5%, rgba(255, 255, 255, 0.07) 98.85%, transparent 99.2%),
+        radial-gradient(620px 520px at 30% 30%, rgba(54, 37, 92, 0.85), transparent 70%),
+        radial-gradient(560px 520px at 72% 74%, rgba(54, 37, 92, 0.7), transparent 70%),
+        radial-gradient(ellipse 46% 56% at 50% 46%, rgba(124, 92, 240, 0.14), transparent 75%) !important;
+}
+.toast { background: rgba(24, 19, 38, 0.82) !important; backdrop-filter: var(--g-blur) !important; -webkit-backdrop-filter: var(--g-blur) !important; border: 1px solid rgba(255, 255, 255, 0.10) !important; }
+
+/* ------------------------------------------------ Nutzerblock unten in der Seitenleiste */
+.sidebar-logout-divider { margin-top: auto !important; }
+.sidebar-nutzer {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 10px 10px 10px;
+    margin-top: 8px;
+    border-radius: 18px;
+    background: rgba(54, 37, 92, 0.38);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    box-shadow: var(--g-glas-licht);
+}
+.sidebar-nutzer-bild {
+    position: relative;
+    width: 36px; height: 36px; flex: none;
+    border-radius: 50%;
+    overflow: hidden;
+    background: linear-gradient(160deg, #4A347C, #36255C);
+    box-shadow: 0 0 0 2px rgba(167, 139, 250, 0.35);
+    display: grid; place-items: center;
+}
+.sidebar-nutzer-bild img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.sidebar-nutzer-bild img[hidden], #sidebarInitial[hidden] { display: none; }
+#sidebarInitial { font-weight: 700; font-size: 15px; color: #F4F4F5; }
+.sidebar-nutzer-text { min-width: 0; flex: 1; display: flex; flex-direction: column; gap: 2px; }
+.sidebar-nutzer-name {
+    font-size: 14px; font-weight: 600; color: #F4F4F5;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.sidebar-nutzer-art { display: inline-flex; align-items: center; gap: 5px; font-size: 11px; color: #A9A0CF; }
+.sidebar-nutzer-art[hidden] { display: none; }
+.sidebar-nutzer-art svg { color: #8C9EFF; flex: none; }
+.sidebar-nutzer .sidebar-logout-btn {
+    flex: none;
+    width: 38px; height: 38px;
+    padding: 0 !important;
+    margin: 0 !important;
+    justify-content: center;
+    gap: 0 !important;
+    border-radius: 50% !important;
+}
+.sidebar-nutzer .sidebar-logout-btn .nav-icon { margin: 0 !important; }
+.sidebar-nutzer .sidebar-logout-btn:focus-visible { outline: 2px solid #FB7185; outline-offset: 2px; }
+
+/* ------------------------------------------------ Erfasste Trades (Analytics) */
+.ana-vollstaendig { display: grid; gap: 6px; font-size: 12px; color: var(--cf-text-2); }
+.ana-vollstaendig > div:not(.ana-balken) { display: flex; justify-content: space-between; gap: 12px; }
+.ana-vollstaendig > div:not(.ana-balken) > span:last-child { color: #E4DBFF; font-variant-numeric: tabular-nums; }
+.ana-balken { height: 4px; border-radius: 4px; background: rgba(255, 255, 255, 0.06); overflow: hidden; margin-bottom: 6px; }
+.ana-balken > span { display: block; height: 100%; border-radius: 4px; background: linear-gradient(90deg, #36255C, #7C5CF0); }
+
+/* Navbar-Abzeichen ist doppelt, seit der Nutzer unten in der Leiste steht */
+.session-badge { display: none !important; }
+
+@media (prefers-reduced-transparency: reduce) {
+    .sidebar, .navbar, .dashboard-big-card, .dashboard-section, .analytics-metric-card, .aus-karte, .form-section,
+    .trade-card, .position-card, .setups-card, .dir-card, .modal-content, dialog.cf-dialog, .login-container {
+        backdrop-filter: none !important; -webkit-backdrop-filter: none !important;
+        background: #17131F !important;
+    }
+}
+/* Nutzerblock ganz unten: die Leiste ist per Inline-Stil display:block
+   (auth.js), deshalb ueber die Hoehe der Navigation statt ueber Flex */
+.sidebar-nav { min-height: 100%; }
+
+/* ================================================ FORMULARE KOMPAKT (03.10.)
+   Die Zeilen waren ein Raster mit automatischer Spaltenzahl: fuenf Felder
+   in drei Spalten liessen rechts ein Loch, und jeder Wechsel der
+   Produktart verschob alles. Jetzt fliessen die Felder einer Zeile in
+   einer Reihe und teilen sich die Breite - kein Loch, egal wie viele
+   Felder gerade sichtbar sind. */
+.cf-aufklapp .form-row {
+    display: flex !important;
+    flex-wrap: wrap;
+    gap: 14px 16px !important;
+    margin-bottom: 18px !important;
+}
+.cf-aufklapp .form-row > .form-group {
+    flex: 1 1 150px;
+    min-width: 0;
+    margin-bottom: 0 !important;
+}
+.cf-aufklapp .form-row > .form-group[style*="grid-column"] { flex-basis: 100%; }
+.cf-aufklapp .form-row > .form-group[style*="display: none"] { display: none !important; }
+.cf-aufklapp form > .form-group, .cf-aufklapp .zert-block + .form-group { margin-bottom: 18px !important; }
+/* Lange Zusaetze duerfen umbrechen; die Felder einer Zeile bleiben unten buendig */
+.cf-aufklapp .form-row > .form-group { display: flex; flex-direction: column; justify-content: flex-end; }
+.cf-aufklapp .direction-toggle { min-width: 0; }
+.cf-aufklapp .direction-btn { padding-left: 10px !important; padding-right: 10px !important; }
+.cf-aufklapp .form-section h3 { margin-bottom: 18px; }
+/* Richtung so hoch wie die Eingabefelder daneben (47 px) */
+.cf-aufklapp .direction-toggle { align-items: stretch; height: 47px; }
+.cf-aufklapp .direction-toggle .direction-btn { height: 100%; }

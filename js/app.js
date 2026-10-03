@@ -321,7 +321,7 @@ function initLoginSystem() {
     loginBtn.addEventListener('click', () => {
         const enteredKey = loginKeyInput.value.trim();
         if (!enteredKey) {
-            showToast('Please enter your key', 'error');
+            showToast('Bitte deinen Key eingeben', 'error');
             return;
         }
 
@@ -402,7 +402,7 @@ function initLoginSystem() {
                 renderSessionBadge();
             }, 400);
         } else {
-            showToast('Invalid key! Contact your admin.', 'error');
+            showToast('Key ungültig – frag beim Admin nach.', 'error');
             loginKeyInput.value = '';
         }
     });
@@ -450,7 +450,7 @@ function initLoginSystem() {
         // in js/keys.js.
         renderNewKeyResult(userName, newKey, hash, today);
         adminUserNameInput.value = '';
-        showToast('Key generated! ', 'success');
+        showToast('Key erstellt', 'success');
     });
 }
 
@@ -511,7 +511,7 @@ function renderKeysList() {
 }
 function copyToClipboard(text) {
     navigator.clipboard.writeText(text).then(() => {
-        showToast('Key copied! ', 'success');
+        showToast('Key kopiert', 'success');
     });
 }
 
@@ -545,6 +545,8 @@ function confirmLogout() {
     // Aktiven Key freigeben, sonst sieht der naechste Nutzer fremde Daten
     window.cfRawStorage.remove('capitalflow_current_key');
     window.cfRawStorage.remove('capitalflow_current_name');
+    window.cfRawStorage.remove('capitalflow_current_avatar');
+    window.cfRawStorage.remove('capitalflow_login_art');
     window.location.reload();
 }
 
@@ -583,6 +585,7 @@ document.addEventListener('DOMContentLoaded', () => {
     initLoginSystem();
     initMobileMenu();
     initCountdownTimer();
+    cfNutzerblock();
 });
 
 const tradeForm = document.getElementById('tradeForm');
@@ -620,7 +623,7 @@ function clearScreenshot() {
     const pasteArea = document.getElementById('screenshotPasteArea');
     const preview = document.getElementById('screenshotPreview');
     pasteArea.classList.remove('has-image');
-    pasteArea.textContent = 'Hier Screenshot einfügen (Ctrl+V) oder klicken zum Datei wählen';
+    pasteArea.textContent = 'Strg+V zum Einfügen oder klicken zum Hochladen';
     pasteArea.style.display = 'block';
     preview.innerHTML = '';
 }
@@ -884,7 +887,10 @@ function handleTabChange(tabId) {
         setups: typeof loadSetups === 'function' ? loadSetups : null,
     }[tabId];
     if (laden) {
-        try { laden(); } catch (e) { console.error('Tab ' + tabId + ':', e); }
+        // Ein Fehler im Rendern darf das Umschalten nicht abbrechen (Navigation
+        // bleibt bedienbar) - aber er darf auch nicht verschwinden: danach
+        // erneut werfen, damit er in der Konsole und in den Tests auffaellt.
+        try { laden(); } catch (e) { setTimeout(() => { throw e; }, 0); }
     }
     if (tabId === 'admin' && typeof cfAdminOeffnen === 'function') {
         cfAdminOeffnen();
@@ -967,7 +973,7 @@ function bearbeitungsLeiste(trade) {
 
     if (!trade) {
         if (leiste) leiste.style.display = 'none';
-        if (btn) btn.textContent = 'Trade Hinzufügen';
+        if (btn) btn.textContent = 'Trade speichern';
         if (abbrechen) abbrechen.style.display = 'none';
         return;
     }
@@ -1221,8 +1227,8 @@ function addTrade(e) {
         }
 
         showToast(alt
-            ? `${ticker} geändert (P&L: €${trade.pnl.toFixed(2)})`
-            : `Trade hinzugefügt: ${ticker} (P&L: €${trade.pnl.toFixed(2)})`);
+            ? `${ticker} geändert (P&L: ${cfGeld(trade.pnl, { vorzeichen: true })})`
+            : `Trade hinzugefügt: ${ticker} (P&L: ${cfGeld(trade.pnl, { vorzeichen: true })})`);
 
         tradeInBearbeitung = null;
         bearbeitungsLeiste(null);
@@ -1283,7 +1289,20 @@ function cfKlapp(was, id, arg) {
 function eurMitVorzeichen(n) {
     const z = parseFloat(n);
     if (!Number.isFinite(z)) return '—';
-    return (z >= 0 ? '+' : '−') + '€' + Math.abs(z).toFixed(2);
+    return cfGeld(z, { vorzeichen: true });
+}
+
+/**
+ * Waehrung der Kurse auf einer Trade-Karte. Zertifikate und alles aus dem
+ * Trade-Republic-Import kosten Euro; nur bei von Hand eingetragenen Aktien
+ * fragt das Formular nach Dollar ("Entry Preis ($)"). Vorher stand ueberall
+ * "$" - auch beim Knock-Out fuer 1,52 Euro.
+ */
+function preisWaehrung(trade) {
+    if (!trade) return '$';
+    if (trade.quelle === 'import') return '€';
+    if (trade.produkt && trade.produkt.art && trade.produkt.art !== 'aktie') return '€';
+    return '$';
 }
 
 /** Gruen im Plus, rot im Minus - passend zu eurMitVorzeichen(). */
@@ -1331,11 +1350,10 @@ function koBadge(trade) {
     const pz = p.koAbstandProzent;
     const eng = pz < 5 ? ' eng' : '';
     const titel = pz < 5
-        ? 'Nur ' + pz.toFixed(1) + ' % bis zum Totalverlust'
+        ? 'Nur ' + cfProz(pz, 1) + ' bis zum Totalverlust'
         : 'Abstand zur KO-Schwelle beim Einstieg';
     return '<span class="trade-ko-badge' + eng + '" title="'
-        + escapeHtml(titel) + '">KO ' + pz.toFixed(1).replace('.', ',')
-        + ' %</span>';
+        + escapeHtml(titel) + '">KO ' + cfProz(pz, 1) + '</span>';
 }
 
 /**
@@ -1463,7 +1481,7 @@ function loadTrades() {
     const tradeCountDisplay = document.getElementById('tradeCountDisplay');
     
     if (tradesPnLDisplay) {
-        tradesPnLDisplay.textContent = `€ ${filteredPnL.toFixed(2)}`;
+        tradesPnLDisplay.textContent = cfGeld(filteredPnL, { vorzeichen: true });
         // Die Zahl steht als Farbverlauf mit background-clip: text.
         // Dabei ist -webkit-text-fill-color auf transparent gesetzt, und
         // das schlaegt jedes color. Ein Minusbetrag blieb deshalb gruen,
@@ -1502,28 +1520,28 @@ function loadTrades() {
                     ${koBadge(trade)}
                 </div>
                 <div class="trade-pnl ${trade.pnl > 0 ? 'profit' : 'loss'}">
-                    <div>€${trade.pnl > 0 ? '+' : ''}${trade.pnl.toFixed(2)}</div>
-                    <div class="trade-pnl-percent">${trade.pnlPercent > 0 ? '+' : ''}${trade.pnlPercent.toFixed(1)}%</div>
+                    <div>${cfGeld(trade.pnl, { vorzeichen: true })}</div>
+                    <div class="trade-pnl-percent">${cfProz(trade.pnlPercent, 1, { vorzeichen: true })}</div>
                 </div>
             </div>
             <div style="margin-bottom: 15px; margin-top: 10px;">
                 <span class="setup-type-badge ${getSetupTypeBadgeClass(trade.setupType || 'Sonstiges')}">${trade.setupType || 'Sonstiges'}</span>
             </div>
             <div class="trade-detail">
-                <span class="trade-detail-label">Entry / Exit</span>
-                <span class="trade-detail-value">$${trade.entryPrice.toFixed(2)} / $${trade.exitPrice.toFixed(2)}</span>
+                <span class="trade-detail-label">Kauf / Verkauf</span>
+                <span class="trade-detail-value">${cfGeld(trade.entryPrice, { waehrung: preisWaehrung(trade) })} / ${cfGeld(trade.exitPrice, { waehrung: preisWaehrung(trade) })}</span>
             </div>
             <div class="trade-detail">
                 <span class="trade-detail-label">Grund</span>
                 <span class="trade-detail-value">${trade.reason || '-'}</span>
             </div>
             <div class="trade-detail">
-                <span class="trade-detail-label">Position Größe</span>
-                <span class="trade-detail-value">€${trade.positionSize.toFixed(2)}</span>
+                <span class="trade-detail-label">Positionsgröße</span>
+                <span class="trade-detail-value">${cfGeld(trade.positionSize)}</span>
             </div>
             <div class="trade-detail">
-                <span class="trade-detail-label">R:R Ratio</span>
-                <span class="trade-detail-value">${trade.riskReward.toFixed(2)} : 1</span>
+                <span class="trade-detail-label">Chance : Risiko</span>
+                <span class="trade-detail-value">${cfZahl(trade.riskReward, 2)} : 1</span>
             </div>
             <div class="trade-detail">
                 <span class="trade-detail-label">Fehler</span>
@@ -1533,7 +1551,7 @@ function loadTrades() {
                 <span class="trade-detail-label">Datum</span>
                 <span class="trade-detail-value">${trade.date}</span>
             </div>
-            ${trade.notes ? `<div class="trade-detail"><span class="trade-detail-label">Notes</span><span class="trade-detail-value">${escapeHtml(trade.notes)}</span></div>` : ''}
+            ${trade.notes ? `<div class="trade-detail"><span class="trade-detail-label">Notizen</span><span class="trade-detail-value">${escapeHtml(trade.notes)}</span></div>` : ''}
             ${trade.screenshot && trade.screenshot.trim() ? `<div class="trade-screenshot"><img src="${trade.screenshot}" alt="Trade Setup" onclick="openScreenshotModal('${trade.screenshot}')" style="cursor: pointer;"></div>` : ''}
             ${nachtragenHinweis(trade)}
             <div class="trade-aktionen">
@@ -1714,9 +1732,9 @@ function renderDailyCalendar(trades, container) {
                 const isSpecial = (bestDay.date === date) ? 'style="box-shadow: 0 0 20px rgba(52, 211, 153, 0.6);"' : (worstDay.date === date) ? 'style="box-shadow: 0 0 20px rgba(251, 113, 133, 0.6);"' : '';
                 
                 return `
-                    <div class="calendar-day ${status}" ${isSpecial} title="${date}: ${dayTrades.length} Trades, €${dayPnL.toFixed(2)}">
+                    <div class="calendar-day ${status}" ${isSpecial} title="${date}: ${dayTrades.length} Trades, ${cfGeld(dayPnL, { vorzeichen: true })}">
                         <div class="calendar-day-header">${date}</div>
-                        <div class="calendar-day-pnl">${dayTrades.length > 0 ? `${dayPnL < 0 ? '−' : '+'}€${Math.abs(dayPnL).toFixed(0)}` : '—'}</div>
+                        <div class="calendar-day-pnl">${dayTrades.length > 0 ? cfGeld(dayPnL, { vorzeichen: true, stellen: 0 }) : '—'}</div>
                         <div class="calendar-day-trades">${dayTrades.length} T.</div>
                     </div>
                 `;
@@ -1777,7 +1795,7 @@ function renderWeeklyCalendar(trades, container) {
         return `
             <div class="calendar-day ${status}">
                 <div class="calendar-day-header">${weekKey}</div>
-                <div class="calendar-day-pnl">${weekTrades.length > 0 ? `€${Math.abs(weekPnL).toFixed(0)}` : '—'}</div>
+                <div class="calendar-day-pnl">${weekTrades.length > 0 ? cfGeld(weekPnL, { vorzeichen: true, stellen: 0 }) : '—'}</div>
                 <div class="calendar-day-trades">${weekTrades.length} T.</div>
             </div>
         `;
@@ -1869,9 +1887,9 @@ function renderMonthlyCalendar(trades, container) {
                 const isSpecial = (bestMonth.key === monthKey) ? 'style="box-shadow: 0 0 20px rgba(52, 211, 153, 0.6);"' : (worstMonth.key === monthKey) ? 'style="box-shadow: 0 0 20px rgba(251, 113, 133, 0.6);"' : '';
                 
                 return `
-                    <div class="calendar-day ${status}" ${isSpecial} title="${getMonthName(monthKey)}: ${monthTrades.length} Trades, €${monthPnL.toFixed(2)}">
+                    <div class="calendar-day ${status}" ${isSpecial} title="${getMonthName(monthKey)}: ${monthTrades.length} Trades, ${cfGeld(monthPnL, { vorzeichen: true })}">
                         <div class="calendar-day-header">${getMonthName(monthKey)}</div>
-                        <div class="calendar-day-pnl">${monthTrades.length > 0 ? `${monthPnL < 0 ? '−' : '+'}€${Math.abs(monthPnL).toFixed(0)}` : '—'}</div>
+                        <div class="calendar-day-pnl">${monthTrades.length > 0 ? cfGeld(monthPnL, { vorzeichen: true, stellen: 0 }) : '—'}</div>
                         <div class="calendar-day-trades">${monthTrades.length} T.</div>
                     </div>
                 `;
@@ -1957,7 +1975,7 @@ function buildDashboardGreeting(trades, stats) {
     } else if (heutige.length > 0) {
         const vz = heutePnl >= 0 ? '+' : '';
         lage = `${heutige.length} ${heutige.length === 1 ? 'Trade' : 'Trades'} ` +
-               `heute, ${vz}€${heutePnl.toFixed(2)}.`;
+               `heute, ${cfGeld(heutePnl, { vorzeichen: true })}.`;
     } else if (trades.length < 20) {
         const fehlt = 20 - trades.length;
         lage = `${trades.length} ${trades.length === 1 ? 'Trade' : 'Trades'} erfasst. ` +
@@ -1965,7 +1983,7 @@ function buildDashboardGreeting(trades, stats) {
                `noch ${fehlt} zu gehen.`;
     } else {
         lage = `${trades.length} Trades erfasst, Trefferquote ` +
-               `${(stats.winRate || 0).toFixed(1)} Prozent.`;
+               `${cfProz(stats.winRate || 0, 1)}.`;
     }
 
     return `
@@ -2191,19 +2209,19 @@ function loadDashboard() {
              raus, weil er ohne offene Positionen und Kursbewegungen nie
              mit dem Depot uebereinstimmt. -->
         <div class="dashboard-top-cards dash-raster-3">
-            ${gross('Gesamt', stats.totalPnL, `${stats.trades.length} Trades • ${stats.winRate}% Treffer`)}
-            ${gross('Diese Woche', wocheSumme, `${wocheTrades.length} Trades${wocheTrades.length ? ' • ' + wocheQuote + '% Treffer' : ''}`)}
-            ${gross('Heute', stats.todayPnL, stats.todayTrades.length ? `${stats.todayTrades.length} Trades • ${stats.todayWinRate}% Treffer` : 'Heute noch kein Trade')}
+            ${gross('Gesamt', stats.totalPnL, `${stats.trades.length} Trades • ${cfProz(stats.winRate, 1)} Treffer`)}
+            ${gross('Diese Woche', wocheSumme, `${wocheTrades.length} Trades${wocheTrades.length ? ' • ' + cfProz(wocheQuote, 0) + ' Treffer' : ''}`)}
+            ${gross('Heute', stats.todayPnL, stats.todayTrades.length ? `${stats.todayTrades.length} Trades • ${cfProz(stats.todayWinRate, 1)} Treffer` : 'Heute noch kein Trade')}
         </div>
 
         <div class="dashboard-mid-cards dash-raster-4">
             ${kachel('Aktuelle Serie', serieText, serie ? serieFarbe : '#A1A1AA', serie ? 'in Folge, jüngster Trade zuerst' : 'Noch keine Serie')}
-            ${kachel('Profit Factor', stats.profitFactor, '#C9B8FF', 'Gewinne geteilt durch Verluste')}
-            ${kachel('Größter Gewinn', groessterGewinn ? '€' + groessterGewinn.pnl.toFixed(2) : '—', '#34D399',
+            ${kachel('Profit Factor', cfZahl(stats.profitFactor, 2), '#C9B8FF', 'Gewinne geteilt durch Verluste')}
+            ${kachel('Größter Gewinn', groessterGewinn ? cfGeld(groessterGewinn.pnl, { vorzeichen: true }) : '—', '#34D399',
                 groessterGewinn ? escapeHtml(String(groessterGewinn.ticker || '')) + ' • ' + escapeHtml(String(groessterGewinn.date || '')) : 'Noch kein Gewinn')}
-            ${kachel('Bester Wochentag', gehandelt.length ? (bestDay.pnl >= 0 ? '+' : '−') + '€' + Math.abs(bestDay.pnl).toFixed(2) : '—',
+            ${kachel('Bester Wochentag', gehandelt.length ? cfGeld(bestDay.pnl, { vorzeichen: true }) : '—',
                 bestDay.pnl >= 0 ? '#34D399' : '#FB7185',
-                gehandelt.length ? `${tagNamen[bestDay.day]} • ${bestDay.total} Trades • ${bestDay.rate}% Treffer` : 'Noch keine Trades')}
+                gehandelt.length ? `${tagNamen[bestDay.day]} • ${bestDay.total} Trades • ${cfProz(bestDay.rate, 0)} Treffer` : 'Noch keine Trades')}
         </div>
 
         <div class="dashboard-bottom-stats dash-raster-4">
@@ -2218,7 +2236,7 @@ function loadDashboard() {
         <div class="dashboard-zwei" style="display: grid; grid-template-columns: 1fr 1.2fr; gap: 20px;">
             <div class="dashboard-section" style="padding: 24px;">
                 <div style="text-align: center; margin-bottom: 20px;">
-                    <div class="trade-score-label" style="color: #A9A5BD; font-size: 12px; margin-bottom: 8px;">Trade Score</div>
+                    <div class="trade-score-label" style="color: #A9A5BD; font-size: 12px; margin-bottom: 8px;">Trade-Score</div>
                     <div class="trade-score-value" id="tradeScoreValue" style="font-size: 48px; font-weight: 700; color: #ECEAF4;">0</div>
                     <div class="trade-score-status" id="tradeScoreStatus" style="color: #fbbf24; font-size: 13px; margin-top: 4px;">-</div>
                 </div>
@@ -2251,7 +2269,7 @@ function renderDashboardCharts(trades, stats) {
         tradeScore = Math.min(100, Math.max(0, tradeScore));
     }
     
-    const status = tradeScore >= 75 ? 'Excellent' : tradeScore >= 50 ? 'Good' : tradeScore >= 25 ? 'Fair' : 'Improving';
+    const status = tradeScore >= 75 ? 'Sehr gut' : tradeScore >= 50 ? 'Gut' : tradeScore >= 25 ? 'Ausbaufähig' : 'Am Anfang';
     // Diese Elemente stammen aus einer aelteren Dashboard-Version und
     // existieren im HTML nicht mehr - ohne Pruefung bricht die Funktion hier ab
     const scoreValueEl = document.getElementById('tradeScoreValue');
@@ -2268,7 +2286,7 @@ function renderDashboardCharts(trades, stats) {
         window.tradeScoreChartInstance = new Chart(ctx, {
             type: 'radar',
             data: {
-                labels: ['Win Rate', 'Consistency', 'Profit Factor', 'Trade Count', 'Risk/Reward'],
+                labels: ['Trefferquote', 'Beständigkeit', 'Profit Factor', 'Anzahl Trades', 'Chance : Risiko'],
                 datasets: [{
                     label: 'Performance',
                     data: [
@@ -2437,21 +2455,21 @@ function buildDirectionBreakdown(trades) {
         <div class="dir-card ${klasse}">
             <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;">
                 <div class="dir-card-title" style="color:${farbe};">${titel}</div>
-                <div style="font-size:11px;color:#8A86A0;font-weight:600;">${anteil}% aller Trades</div>
+                <div style="font-size:11px;color:#8A86A0;font-weight:600;">${cfProz(anteil, 0)} aller Trades</div>
             </div>
             <div style="font-size:30px;font-weight: 700;color:${pnlFarbe};line-height:1;margin-bottom:6px;">
-                ${vz}€${d.pnl.toFixed(2)}
+                ${cfGeld(d.pnl, { vorzeichen: true })}
             </div>
             <div style="font-size:12px;color:#A9A5BD;margin-bottom:18px;">
-                ${d.anzahl} ${d.anzahl === 1 ? 'Trade' : 'Trades'} · Ø ${vz}€${d.schnitt.toFixed(2)}
+                ${d.anzahl} ${d.anzahl === 1 ? 'Trade' : 'Trades'} · Ø ${cfGeld(d.schnitt, { vorzeichen: true })}
             </div>
             <div style="height:6px;border-radius:3px;background:rgba(251, 113, 133, 0.25);overflow:hidden;margin-bottom:8px;">
                 <div style="height:100%;width:${d.quote.toFixed(1)}%;background:#34D399;"></div>
             </div>
             <div style="display:flex;justify-content:space-between;font-size:12px;font-weight:600;">
-                <span style="color:#34D399;">${d.wins}W</span>
-                <span style="color:#D5D2E2;">${d.quote.toFixed(1)}% Trefferquote</span>
-                <span style="color:#FB7185;">${d.verluste}L</span>
+                <span style="color:#34D399;">${d.wins} Gewinner</span>
+                <span style="color:#D5D2E2;">${cfProz(d.quote, 1)} Trefferquote</span>
+                <span style="color:#FB7185;">${d.verluste} Verlierer</span>
             </div>
         </div>`;
     };
@@ -2521,7 +2539,7 @@ function loadAnalytics() {
     const avgRR = mitStop.length
         ? mitStop.reduce((s, t) => s + parseFloat(t.riskReward), 0) / mitStop.length
         : null;
-    const avgRRText = avgRR === null ? '—' : avgRR.toFixed(2) + ':1';
+    const avgRRText = avgRR === null ? '—' : cfZahl(avgRR, 2) + ' : 1';
     const avgRRZusatz = mitStop.length === 0
         ? 'Kein Trade hat einen Stop'
         : 'aus ' + mitStop.length + ' von ' + trades.length + ' Trades';
@@ -2623,35 +2641,34 @@ function loadAnalytics() {
         <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 170px), 1fr)); gap: 20px; margin-bottom: 30px;">
             <div class="analytics-metric-card">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
-                    <div style="font-size: 12px; text-transform: none; color: #A9A5BD; font-weight: 600;">Win Rate</div>
-                    <div style="font-size: 11px; background: rgba(124, 92, 240, 0.15); color: #C9B8FF; padding: 4px 8px; border-radius: 4px;">Key Metric</div>
+                    <div style="font-size: 12px; text-transform: none; color: #A9A5BD; font-weight: 600;">Trefferquote</div>
                 </div>
-                <div style="font-size: 32px; font-weight: 700; color: #ECEAF4; margin-bottom: 8px;">${stats.winRate}%</div>
-                <div style="font-size: 12px; color: #A9A5BD;">${wins.length}W / ${losses.length}L</div>
+                <div style="font-size: 32px; font-weight: 700; color: #ECEAF4; margin-bottom: 8px;">${cfProz(stats.winRate, 1)}</div>
+                <div style="font-size: 12px; color: #A9A5BD;">${wins.length} Gewinner / ${losses.length} Verlierer</div>
             </div>
             
             <div class="analytics-metric-card">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
                     <div style="font-size: 12px; text-transform: none; color: #A9A5BD; font-weight: 600;">Profit Factor</div>
                 </div>
-                <div style="font-size: 32px; font-weight: 700; color: #ECEAF4; margin-bottom: 8px;">${stats.profitFactor}</div>
+                <div style="font-size: 32px; font-weight: 700; color: #ECEAF4; margin-bottom: 8px;">${cfZahl(stats.profitFactor, 2)}</div>
                 <div style="font-size: 12px; color: ${pfUrteil.farbe};">${pfUrteil.text}</div>
             </div>
             
             <div class="analytics-metric-card">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
-                    <div style="font-size: 12px; text-transform: none; color: #A9A5BD; font-weight: 600;">Expectancy</div>
+                    <div style="font-size: 12px; text-transform: none; color: #A9A5BD; font-weight: 600;">Erwartungswert</div>
                 </div>
                 <div style="font-size: 32px; font-weight: 700; color: ${farbeFuer(stats.expectancy)}; margin-bottom: 8px;">${eurMitVorzeichen(stats.expectancy)}</div>
-                <div style="font-size: 12px; color: #A9A5BD;">Per trade average</div>
+                <div style="font-size: 12px; color: #A9A5BD;">pro Trade im Schnitt</div>
             </div>
             
             <div class="analytics-metric-card">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
-                    <div style="font-size: 12px; text-transform: none; color: #A9A5BD; font-weight: 600;">Total P&L</div>
+                    <div style="font-size: 12px; text-transform: none; color: #A9A5BD; font-weight: 600;">Gesamtergebnis</div>
                 </div>
                 <div style="font-size: 32px; font-weight: 700; color: ${stats.totalPnL >= 0 ? '#34D399' : '#FB7185'}; margin-bottom: 8px;">${eurMitVorzeichen(stats.totalPnL)}</div>
-                <div style="font-size: 12px; color: #A9A5BD;">${trades.length} trades</div>
+                <div style="font-size: 12px; color: #A9A5BD;">${trades.length} ${trades.length === 1 ? 'Trade' : 'Trades'}</div>
             </div>
         </div>
 
@@ -2665,13 +2682,9 @@ function loadAnalytics() {
             <!-- LEFT: Equity Curve -->
             <div class="dashboard-section" style="background: linear-gradient(135deg, rgba(124, 92, 240, 0.06) 0%, rgba(124, 92, 240, 0.025) 100%); border: 1px solid rgba(124, 92, 240, 0.15); border-radius: 16px; padding: 24px;">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
-                    <div style="font-size: 14px; font-weight: 600; color: #D5D2E2;">Equity curve</div>
-                    <div style="display: flex; gap: 12px; font-size: 11px; margin-right: 44px;">
-                        <span style="color: #D5D2E2; padding: 4px 8px; background: rgba(124, 92, 240, 0.15); border-radius: 4px; cursor: pointer;">Portfolio</span>
-                        <span style="color: #A9A5BD; cursor: pointer;">Benchmark</span>
-                    </div>
+                    <div style="font-size: 14px; font-weight: 600; color: #D5D2E2;">Equity-Kurve</div>
                 </div>
-                <p style="color: #A9A5BD; font-size: 12px; margin-bottom: 16px;">Track your growth with live-updating equity curves that reveal your true edge over time.</p>
+                <p style="color: #A9A5BD; font-size: 12px; margin-bottom: 16px;">Dein Ergebnis Trade für Trade aufaddiert. Steigt die Linie, arbeitet dein Vorgehen für dich.</p>
                 <div class="cf-diagramm" style="height: 300px;"><canvas id="equityChart"></canvas></div>
             </div>
         </div>
@@ -2680,7 +2693,7 @@ function loadAnalytics() {
         <!-- Win/Loss Donut -->
         <div class="dashboard-section" style="background: linear-gradient(135deg, rgba(124, 92, 240, 0.06) 0%, rgba(124, 92, 240, 0.025) 100%); border: 1px solid rgba(124, 92, 240, 0.15); border-radius: 16px; padding: 24px;">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-                <div style="font-size: 14px; font-weight: 600; color: #D5D2E2;">Win/Loss</div>
+                <div style="font-size: 14px; font-weight: 600; color: #D5D2E2;">Gewinner und Verlierer</div>
             </div>
             <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr)); gap: 30px; align-items: center;">
                 <div style="position: relative; height: 260px; min-width: 0;"><canvas id="winLossChart"></canvas></div>
@@ -2688,11 +2701,11 @@ function loadAnalytics() {
                     <div style="display: flex; gap: 20px; margin-bottom: 20px;">
                         <div style="display: flex; align-items: center; gap: 6px;">
                             <div style="width: 12px; height: 12px; background: #34D399; border-radius: 2px;"></div>
-                            <span style="color: #D5D2E2; font-size: 12px;">Wins</span>
+                            <span style="color: #D5D2E2; font-size: 12px;">Gewinner</span>
                         </div>
                         <div style="display: flex; align-items: center; gap: 6px;">
                             <div style="width: 12px; height: 12px; background: #FB7185; border-radius: 2px;"></div>
-                            <span style="color: #D5D2E2; font-size: 12px;">Losses</span>
+                            <span style="color: #D5D2E2; font-size: 12px;">Verlierer</span>
                         </div>
                     </div>
                 </div>
@@ -2700,7 +2713,7 @@ function loadAnalytics() {
         </div>
             <!-- Additional Stats -->
             <div class="dashboard-section ana-keystats" style="padding: 24px;">
-                <div style="font-size: 14px; font-weight: 600; color: #D5D2E2; margin-bottom: 8px;">Key stats</div>
+                <div style="font-size: 14px; font-weight: 600; color: #D5D2E2; margin-bottom: 8px;">Eckdaten</div>
                 <div class="ana-keystats-liste">
                     <div style="display: flex; justify-content: space-between;">
                         <span style="color: #A9A5BD;">Bester Tag</span>
@@ -2712,7 +2725,7 @@ function loadAnalytics() {
                     </div>
                     <div style="display: flex; justify-content: space-between;">
                         <span style="color: #A9A5BD;" title="Größter Rückgang vom Kontohöchststand">Max. Rückgang</span>
-                        <span style="color: #FB7185; font-weight: 600;">−€${maxDD.toFixed(2)}${maxDDProzent !== null ? ' · ' + maxDDProzent.toFixed(1) + ' %' : ''}</span>
+                        <span style="color: #FB7185; font-weight: 600;">${cfGeld(-maxDD)}${maxDDProzent !== null ? ' · ' + cfProz(maxDDProzent, 1) : ''}</span>
                     </div>
                 </div>
             </div>
@@ -2721,20 +2734,20 @@ function loadAnalytics() {
         <!-- 5 SECONDARY METRICS -->
         <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 150px), 1fr)); gap: 20px; margin-bottom: 30px;">
             <div class="analytics-metric-card-small">
-                <div style="font-size: 11px; text-transform: none; color: #A9A5BD; font-weight: 600; margin-bottom: 8px;">Avg Win</div>
-                <div style="font-size: 24px; font-weight: 700; color: #34D399;">€${avgWin.toFixed(2)}</div>
+                <div style="font-size: 11px; text-transform: none; color: #A9A5BD; font-weight: 600; margin-bottom: 8px;">Ø Gewinn</div>
+                <div style="font-size: 24px; font-weight: 700; color: #34D399;">${cfGeld(avgWin, { vorzeichen: true })}</div>
             </div>
             <div class="analytics-metric-card-small">
-                <div style="font-size: 11px; text-transform: none; color: #A9A5BD; font-weight: 600; margin-bottom: 8px;">Avg Loss</div>
-                <div style="font-size: 24px; font-weight: 700; color: #FB7185;">-€${Math.abs(avgLoss).toFixed(2)}</div>
+                <div style="font-size: 11px; text-transform: none; color: #A9A5BD; font-weight: 600; margin-bottom: 8px;">Ø Verlust</div>
+                <div style="font-size: 24px; font-weight: 700; color: #FB7185;">${cfGeld(-Math.abs(avgLoss))}</div>
             </div>
             <div class="analytics-metric-card-small">
-                <div style="font-size: 11px; text-transform: none; color: #A9A5BD; font-weight: 600; margin-bottom: 8px;">Largest Win</div>
-                <div style="font-size: 24px; font-weight: 700; color: #34D399;">€${largestWin.toFixed(2)}</div>
+                <div style="font-size: 11px; text-transform: none; color: #A9A5BD; font-weight: 600; margin-bottom: 8px;">Größter Gewinn</div>
+                <div style="font-size: 24px; font-weight: 700; color: #34D399;">${cfGeld(largestWin, { vorzeichen: true })}</div>
             </div>
             <div class="analytics-metric-card-small">
-                <div style="font-size: 11px; text-transform: none; color: #A9A5BD; font-weight: 600; margin-bottom: 8px;">Largest Loss</div>
-                <div style="font-size: 24px; font-weight: 700; color: #FB7185;">-€${largestLoss.toFixed(2)}</div>
+                <div style="font-size: 11px; text-transform: none; color: #A9A5BD; font-weight: 600; margin-bottom: 8px;">Größter Verlust</div>
+                <div style="font-size: 24px; font-weight: 700; color: #FB7185;">${cfGeld(-Math.abs(largestLoss))}</div>
             </div>
             <div class="analytics-metric-card-small">
                 <div style="font-size: 11px; text-transform: none; color: #A9A5BD; font-weight: 600; margin-bottom: 8px;">Ø Chance : Risiko</div>
@@ -2750,7 +2763,7 @@ function loadAnalytics() {
             <!-- RIGHT: Behavioral Score -->
             <div class="dashboard-section" style="background: linear-gradient(135deg, rgba(124, 92, 240, 0.06) 0%, rgba(124, 92, 240, 0.025) 100%); border: 1px solid rgba(124, 92, 240, 0.15); border-radius: 16px; padding: 24px;">
                 <div style="text-align: center; margin-bottom: 16px;">
-                    <div style="font-size: 14px; font-weight: 600; color: #ECEAF4;">Behavioral score</div>
+                    <div style="font-size: 14px; font-weight: 600; color: #ECEAF4;">Verhaltens-Score</div>
                 </div>
                 <!-- Der Radar ist noch keine echte Auswertung.
                      "Disziplin" ist Trefferquote mal 1,5, "Strategie"
@@ -2767,34 +2780,43 @@ function loadAnalytics() {
                 </div>
                 <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; font-size: 12px;">
                     <div style="text-align: center;">
-                        <div style="color: #A9A5BD; margin-bottom: 4px;">Win Rate</div>
-                        <div style="font-size: 20px; font-weight: 700; color: #34D399;">${stats.winRate}%</div>
+                        <div style="color: #A9A5BD; margin-bottom: 4px;">Trefferquote</div>
+                        <div style="font-size: 20px; font-weight: 700; color: #34D399;">${cfProz(stats.winRate, 1)}</div>
                     </div>
                     <div style="text-align: center;">
                         <div style="color: #A9A5BD; margin-bottom: 4px;">Profit Factor</div>
-                        <div style="font-size: 20px; font-weight: 700; color: #D5D2E2;">${stats.profitFactor}</div>
+                        <div style="font-size: 20px; font-weight: 700; color: #D5D2E2;">${cfZahl(stats.profitFactor, 2)}</div>
                     </div>
                     <div style="text-align: center;">
-                        <div style="color: #A9A5BD; margin-bottom: 4px;">Avg R:R</div>
+                        <div style="color: #A9A5BD; margin-bottom: 4px;">Ø Chance : Risiko</div>
                         <div style="font-size: 20px; font-weight: 700; color: #D5D2E2;">${avgRRText}</div>
                     </div>
                     <div style="text-align: center;">
                         <div style="color: #A9A5BD; margin-bottom: 4px;">Sharpe</div>
-                        <div style="font-size: 20px; font-weight: 700; color: #D5D2E2;">${sharpeRatio}</div>
+                        <div style="font-size: 20px; font-weight: 700; color: #D5D2E2;">${cfZahl(sharpeRatio, 2)}</div>
                     </div>
                 </div>
             </div>
-            <!-- Trades Logged -->
-            <div class="dashboard-section" style="background: linear-gradient(135deg, rgba(124, 92, 240, 0.06) 0%, rgba(124, 92, 240, 0.025) 100%); border: 1px solid rgba(124, 92, 240, 0.15); border-radius: 16px; padding: 24px;">
-                <div style="font-size: 13px; text-transform: none; color: #A9A5BD; font-weight: 600; margin-bottom: 16px;">Trades logged</div>
-                <div style="font-size: 48px; font-weight: 700; color: #ECEAF4; margin-bottom: 8px;">${trades.length}+</div>
-                <div style="font-size: 12px; color: #A9A5BD;">metrics per trade</div>
+            <!-- Erfasste Trades: vorher "N+ metrics per trade" - ein Text,
+                 der nach Kennzahl aussah und nichts aussagte. Jetzt steht da,
+                 wie vollstaendig das Journal ist: ohne Stop kein Risiko, ohne
+                 Setup-Typ keine Auswertung nach Setup. -->
+            <div class="dashboard-section" style="padding: 24px;">
+                <div style="font-size: 13px; text-transform: none; color: #A9A5BD; font-weight: 600; margin-bottom: 16px;">Erfasste Trades</div>
+                <div style="font-size: 48px; font-weight: 700; color: #ECEAF4; margin-bottom: 12px;">${trades.length}</div>
+                <div class="ana-vollstaendig">
+                    ${[['mit Stop', trades.filter(t => parseFloat(t.stopLoss) > 0 || (t.produkt && t.produkt.stop)).length],
+                       ['mit Setup-Typ', trades.filter(t => String(t.setupType || '').trim()).length],
+                       ['mit Begründung', trades.filter(t => String(t.reason || '').trim()).length]]
+                      .map(([text, n]) => `<div><span>${text}</span><span>${n} von ${trades.length}</span></div>
+                        <div class="ana-balken"><span style="width: ${trades.length ? Math.round(100 * n / trades.length) : 0}%;"></span></div>`).join('')}
+                </div>
             </div>
             <!-- Geographic Performance -->
             <div style="position: relative;">
                 <!-- Blurred Background -->
                 <div class="dashboard-section" style="background: linear-gradient(135deg, rgba(124, 92, 240, 0.06) 0%, rgba(124, 92, 240, 0.025) 100%); border: 1px solid rgba(124, 92, 240, 0.15); border-radius: 16px; padding: 24px; opacity: 0.4; pointer-events: none; filter: blur(3px); position: absolute; top: 0; left: 0; right: 0; bottom: 0; width: 100%; height: 100%;">
-                    <div style="font-size: 13px; text-transform: none; color: #A9A5BD; font-weight: 600; margin-bottom: 16px;">Market performance</div>
+                    <div style="font-size: 13px; text-transform: none; color: #A9A5BD; font-weight: 600; margin-bottom: 16px;">Handelszeiten</div>
                     <div style="font-size: 12px; color: #D5D2E2; margin-bottom: 8px;">
                         <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
                             <span>London</span>
@@ -2815,7 +2837,7 @@ function loadAnalytics() {
                     </div>
                     <div style="font-size: 12px; color: #D5D2E2;">
                         <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
-                            <span>Asian</span>
+                            <span>Asien</span>
                             <span style="color: #f59e0b; font-weight: 600;">23%</span>
                         </div>
                         <div style="width: 100%; height: 4px; background: rgba(124, 92, 240, 0.15); border-radius: 2px; overflow: hidden;">
@@ -2825,7 +2847,7 @@ function loadAnalytics() {
                 </div>
                 
                 <!-- Coming Soon Overlay (OUTSIDE blur!) -->
-                <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: rgba(20, 20, 35, 0.85); padding: 12px 20px; border-radius: 8px; color: #ECEAF4; font-weight: 700; font-size: 12px; letter-spacing: 0; z-index: 100; white-space: nowrap; border: 1.5px solid #8B6CF3; box-shadow: 0 0 12px rgba(124, 92, 240, 0.225);">Coming Soon</div>
+                <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: rgba(20, 20, 35, 0.85); padding: 12px 20px; border-radius: 8px; color: #ECEAF4; font-weight: 700; font-size: 12px; letter-spacing: 0; z-index: 100; white-space: nowrap; border: 1.5px solid #8B6CF3; box-shadow: 0 0 12px rgba(124, 92, 240, 0.225);">Kommt bald</div>
             </div>
         </div>
 
@@ -2904,7 +2926,7 @@ function renderAnalyticsCharts(trades, stats, wins, losses, behavioralScore) {
         window.behavioralChartInstance = new Chart(ctx, {
             type: 'radar',
             data: {
-                labels: ['Discipline', 'Psychology', 'Risk Mgmt', 'Strategy', 'Timing', 'Consistency'],
+                labels: ['Disziplin', 'Psychologie', 'Risiko', 'Strategie', 'Timing', 'Beständigkeit'],
                 datasets: [{
                     label: 'Score',
                     data: [
@@ -2989,7 +3011,7 @@ function renderCharts(trades, stats, winRateByDay, recentTrades) {
     // Update Best Day in Top Stats
     const bestDayValue = document.getElementById('bestDayValue');
     const bestDayDetail = document.getElementById('bestDayDetail');
-    if (bestDayValue) bestDayValue.textContent = `${bestDay.rate}%`;
+    if (bestDayValue) bestDayValue.textContent = cfProz(bestDay.rate, 0);
     if (bestDayDetail) bestDayDetail.textContent = bestDay.day;
     // Equity Chart
     if (window.equityChartInstance) window.equityChartInstance.destroy();
@@ -3034,7 +3056,7 @@ function renderCharts(trades, stats, winRateByDay, recentTrades) {
     // Update equity current value
     const equityCurrentValue = document.getElementById('equityCurrentValue');
     if (equityCurrentValue && trades.length > 0) {
-        equityCurrentValue.textContent = `€${equityData[equityData.length - 1].toFixed(2)}`;
+        equityCurrentValue.textContent = cfGeld(equityData[equityData.length - 1], { vorzeichen: true });
     }
     
     // Win/Loss Chart
@@ -3070,7 +3092,7 @@ function renderCharts(trades, stats, winRateByDay, recentTrades) {
             <div style="margin-bottom: 12px;">
                 <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
                     <span style="color: #D5D2E2;">${day.day}</span>
-                    <span style="color: #a78bfa; font-weight: 600;">${day.rate}% (${day.total})</span>
+                    <span style="color: #a78bfa; font-weight: 600;">${cfProz(day.rate, 0)} (${day.total})</span>
                 </div>
                 <div style="width: 100%; height: 6px; background: rgba(124, 92, 240, 0.075); border-radius: 3px; overflow: hidden;">
                     <div style="width: ${day.rate}%; height: 100%; background: linear-gradient(90deg, #8B6CF3, #ec4899);"></div>
@@ -3090,10 +3112,10 @@ function renderCharts(trades, stats, winRateByDay, recentTrades) {
             <div class="trade-card" style="margin-bottom: 12px;">
                 <div class="trade-header">
                     <span class="trade-ticker">${escapeHtml(trade.ticker)}</span>
-                    <span class="trade-pnl ${trade.pnl >= 0 ? 'positive' : 'negative'}">€${trade.pnl.toFixed(2)} ${trade.pnl >= 0 ? '+' : ''}${trade.pnlPercent.toFixed(1)}%</span>
+                    <span class="trade-pnl ${trade.pnl >= 0 ? 'positive' : 'negative'}">${cfGeld(trade.pnl, { vorzeichen: true })} ${cfProz(trade.pnlPercent, 1, { vorzeichen: true })}</span>
                 </div>
                 <div class="trade-detail">
-                    <span class="trade-detail-label">Entry / Exit</span>
+                    <span class="trade-detail-label">Kauf / Verkauf</span>
                     <span class="trade-detail-value">$${trade.entryPrice} / $${trade.exitPrice}</span>
                 </div>
                 <div class="trade-detail">
@@ -3136,9 +3158,9 @@ function updatePortfolioSummary() {
     
     // Update DOM
     document.getElementById('portfolioOpenCount').textContent = openCount;
-    document.getElementById('portfolioTotalValue').textContent = `€${totalValue.toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-    document.getElementById('portfolioAvgSize').textContent = `€${avgSize.toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-    document.getElementById('portfolioMaxSize').textContent = `€${maxSize.toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+    document.getElementById('portfolioTotalValue').textContent = cfGeld(totalValue);
+    document.getElementById('portfolioAvgSize').textContent = cfGeld(avgSize);
+    document.getElementById('portfolioMaxSize').textContent = cfGeld(maxSize);
     
     // Render Chart
     renderPortfolioCompositionChart(positions);
@@ -3171,14 +3193,14 @@ function loadPositions() {
                             ${hebelBadge(Object.assign({}, pos, { leverage: pos.produkt && pos.produkt.hebelEffektiv }))}
                             ${koBadge(pos)}
                         </div>
-                        <div class="position-entry">Kauf: €${parseFloat(pos.entry).toFixed(2)}</div>
+                        <div class="position-entry">Kauf: ${cfGeld(pos.entry)}</div>
                     </div>
                 </div>
                 
                 <div class="position-details">
                     <div class="position-detail-row">
-                        <span class="position-detail-label">Position Size:</span>
-                        <span class="position-detail-value">€${parseFloat(pos.size).toFixed(2)}</span>
+                        <span class="position-detail-label">Positionsgröße:</span>
+                        <span class="position-detail-value">${cfGeld(pos.size)}</span>
                     </div>
                     <div class="position-detail-row">
                         <span class="position-detail-label">Geöffnet:</span>
@@ -3201,7 +3223,7 @@ function loadPositions() {
                 ` : ''}
                 
                 <div class="position-actions">
-                    <button class="position-close-btn" onclick="closePosition(${idx})">Position Schließen</button>
+                    <button class="position-close-btn" onclick="closePosition(${idx})">Position schließen</button>
                     <button class="position-delete-btn" onclick="deletePosition(${idx})">Löschen</button>
                 </div>
             </div>
@@ -3294,7 +3316,7 @@ function updatePositionsVorschau() {
                 ? getAccountBalance() : null;
             if (kb && kb > 0) zusatz += ' · ' + nz((r.wert.euro / kb) * 100, 1)
                 + ' % vom Konto';
-            teile.push(kachel('Risiko bei deinem Stop', nz(r.wert.euro, 2) + ' €',
+            teile.push(kachel('Risiko bei deinem Stop', cfGeld(r.wert.euro),
                 zusatz, r.wert.totalverlust ? 'rot' : 'gut'));
             if (r.wert.hinweis) {
                 teile.push('<div class="zert-warnung" style="grid-column:1/-1;'
@@ -3335,11 +3357,11 @@ function addPosition(event) {
         
         // Entry 0 wuerde beim Schliessen eine Division durch null ausloesen
         if (isNaN(entryNum) || entryNum <= 0) {
-            showToast('Entry Price muss groesser als 0 sein!', 'error');
+            showToast('Der Kaufpreis muss größer als 0 sein.', 'error');
             return;
         }
         if (isNaN(sizeNum) || sizeNum <= 0) {
-            showToast('Position Size muss groesser als 0 sein!', 'error');
+            showToast('Der Einsatz muss größer als 0 sein.', 'error');
             return;
         }
         
@@ -3442,7 +3464,7 @@ function closePosition(idx) {
     document.getElementById('modalExitPrice').value = '';
     document.getElementById('modalExitReason').value = '';
     document.getElementById('modalPositionTicker').textContent = position.ticker;
-    document.getElementById('modalPositionSize').textContent = `€${parseFloat(position.size).toFixed(2)}`;
+    document.getElementById('modalPositionSize').textContent = cfGeld(position.size);
     
     document.getElementById('closePositionModal').style.display = 'flex';
     document.getElementById('modalExitPrice').focus();
@@ -3458,13 +3480,13 @@ function confirmClosePositionModal() {
     
     // Validierung
     if (!exitPriceInput || exitPriceInput === '') {
-        showToast('Exit Price erforderlich!', 'error');
+        showToast('Bitte den Verkaufspreis eintragen.', 'error');
         return;
     }
     
     const exitPrice = parseFloat(exitPriceInput);
     if (isNaN(exitPrice) || exitPrice <= 0) {
-        showToast('Exit Price muss eine Zahl > 0 sein!', 'error');
+        showToast('Der Verkaufspreis muss größer als 0 sein.', 'error');
         return;
     }
     
@@ -3518,7 +3540,7 @@ function confirmClosePositionModal() {
         
         // Reload UI
         loadPositions();
-        showToast(`Position ${position.ticker} geschlossen! P&L: €${closedPosition.pnl.toFixed(2)}`);
+        showToast(`Position ${position.ticker} geschlossen! P&L: ${cfGeld(closedPosition.pnl, { vorzeichen: true })}`);
     } catch (error) {
         console.error('Fehler:', error);
         showToast('Fehler beim Schließen der Position!', 'error');
@@ -3570,18 +3592,18 @@ function displayClosedPositions() {
                 <div class="position-header">
                     <div>
                         <div class="position-ticker">${escapeHtml(pos.ticker)}</div>
-                        <div class="position-entry">Entry: €${parseFloat(pos.entry).toFixed(2)} → Exit: €${parseFloat(pos.exitPrice).toFixed(2)}</div>
+                        <div class="position-entry">Kauf: ${cfGeld(pos.entry)} → Verkauf: ${cfGeld(pos.exitPrice)}</div>
                     </div>
                     <div style="text-align: right;">
-                        <div style="font-size: 18px; font-weight: 700; color: ${pnlColor};">${pnlSign}€${pos.pnl.toFixed(2)}</div>
-                        <div style="font-size: 12px; color: ${pnlColor};">${pnlSign}${pos.pnlPercent.toFixed(2)}%</div>
+                        <div style="font-size: 18px; font-weight: 700; color: ${pnlColor};">${cfGeld(pos.pnl, { vorzeichen: true })}</div>
+                        <div style="font-size: 12px; color: ${pnlColor};">${cfProz(pos.pnlPercent, 2, { vorzeichen: true })}</div>
                     </div>
                 </div>
                 
                 <div class="position-details">
                     <div class="position-detail-row">
                         <span class="position-detail-label">Position:</span>
-                        <span class="position-detail-value">€${parseFloat(pos.size).toFixed(2)}</span>
+                        <span class="position-detail-value">${cfGeld(pos.size)}</span>
                     </div>
                     <div class="position-detail-row">
                         <span class="position-detail-label">Geschlossen:</span>
@@ -3691,10 +3713,10 @@ function renderPortfolioCompositionChart(positions) {
                 cursor: pointer;
             " 
             class="portfolio-bar-segment"
-            title="${escapeHtml(pos.ticker)}: ${percentage.toFixed(1)}% (€${pos.size.toFixed(2)})"
+            title="${escapeHtml(pos.ticker)}: ${cfProz(percentage, 1)} (${cfGeld(pos.size)})"
             onmouseover="this.style.filter='brightness(1.2)'; this.style.flex='${percentage * 1.1}'"
             onmouseout="this.style.filter='brightness(1)'; this.style.flex='${percentage}'">
-                ${percentage > 8 ? `<span style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-weight: 700; font-size: 12px; color: white; text-shadow: 0 1px 3px rgba(0,0,0,0.5);">${percentage.toFixed(0)}%</span>` : ''}
+                ${percentage > 8 ? `<span style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-weight: 700; font-size: 12px; color: white; text-shadow: 0 1px 3px rgba(0,0,0,0.5);">${cfProz(percentage, 0)}</span>` : ''}
             </div>
         `;
     });
@@ -3719,8 +3741,8 @@ function renderPortfolioCompositionChart(positions) {
                     <div style="width: 10px; height: 10px; border-radius: 50%; background: ${color}; box-shadow: 0 0 12px ${color}80;"></div>
                     <div style="font-weight: 700; font-size: 14px; color: #ECEAF4;">${escapeHtml(pos.ticker)}</div>
                 </div>
-                <div style="font-size: 16px; font-weight: 700; color: #ECEAF4; margin-bottom: 4px;">€${pos.size.toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
-                <div style="font-size: 12px; color: #A9A5BD; font-weight: 600;">${percentage.toFixed(1)}% des Portfolios</div>
+                <div style="font-size: 16px; font-weight: 700; color: #ECEAF4; margin-bottom: 4px;">${cfGeld(pos.size)}</div>
+                <div style="font-size: 12px; color: #A9A5BD; font-weight: 600;">${cfProz(percentage, 1)} des Portfolios</div>
             </div>
         `;
     }).join('');
@@ -3736,7 +3758,7 @@ function renderTradeScoreChart(tradeScore, stats) {
     window.tradeScoreChartInstance = new Chart(ctx, {
         type: 'radar',
         data: {
-            labels: ['Win Rate', 'Consistency', 'Profit Factor', 'Trade Count', 'Risk/Reward'],
+            labels: ['Trefferquote', 'Beständigkeit', 'Profit Factor', 'Anzahl Trades', 'Chance : Risiko'],
             datasets: [{
                 label: 'Performance Metrics',
                 data: [
@@ -3812,7 +3834,7 @@ function renderSetupTypeChart(trades) {
             labels,
             datasets: [
                 {
-                    label: 'Total P&L (€)',
+                    label: 'Ergebnis (€)',
                     data: pnlData,
                     backgroundColor: pnlColors,
                     borderColor: pnlColors.map(c => c.replace('0.7', '1')),
@@ -3863,9 +3885,9 @@ function renderSetupTypeChart(trades) {
                     callbacks: {
                         label: function(context) {
                             if (context.datasetIndex === 0) {
-                                return 'P&L: €' + context.parsed.x.toFixed(2);
+                                return 'P&L: ' + cfGeld(context.parsed.x, { vorzeichen: true });
                             } else {
-                                return 'Win-Rate: ' + context.parsed.x.toFixed(1) + '%';
+                                return 'Trefferquote: ' + cfProz(context.parsed.x, 1);
                             }
                         }
                     }
@@ -3968,7 +3990,40 @@ function renderSessionBadge() {
             : activeKey;
     }
     badge.style.display = 'flex';
+    cfNutzerblock();
 }
+
+/**
+ * Der Block unten in der Seitenleiste: Discord-Bild, Name, Abmelden.
+ * Bild und Name kommen aus dem Speicher, den js/auth.js beim Anmelden
+ * fuellt - so steht beides auch nach dem Neuladen sofort da. Ohne Bild
+ * (oder wenn es nicht laedt) der Anfangsbuchstabe.
+ */
+function cfNutzerblock() {
+    const roh = window.cfRawStorage;
+    const name = (roh && roh.get('capitalflow_current_name')) || 'Angemeldet';
+    const bild = (roh && roh.get('capitalflow_current_avatar')) || '';
+    const art = (roh && roh.get('capitalflow_login_art')) || '';
+    const n = document.getElementById('sidebarName');
+    const img = document.getElementById('sidebarAvatar');
+    const ini = document.getElementById('sidebarInitial');
+    const a = document.getElementById('sidebarArt');
+    if (n) { n.textContent = name; n.title = name; }
+    if (ini) ini.textContent = (name.trim()[0] || '?').toUpperCase();
+    if (a) a.hidden = art !== 'discord';
+    if (img) {
+        if (/^https:\/\//.test(bild)) {
+            img.onerror = function () { img.hidden = true; if (ini) ini.hidden = false; };
+            img.onload = function () { img.hidden = false; if (ini) ini.hidden = true; };
+            if (img.getAttribute('src') !== bild) img.src = bild;
+        } else {
+            img.removeAttribute('src');
+            img.hidden = true;
+            if (ini) ini.hidden = false;
+        }
+    }
+}
+window.cfNutzerblock = cfNutzerblock;
 
 function showWelcome(name, isReturning) {
     if (!name) return;
@@ -4067,14 +4122,14 @@ function initCustomDropdowns() {
 function updateCalendarStats(trades) {
     if (!trades || trades.length === 0) {
         // Reset stats to default
-        document.getElementById("totalPnLStat").textContent = "€ 0.00";
-        document.getElementById("bestDayStat").textContent = "€ 0.00";
+        document.getElementById("totalPnLStat").textContent = cfGeld(0);
+        document.getElementById("bestDayStat").textContent = cfGeld(0);
         document.getElementById("bestDayDateStat").textContent = "—";
-        document.getElementById("worstDayStat").textContent = "€ 0.00";
+        document.getElementById("worstDayStat").textContent = cfGeld(0);
         document.getElementById("worstDayDateStat").textContent = "—";
         document.getElementById("winningDaysStat").textContent = "0%";
         document.getElementById("losingDaysStat").textContent = "0%";
-        document.getElementById("avgDailyPnLStat").textContent = "€ 0.00";
+        document.getElementById("avgDailyPnLStat").textContent = cfGeld(0);
         document.getElementById("calendarTradeCount").textContent = "0";
         document.getElementById("calendarTradingDays").textContent = "0";
         return;
@@ -4118,14 +4173,14 @@ function updateCalendarStats(trades) {
         if (el) el.textContent = value;
     };
 
-    updateElement("totalPnLStat", `€ ${totalPnL.toFixed(2)}`);
-    updateElement("bestDayStat", `€ ${bestDayPnL.toFixed(2)}`);
+    updateElement("totalPnLStat", cfGeld(totalPnL, { vorzeichen: true }));
+    updateElement("bestDayStat", cfGeld(bestDayPnL, { vorzeichen: true }));
     updateElement("bestDayDateStat", bestDayDate || "—");
-    updateElement("worstDayStat", `€ ${worstDayPnL.toFixed(2)}`);
+    updateElement("worstDayStat", cfGeld(worstDayPnL, { vorzeichen: true }));
     updateElement("worstDayDateStat", worstDayDate || "—");
-    updateElement("winningDaysStat", `${winningDaysPercent}%`);
-    updateElement("losingDaysStat", `${losingDaysPercent}%`);
-    updateElement("avgDailyPnLStat", `€ ${avgDailyPnL.toFixed(2)}`);
+    updateElement("winningDaysStat", cfProz(winningDaysPercent, 1));
+    updateElement("losingDaysStat", cfProz(losingDaysPercent, 1));
+    updateElement("avgDailyPnLStat", cfGeld(avgDailyPnL, { vorzeichen: true }));
     updateElement("calendarTradeCount", trades.length);
     updateElement("calendarTradingDays", tradingDays);
 }
@@ -4257,8 +4312,8 @@ function addTransaction(e) {
         if (typeof loadDashboard === 'function') loadDashboard();
 
         showToast(type === 'deposit'
-            ? `Einzahlung über €${amount.toFixed(2)} gespeichert!`
-            : `Auszahlung über €${amount.toFixed(2)} gespeichert!`);
+            ? `Einzahlung über ${cfGeld(amount)} gespeichert!`
+            : `Auszahlung über ${cfGeld(amount)} gespeichert!`);
     } catch (err) {
         console.error('Buchung konnte nicht gespeichert werden:', err);
         showToast('Buchung konnte nicht gespeichert werden!', 'error');
@@ -4314,8 +4369,7 @@ function loadTransactions() {
     // gibt es keine sinnvolle Bezugsgroesse.
     const rendite = netto > 0 ? ((stand - netto) / netto) * 100 : 0;
 
-    const fmt = (v) => '€' + v.toLocaleString('de-DE',
-        { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    const fmt = (v) => cfGeld(v);
 
     const set = (id, value, color) => {
         const el = document.getElementById(id);
@@ -4326,7 +4380,7 @@ function loadTransactions() {
 
     set('txNetDeposit', fmt(netto));
     set('txBalance', fmt(stand), stand >= netto ? '#34D399' : '#FB7185');
-    set('txReturn', (rendite >= 0 ? '+' : '') + rendite.toFixed(2) + '%',
+    set('txReturn', cfProz(rendite, 2, { vorzeichen: true }),
         rendite >= 0 ? '#3b82f6' : '#FB7185');
     set('txCount', String(list.length));
 
@@ -4541,9 +4595,9 @@ function updateSetupsCrvPreview() {
 
     let zeile =
         '<span>Chance-Risiko</span>' +
-        '<strong style="color:' + c + ';">1 : ' + r.crv.toFixed(2) + '</strong>' +
-        '<span style="color:#FB7185;">Risiko −' + risiko.toFixed(2) + '%</span>' +
-        '<span style="color:#34D399;">Chance +' + r.rewardPct.toFixed(2) + '%</span>' +
+        '<strong style="color:' + c + ';">1 : ' + cfZahl(r.crv, 2) + '</strong>' +
+        '<span style="color:#FB7185;">Risiko ' + cfProz(-risiko, 2) + '</span>' +
+        '<span style="color:#34D399;">Chance ' + cfProz(r.rewardPct, 2, { vorzeichen: true }) + '</span>' +
         (r.leverage > 1
             ? '<span style="color:#C9B8FF;">' + formatLeverage(r.leverage)
               + (koInfo && koInfo.hebel ? ' (gerechnet)' : ' Hebel') + '</span>'
@@ -4552,8 +4606,7 @@ function updateSetupsCrvPreview() {
     if (koInfo && koInfo.abstandPct !== null) {
         const eng = koInfo.abstandPct < 5;
         zeile += '<span style="color:' + (eng ? '#FB7185' : '#fbbf24') + ';">'
-              + 'KO-Abstand ' + koInfo.abstandPct.toFixed(1).replace('.', ',')
-              + ' %</span>';
+              + 'KO-Abstand ' + cfProz(koInfo.abstandPct, 1) + '</span>';
     }
 
     box.innerHTML = zeile;
@@ -4562,15 +4615,15 @@ function updateSetupsCrvPreview() {
         box.classList.add('setups-crv-warn');
         box.innerHTML = '<strong>Dein Stop liegt jenseits der Schwelle.</strong> '
             + 'Der Schein verfällt vorher wertlos — der Stop löst nie aus. '
-            + 'Du riskierst nicht ' + r.riskPct.toFixed(0) + ' %, sondern alles. '
-            + 'Setz den Stop über ' + ko.toFixed(2).replace('.', ',')
+            + 'Du riskierst nicht ' + cfProz(r.riskPct, 0) + ', sondern alles. '
+            + 'Setz den Stop über ' + cfZahl(ko, 2)
             + ' oder nimm einen Schein mit tieferer Schwelle.';
     } else if (koInfo && koInfo.abstandPct !== null && koInfo.abstandPct < 5) {
         box.classList.add('setups-crv-warn');
         box.innerHTML = zeile
             + '<span style="color:#FB7185;">Nur '
-            + koInfo.abstandPct.toFixed(1).replace('.', ',')
-            + ' % bis zum Totalverlust</span>';
+            + cfProz(koInfo.abstandPct, 1)
+            + ' bis zum Totalverlust</span>';
     }
 }
 
@@ -4749,7 +4802,7 @@ function loadSetups() {
     setText('setupsDiscarded', String(all.filter(w => w.status === 'discarded').length));
     if (crvs.length) {
         const avg = crvs.reduce((a, b) => a + b, 0) / crvs.length;
-        setText('setupsAvgCrv', '1 : ' + avg.toFixed(2), setupsCrvColor(avg));
+        setText('setupsAvgCrv', '1 : ' + cfZahl(avg, 2), setupsCrvColor(avg));
     } else {
         setText('setupsAvgCrv', '–', '#3b82f6');
     }
@@ -4781,7 +4834,7 @@ function loadSetups() {
         return;
     }
 
-    const fmt = v => v > 0 ? v.toFixed(2) : '–';
+    const fmt = v => v > 0 ? cfZahl(v, 2) : '–';
 
     box.innerHTML = shown.map(w => {
         const st = SETUPS_STATUS[w.status];
@@ -4817,11 +4870,11 @@ function loadSetups() {
             ${r.ok ? `
             <div class="setups-crv">
                 <span>Chance-Risiko</span>
-                <strong style="color:${setupsCrvColor(r.crv)};">1 : ${r.crv.toFixed(2)}</strong>
+                <strong style="color:${setupsCrvColor(r.crv)};">1 : ${cfZahl(r.crv, 2)}</strong>
             </div>
             <div class="setups-risk-row">
-                <span style="color:#FB7185;">Risiko −${r.riskPct.toFixed(2)}%</span>
-                <span style="color:#34D399;">Chance +${r.rewardPct.toFixed(2)}%</span>
+                <span style="color:#FB7185;">Risiko ${cfProz(-r.riskPct, 2)}</span>
+                <span style="color:#34D399;">Chance ${cfProz(r.rewardPct, 2, { vorzeichen: true })}</span>
             </div>` : ''}
 
             ${w.thesis ? `<div class="setups-thesis">${escapeHtml(w.thesis)}</div>` : ''}

@@ -10,7 +10,7 @@
  * Bei jedem Release CACHE_VERSION hochzaehlen.
  */
 
-const CACHE_VERSION = 'cf-v64';
+const CACHE_VERSION = 'cf-v65';
 const CACHE_APP = CACHE_VERSION + '-app';
 const CACHE_ASSETS = CACHE_VERSION + '-assets';
 
@@ -42,6 +42,7 @@ const PRECACHE = [
     './js/zertifikate.js',
     './js/basis.js',
     './js/gross.js',
+    './js/format.js',
     './js/aufklapp.js',
     './js/produkt.js',
     './js/import.js',

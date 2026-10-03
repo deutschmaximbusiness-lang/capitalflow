@@ -45,7 +45,7 @@
         const a = art();
         const zert = a !== AKTIE;
 
-        const t = { entry: 'Entry Preis ($)', exit: 'Exit Preis ($)',
+        const t = { entry: 'Kaufkurs ($)', exit: 'Verkaufskurs ($)',
                     pos: 'Position (€)', ticker: '' };
         if (zert) {
             t.entry = 'Kaufpreis Zertifikat (€)';
@@ -350,7 +350,7 @@
             if (anteil !== null) zusatz += ' · ' + nz(anteil, 1) + ' % vom Konto';
             if (r.wert.naeherung) zusatz += ' · Näherung, siehe Hinweis';
             teile.push(kachel('Risiko bei deinem Stop',
-                nz(r.wert.euro, 2) + ' €', zusatz,
+                window.cfGeld(r.wert.euro), zusatz,
                 r.wert.totalverlust ? 'rot'
                     : (anteil !== null && anteil > 2 ? 'warn' : 'gut')));
         } else {

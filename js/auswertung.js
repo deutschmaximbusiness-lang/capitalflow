@@ -24,10 +24,7 @@
             .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
     }
     function eur(n) {
-        const z = parseFloat(n) || 0;
-        return (z >= 0 ? '+' : '−') + '€' + Math.abs(z)
-            .toLocaleString('de-DE', { minimumFractionDigits: 2,
-                                       maximumFractionDigits: 2 });
+        return window.cfGeld(parseFloat(n) || 0, { vorzeichen: true });
     }
     function farbe(n) { return (parseFloat(n) || 0) >= 0 ? '#4ade80' : '#FB7185'; }
 
@@ -127,7 +124,7 @@
                 zellen: [
                     { text: esc(g.name) },
                     { text: String(k.n) },
-                    { text: k.quote.toFixed(0) + ' %' },
+                    { text: window.cfProz(k.quote, 0) },
                     { text: eur(k.summe), farbe: farbe(k.summe) },
                     { text: eur(k.schnitt), farbe: farbe(k.schnitt) },
                 ],
@@ -137,8 +134,8 @@
         const k = kennzahlen(schlimmste.liste);
         const fuss = (k.summe < 0)
             ? 'Deine Trades über <strong>' + esc(schlimmste.name) + '</strong> '
-              + 'kosten dich ' + eur(k.summe) + ' bei ' + k.quote.toFixed(0)
-              + ' % Trefferquote. Wenn der Rest im Plus steht, liegt das Problem '
+              + 'kosten dich ' + eur(k.summe) + ' bei ' + window.cfProz(k.quote, 0)
+              + ' Trefferquote. Wenn der Rest im Plus steht, liegt das Problem '
               + 'nicht an der Auswahl, sondern am Loslassen.'
             : null;
 
@@ -171,16 +168,16 @@
             return { zellen: [
                 { text: name },
                 { text: String(k.n) },
-                { text: k.quote.toFixed(0) + ' %' },
+                { text: window.cfProz(k.quote, 0) },
                 { text: eur(k.summe), farbe: farbe(k.summe) },
-                { text: mittel === null ? '—' : mittel.toFixed(1) + ' T.' },
+                { text: mittel === null ? '—' : window.cfZahl(mittel, 1) + ' T.' },
             ] };
         };
 
         const kh = kennzahlen(mitHebel);
         const fuss = (kh.quote >= 50 && kh.summe < 0)
-            ? 'Du triffst bei Hebelprodukten in <strong>' + kh.quote.toFixed(0)
-              + ' %</strong> der Fälle richtig und verlierst trotzdem '
+            ? 'Du triffst bei Hebelprodukten in <strong>' + window.cfProz(kh.quote, 0)
+              + '</strong> der Fälle richtig und verlierst trotzdem '
               + eur(kh.summe) + '. Das heißt: die wenigen Verlierer sind '
               + 'größer als die vielen Gewinner. Ein Stop-Problem, kein '
               + 'Auswahlproblem.'
@@ -208,19 +205,19 @@
                 { text: new Date(m.monat).toLocaleDateString('de-DE',
                     { month: 'short', year: '2-digit' }) },
                 { text: String(m.trades) },
-                { text: '−€' + Number(m.gebuehren).toFixed(2), farbe: '#fbbf24' },
+                { text: window.cfGeld(-Number(m.gebuehren)), farbe: '#fbbf24' },
                 { text: eur(m.pnl_netto), farbe: farbe(m.pnl_netto) },
                 { text: m.prozent_vom_einsatz !== null
-                    ? Number(m.prozent_vom_einsatz).toFixed(2) + ' %' : '—' },
+                    ? window.cfProz(Number(m.prozent_vom_einsatz), 2) : '—' },
             ] };
         });
 
         const summe = data.reduce(function (s, m) { return s + Number(m.gebuehren); }, 0);
         const anzahl = data.reduce(function (s, m) { return s + Number(m.trades); }, 0);
         const fuss = anzahl
-            ? 'Zusammen <strong>' + summe.toFixed(2).replace('.', ',') + ' €</strong> '
+            ? 'Zusammen <strong>' + window.cfGeld(summe) + '</strong> '
               + 'auf ' + anzahl + ' Trades, also '
-              + (summe / anzahl).toFixed(2).replace('.', ',') + ' € je Runde. '
+              + window.cfGeld(summe / anzahl) + ' je Runde. '
               + 'Bei Positionen um 250 € ist das rund ein Prozent, das du erst '
               + 'wieder hereinholen musst, bevor überhaupt etwas übrig bleibt.'
             : null;
@@ -247,8 +244,8 @@
                 { text: esc(g.gruppe) },
                 { text: String(g.trades) },
                 { text: g.hebel_schnitt !== null
-                    ? Number(g.hebel_schnitt).toFixed(1) + '×' : '—' },
-                { text: Number(g.trefferquote).toFixed(0) + ' %' },
+                    ? window.cfZahl(Number(g.hebel_schnitt), 1) + '×' : '—' },
+                { text: window.cfProz(Number(g.trefferquote), 0) },
                 { text: eur(g.pnl_summe), farbe: farbe(g.pnl_summe) },
             ] };
         });
