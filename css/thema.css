@@ -1483,14 +1483,9 @@ dialog.cf-gross .ana-zeitraum { display: none; }
 .pb-karte-kopf { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
 .pb-karte-kopf h3 { margin: 0; font-size: 20px; line-height: 1.25; color: var(--cf-text); letter-spacing: -0.01em; }
 .pb-aktionen { display: flex; gap: 8px; flex-wrap: wrap; }
-.pb-knopf {
-    min-height: 34px; padding: 0 14px; border-radius: 999px; cursor: pointer;
-    background: rgba(255, 255, 255, 0.04); color: var(--cf-text-2);
-    border: 1px solid var(--g-pille-rand); font: inherit; font-size: 13px; font-weight: 500;
-    transition: color 0.2s ease, border-color 0.2s ease, background 0.2s ease;
-}
-.pb-knopf:hover { color: #DDD3FF; border-color: rgba(168, 85, 247, 0.45); background: rgba(54, 37, 92, 0.6); }
-.pb-knopf-gefahr:hover { color: #FECDD3; border-color: rgba(251, 113, 133, 0.5); background: rgba(251, 113, 133, 0.12); }
+/* Farben und Rundung kommen von .trade-edit / .trade-delete - dieselben
+   Knoepfe wie auf den Trade-Karten. Hier nur die Groesse. */
+.pb-knopf { min-height: 36px; padding: 0 16px !important; font-size: 13px !important; cursor: pointer; }
 .pb-knopf:focus-visible, .pb-link:focus-visible { outline: 2px solid #C9B8FF; outline-offset: 2px; }
 .pb-beschreibung { margin: 0; color: var(--cf-text-2); font-size: 14px; line-height: 1.55; max-width: 72ch; }
 
@@ -1564,7 +1559,6 @@ dialog.cf-gross .ana-zeitraum { display: none; }
     background-position: right 16px center !important;
 }
 .form-group select option { background: #16131F; color: #F4F4F5; }
-.form-group input[type="date"] { color-scheme: dark; }
 .pb-formular-leer { margin: -6px 0 14px; font-size: 13px; color: var(--cf-text-2); }
 .pb-link { background: none; border: 0; padding: 0; color: #C9B8FF; font: inherit; text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
 .pb-check { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 190px), 1fr)); gap: 10px; margin: 0 0 14px; }
@@ -1607,3 +1601,70 @@ dialog.cf-gross .ana-zeitraum { display: none; }
 }
 .pb-kapital-eingabe input { padding-right: 36px !important; min-width: 0; }
 .pb-kapital-feld .btn { flex: none; }
+
+/* ================================================================
+   Eingaben ohne Browser-Eigenheiten (05.10.)
+   ================================================================ */
+/* Keine Pfeile in Zahlenfeldern - sie sind winzig, treffen sich schlecht
+   und aendern Kurse in Schritten von 1. Mausrad aendert ebenfalls nichts. */
+input[type="number"]::-webkit-outer-spin-button,
+input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+input[type="number"] { -moz-appearance: textfield; appearance: textfield; }
+
+/* Markierter Text in der Akzentfarbe statt Systemblau */
+::selection { background: rgba(139, 92, 246, 0.45); color: #FFFFFF; }
+
+/* Die eigene Klappliste fuer die Strategie */
+.pb-auswahl .custom-option[tabindex]:focus-visible { outline: none; background: rgba(124, 92, 240, 0.16); color: #E4DBFF; }
+.pb-auswahl .custom-select-header:focus-visible { outline: 2px solid #C9B8FF; outline-offset: 2px; }
+
+/* Datumsfeld mit Kalender (js/datum.js) */
+.cf-datum { position: relative; }
+.cf-datum .cf-datum-text { width: 100%; padding-right: 48px !important; font-variant-numeric: tabular-nums; }
+.cf-datum-fehler .cf-datum-text { border-color: rgba(251, 113, 133, 0.7) !important; }
+.cf-datum-knopf {
+    position: absolute; right: 8px; top: 50%; transform: translateY(-50%);
+    width: 34px; height: 34px; border-radius: 10px; border: 0; cursor: pointer;
+    display: grid; place-items: center; background: transparent; color: #A9A5BD;
+    transition: background 0.2s ease, color 0.2s ease;
+}
+.cf-datum-knopf:hover, .cf-datum-offen .cf-datum-knopf { background: rgba(54, 37, 92, 0.7); color: #E4DBFF; }
+.cf-datum-knopf:focus-visible { outline: 2px solid #C9B8FF; outline-offset: 1px; }
+.cf-datum-pop {
+    position: absolute; top: calc(100% + 8px); left: 0; z-index: 1200;
+    width: 300px; max-width: calc(100vw - 32px); padding: 14px; box-sizing: border-box;
+    border-radius: 18px; background: rgba(24, 19, 38, 0.96);
+    border: 1px solid rgba(167, 139, 250, 0.22);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08), 0 24px 48px -12px rgba(0, 0, 0, 0.85);
+    backdrop-filter: var(--g-blur); -webkit-backdrop-filter: var(--g-blur);
+    animation: cf-datum-ein 0.16s ease-out;
+}
+.cf-datum-pop[hidden] { display: none; }
+@keyframes cf-datum-ein { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: none; } }
+@media (prefers-reduced-motion: reduce) { .cf-datum-pop { animation: none; } }
+.cf-datum-kopf { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+.cf-datum-monat { font-size: 14px; font-weight: 600; color: #F4F4F5; }
+.cf-datum-pfeil {
+    width: 32px; height: 32px; border-radius: 10px; cursor: pointer; display: grid; place-items: center;
+    background: rgba(255, 255, 255, 0.04); border: 1px solid var(--g-pille-rand); color: #C9B8FF;
+}
+.cf-datum-pfeil:hover { background: rgba(54, 37, 92, 0.8); color: #FFFFFF; }
+.cf-datum-raster { display: grid; grid-template-columns: repeat(7, 1fr); gap: 2px; }
+.cf-datum-wt { font-size: 11px; font-weight: 600; color: #8A86A0; text-align: center; padding: 4px 0 6px; }
+.cf-datum-tag {
+    height: 34px; border-radius: 10px; border: 1px solid transparent; cursor: pointer;
+    background: transparent; color: #ECEAF4; font: inherit; font-size: 13px; font-variant-numeric: tabular-nums;
+    transition: background 0.15s ease;
+}
+.cf-datum-tag:hover { background: rgba(54, 37, 92, 0.75); }
+.cf-datum-tag:focus-visible { outline: 2px solid #C9B8FF; outline-offset: -2px; }
+.cf-datum-fremd { color: #5E5A72; }
+.cf-datum-heute { border-color: rgba(167, 139, 250, 0.55); color: #E4DBFF; font-weight: 600; }
+.cf-datum-gewaehlt, .cf-datum-gewaehlt:hover {
+    background: linear-gradient(180deg, #8B5CF6, #6D28D9); color: #FFFFFF; font-weight: 700; border-color: transparent;
+    box-shadow: 0 6px 16px -6px rgba(139, 92, 246, 0.8);
+}
+.cf-datum-fuss { display: flex; justify-content: space-between; margin-top: 10px; padding-top: 10px; border-top: 1px solid rgba(255, 255, 255, 0.06); }
+.cf-datum-aktion { background: none; border: 0; padding: 6px 8px; border-radius: 8px; cursor: pointer; color: #C9B8FF; font: inherit; font-size: 13px; font-weight: 500; }
+.cf-datum-aktion:hover { background: rgba(54, 37, 92, 0.7); color: #FFFFFF; }
+.pb-aktionen .trade-edit, .pb-aktionen .trade-delete { width: auto !important; flex: none !important; margin: 0 !important; }

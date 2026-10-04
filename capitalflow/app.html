@@ -560,8 +560,17 @@
                     <div class="pb-formular" id="pbFormular">
                         <div class="form-row">
                             <div class="form-group">
-                                <label for="pbStrategie">Strategie <span class="feld-zusatz">aus deinem Playbook</span></label>
-                                <select id="pbStrategie"><option value="">Keine Strategie</option></select>
+                                <label id="pbStrategieLabel">Strategie <span class="feld-zusatz">aus deinem Playbook</span></label>
+                                <div class="custom-select-wrapper">
+                                    <input type="hidden" id="pbStrategie" value="">
+                                    <div class="custom-select pb-auswahl" data-select-id="pbStrategie">
+                                        <div class="custom-select-header" tabindex="0" role="button" aria-haspopup="listbox" aria-labelledby="pbStrategieLabel">
+                                            <span class="custom-select-value">Keine Strategie</span>
+                                            <svg class="custom-select-arrow" viewBox="0 0 24 24" width="16" height="16"><path fill="currentColor" d="M7 10l5 5 5-5z"/></svg>
+                                        </div>
+                                        <div class="custom-select-dropdown" role="listbox" id="pbStrategieListe"></div>
+                                    </div>
+                                </div>
                             </div>
                             <div class="form-group" id="pbEarningsGruppe" hidden>
                                 <label for="pbEarnings">Nächste Earnings <span class="feld-zusatz">optional</span></label>
@@ -1894,6 +1903,7 @@
     <script src="js/basis.js"></script>
     <script src="js/gross.js"></script>
     <script src="js/aufklapp.js"></script>
+    <script src="js/datum.js"></script>
     <script src="js/app.js"></script>
     <script src="js/playbook.js"></script>
     <!-- Formular-Verdrahtung nach app.js, damit getAccountBalance steht -->

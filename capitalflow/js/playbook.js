@@ -288,10 +288,10 @@
             + '<header class="pb-karte-kopf"><h3>' + esc(s.name) + '</h3>'
             + '<div class="pb-aktionen">'
             + (s.archiviert
-                ? '<button type="button" class="pb-knopf" data-pb-aktion="zurueck">Wiederherstellen</button>'
-                : '<button type="button" class="pb-knopf" data-pb-aktion="bearbeiten">Bearbeiten</button>'
-                  + '<button type="button" class="pb-knopf" data-pb-aktion="archivieren">Archivieren</button>')
-            + '<button type="button" class="pb-knopf pb-knopf-gefahr" data-pb-aktion="loeschen">Löschen</button>'
+                ? '<button type="button" class="pb-knopf trade-edit" data-pb-aktion="zurueck">Wiederherstellen</button>'
+                : '<button type="button" class="pb-knopf trade-edit" data-pb-aktion="bearbeiten">Bearbeiten</button>'
+                  + '<button type="button" class="pb-knopf trade-edit" data-pb-aktion="archivieren">Archivieren</button>')
+            + '<button type="button" class="pb-knopf trade-delete" data-pb-aktion="loeschen">Löschen</button>'
             + '</div></header>'
             + (s.beschreibung ? '<p class="pb-beschreibung">' + esc(s.beschreibung) + '</p>' : '')
             + (grenzen ? '<ul class="pb-grenzen">' + grenzen + '</ul>' : '')
@@ -509,25 +509,49 @@
             meldung(s.archiviert ? s.name + ' archiviert – im Journal nicht mehr wählbar' : s.name + ' wiederhergestellt');
         }
         if (was === 'loeschen') {
+            // Derselbe Dialog wie beim Loeschen eines Trades, nicht das
+            // graue Browserfenster
             const n = statistik(s).n;
-            const frage = 'Strategie „' + s.name + '“ löschen?\n\n'
-                + (n ? n + ' Trade' + (n === 1 ? '' : 's') + ' verlieren die Zuordnung und die abgehakten Regeln. '
-                       + 'Archivieren behält beides.\n\n' : '')
-                + 'Das lässt sich nicht rückgängig machen.';
-            if (!window.confirm(frage)) return;
-            alleSpeichern(alle.filter(function (x) { return x.id !== id; }));
-            // Lokal dasselbe wie "on delete set null" in der Datenbank
-            const trades = lesen('trades', []);
-            if (Array.isArray(trades) && trades.some(function (t) { return t && t.strategyId === id; })) {
-                localStorage.setItem('trades', JSON.stringify(trades.map(function (t) {
-                    return t && t.strategyId === id
-                        ? Object.assign({}, t, { strategyId: null, regelnErfuellt: null }) : t;
-                })));
-            }
-            if (window.cfDbLoeschen) window.cfDbLoeschen('strategies', id);
-            if (inBearbeitung === id) editorZu();
-            meldung('Strategie gelöscht');
+            loeschDialog('Strategie löschen?',
+                '„' + s.name + '“ wird gelöscht.'
+                + (n ? ' ' + n + ' Trade' + (n === 1 ? ' verliert' : 's verlieren')
+                    + ' die Zuordnung und die abgehakten Regeln – Archivieren behält beides.' : ''),
+                function () { loeschen(s); });
+            return;
         }
+        window.loadPlaybook();
+        if (typeof cfNavZahlen === 'function') cfNavZahlen();
+    }
+
+    function loeschDialog(titel, text, ja) {
+        const modal = el('deleteModal');
+        const knopf = el('deleteConfirmBtn');
+        if (!modal || !knopf) { if (window.confirm(titel + '\n\n' + text)) ja(); return; }
+        el('deleteModalTitle').textContent = titel;
+        el('deleteModalText').textContent = text;
+        knopf.textContent = 'Ja, löschen';
+        knopf.onclick = function () {
+            modal.style.display = 'none';
+            ja();
+        };
+        modal.style.display = 'flex';
+        knopf.focus();
+    }
+
+    function loeschen(s) {
+        const id = s.id;
+        alleSpeichern(strategien().filter(function (x) { return x.id !== id; }));
+        // Lokal dasselbe wie "on delete set null" in der Datenbank
+        const trades = lesen('trades', []);
+        if (Array.isArray(trades) && trades.some(function (t) { return t && t.strategyId === id; })) {
+            localStorage.setItem('trades', JSON.stringify(trades.map(function (t) {
+                return t && t.strategyId === id
+                    ? Object.assign({}, t, { strategyId: null, regelnErfuellt: null }) : t;
+            })));
+        }
+        if (window.cfDbLoeschen) window.cfDbLoeschen('strategies', id);
+        if (inBearbeitung === id) editorZu();
+        meldung('Strategie gelöscht');
         window.loadPlaybook();
         if (typeof cfNavZahlen === 'function') cfNavZahlen();
     }
@@ -555,17 +579,44 @@
     function formularAuswahl(behalten) {
         const sel = el('pbStrategie');
         if (!sel) return;
+        const liste = el('pbStrategieListe');
         const wert = behalten !== undefined ? behalten : sel.value;
         const alle = strategien();
         const sichtbar = alle.filter(function (s) { return !s.archiviert || s.id === wert; });
-        sel.innerHTML = '<option value="">Keine Strategie</option>' + sichtbar.map(function (s) {
-            return '<option value="' + esc(s.id) + '">' + esc(s.name) + (s.archiviert ? ' (archiviert)' : '') + '</option>';
-        }).join('');
+        const option = function (id, name) {
+            return '<div class="custom-option" role="option" tabindex="-1" data-value="' + esc(id) + '">' + esc(name) + '</div>';
+        };
+        if (liste) {
+            liste.innerHTML = option('', 'Keine Strategie') + sichtbar.map(function (s) {
+                return option(s.id, s.name + (s.archiviert ? ' (archiviert)' : ''));
+            }).join('');
+        }
         const da = sichtbar.some(function (s) { return s.id === wert; });
-        sel.value = da ? wert : '';
+        auswahlSetzen(da ? wert : '');
         const leer = el('pbFormularLeer');
         if (leer) leer.hidden = alle.some(function (s) { return !s.archiviert; });
         if (!da && wert) checklisteZeichnen(null);
+    }
+
+    /** Wert und Anzeige der Auswahl - dieselbe Klappliste wie beim Fehlertyp. */
+    function auswahlSetzen(id) {
+        const sel = el('pbStrategie');
+        if (!sel) return;
+        sel.value = id || '';
+        let text = 'Keine Strategie';
+        document.querySelectorAll('#pbStrategieListe .custom-option').forEach(function (o) {
+            const an = o.getAttribute('data-value') === sel.value;
+            o.classList.toggle('selected', an);
+            o.setAttribute('aria-selected', an ? 'true' : 'false');
+            if (an) text = o.textContent;
+        });
+        const kopf = document.querySelector('.pb-auswahl .custom-select-value');
+        if (kopf) kopf.textContent = text;
+    }
+
+    function auswahlZu() {
+        const a = document.querySelector('.pb-auswahl');
+        if (a) a.classList.remove('open');
     }
 
     function checklisteZeichnen(s, haken) {
@@ -775,8 +826,7 @@
             checklisteZeichnen(s, trade && trade.regelnErfuellt);
         },
         zuruecksetzen: function () {
-            const sel = el('pbStrategie');
-            if (sel) sel.value = '';
+            auswahlSetzen('');
             if (el('pbEarnings')) el('pbEarnings').value = '';
             checklisteZeichnen(null);
             formularAuswahl('');
@@ -835,10 +885,39 @@
             if (k) aktion(k.getAttribute('data-id'), a.getAttribute('data-pb-aktion'));
         });
 
-        const sel = el('pbStrategie');
-        if (sel) sel.addEventListener('change', function () {
-            checklisteZeichnen(strategie(sel.value));
-        });
+        const auswahlListe = el('pbStrategieListe');
+        if (auswahlListe) {
+            const nehmen = function (o) {
+                auswahlSetzen(o.getAttribute('data-value'));
+                auswahlZu();
+                checklisteZeichnen(strategie(el('pbStrategie').value));
+                const kopf = document.querySelector('.pb-auswahl .custom-select-header');
+                if (kopf) kopf.focus();
+            };
+            auswahlListe.addEventListener('click', function (e) {
+                const o = e.target.closest('.custom-option');
+                if (!o) return;
+                e.stopPropagation();
+                nehmen(o);
+            });
+            // Mit der Tastatur: Pfeile wandern, Enter waehlt, Escape schliesst
+            auswahlListe.addEventListener('keydown', function (e) {
+                const o = e.target.closest('.custom-option');
+                if (!o) return;
+                if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); nehmen(o); }
+                else if (e.key === 'ArrowDown' && o.nextElementSibling) { e.preventDefault(); o.nextElementSibling.focus(); }
+                else if (e.key === 'ArrowUp' && o.previousElementSibling) { e.preventDefault(); o.previousElementSibling.focus(); }
+                else if (e.key === 'Escape') { auswahlZu(); document.querySelector('.pb-auswahl .custom-select-header').focus(); }
+            });
+            const kopf = document.querySelector('.pb-auswahl .custom-select-header');
+            if (kopf) kopf.addEventListener('keydown', function (e) {
+                if (e.key !== 'ArrowDown') return;
+                e.preventDefault();
+                document.querySelector('.pb-auswahl').classList.add('open');
+                const z = auswahlListe.querySelector('.selected') || auswahlListe.firstElementChild;
+                if (z) z.focus();
+            });
+        }
         const check = el('pbCheckliste');
         if (check) check.addEventListener('change', standZeichnen);
 
