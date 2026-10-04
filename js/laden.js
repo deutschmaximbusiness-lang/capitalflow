@@ -41,6 +41,30 @@
     }
 
     /**
+     * Neue Adresse fuer ein Bild, dessen Signatur abgelaufen ist.
+     *
+     * Die signierten Adressen landen mit den Trades im Browserspeicher.
+     * Bleibt die App laenger als eine Stunde offen - oder wird beim Start
+     * nicht neu aus der Datenbank geladen -, zeigt das img-Tag nur noch
+     * seinen Alternativtext. Die Oberflaeche ruft das hier auf, sobald
+     * ein Bild nicht laedt. Ergebnisse werden gemerkt, damit dasselbe
+     * Bild nicht bei jedem Neuzeichnen neu signiert wird.
+     */
+    const frisch = {};
+    window.cfBildFrisch = async function (pfad) {
+        if (!pfad || !window.cfDb) return null;
+        const jetzt = Date.now();
+        if (frisch[pfad] && frisch[pfad].bis > jetzt) return frisch[pfad].url;
+        const url = await bildAdresse(pfad);
+        if (url) frisch[pfad] = { url: url, bis: jetzt + 50 * 60 * 1000 };
+        return url;
+    };
+    window.cfBildGemerkt = function (pfad) {
+        const f = pfad && frisch[pfad];
+        return f && f.bis > Date.now() ? f.url : null;
+    };
+
+    /**
      * Zeitstempel aus der Datenbank in das Format, das die Oberflaeche
      * ueberall erwartet: TT.MM.JJJJ.
      *
@@ -171,6 +195,7 @@
             size: parseFloat(z.position_size) || 0,
             thesis: z.thesis || '',
             screenshot: bild,
+            screenshotPfad: z.screenshot_path || null,
             dateOpened: z.opened_at,
             produkt: alsProdukt(z),
         };

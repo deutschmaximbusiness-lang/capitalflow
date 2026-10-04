@@ -1285,3 +1285,35 @@ body {
 /* Richtung so hoch wie die Eingabefelder daneben (47 px) */
 .cf-aufklapp .direction-toggle { align-items: stretch; height: 47px; }
 .cf-aufklapp .direction-toggle .direction-btn { height: 100%; }
+
+/* ================================================ KARTEN GLEICH HOCH (04.10.)
+   In einer Reihe sind alle Karten gleich hoch (Raster), der Inhalt aber
+   nicht. Vorher klebten die Knoepfe direkt unter dem letzten Feld - bei
+   kurzen Karten blieb unten ein Loch, bei langen nicht. Jetzt stehen
+   Hinweis und Knoepfe immer am unteren Rand, die Luecke liegt oben
+   darueber, wo sie nicht auffaellt. */
+.trade-card, .position-card, .setups-card { display: flex !important; flex-direction: column; }
+.trade-card > .trade-nachtragen, .trade-card > .trade-aktionen,
+.position-card > .position-actions, .setups-card > .setups-actions { margin-top: auto !important; }
+.trade-card > .trade-nachtragen + .trade-aktionen { margin-top: 12px !important; }
+.trade-card > .trade-aktionen, .position-card > .position-actions, .setups-card > .setups-actions { padding-top: 14px; }
+
+/* Lange Werte (Notizen aus dem Import) brechen sauber um und stehen
+   rechtsbuendig, mit Abstand zur Beschriftung */
+.trade-detail, .position-detail { gap: 16px; align-items: baseline; }
+.trade-detail-label, .position-detail-label { flex: none; }
+.trade-detail-value, .position-detail-value { text-align: right; min-width: 0; overflow-wrap: anywhere; }
+
+/* Screenshot auf Karten: feste Rahmenhoehe, sauberer Ersatz wenn es fehlt */
+.cf-bild img { display: block; width: 100%; max-height: 220px; object-fit: cover; border-radius: 12px; cursor: zoom-in; }
+.cf-bild img[hidden] { display: none; }
+.cf-bild-fehlt {
+    padding: 14px 16px;
+    border-radius: 12px;
+    border: 1px dashed rgba(255, 255, 255, 0.14);
+    color: var(--cf-text-2);
+    font-size: 12px;
+    text-align: center;
+}
+.cf-bild-fehlt[hidden] { display: none; }
+.trade-card > .cf-bild { margin-top: 14px; }

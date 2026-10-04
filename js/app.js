@@ -1279,6 +1279,51 @@ function formatLeverage(value) {
  * zeigten damit "+€-421". Wer das Vorzeichen in die Vorlage schreibt,
  * schreibt eine Behauptung hin statt eines Werts.
  */
+/**
+ * Screenshot auf einer Karte (Trade, Position, Setup).
+ *
+ * Bilder aus der Datenbank kommen als signierte Adresse, die nach einer
+ * Stunde ablaeuft. Vorher stand dann nur noch der Alternativtext
+ * "Trade Setup" auf der Karte. Jetzt traegt das Bild seinen Speicherpfad
+ * mit; laedt es nicht, holt cfBildLaden() eine neue Adresse. Klappt auch
+ * das nicht, steht dort ein ruhiger Hinweis statt eines kaputten Bildes.
+ */
+function cfBildHtml(adresse, pfad, klasse, alt) {
+    const a = String(adresse || '').trim();
+    const p = String(pfad || '').trim();
+    if (!a && !p) return '';
+    const gemerkt = p && window.cfBildGemerkt ? window.cfBildGemerkt(p) : null;
+    const src = gemerkt || a;
+    return `<div class="${klasse || ''} cf-bild">`
+        + `<img ${src ? `src="${escapeHtml(src)}"` : ''} data-pfad="${escapeHtml(p)}" alt="${escapeHtml(alt || 'Screenshot')}"`
+        + ` loading="lazy" decoding="async" onerror="cfBildLaden(this)" onclick="openScreenshotModal(this.src)">`
+        + `<div class="cf-bild-fehlt" hidden>Screenshot konnte nicht geladen werden.</div></div>`;
+}
+
+async function cfBildLaden(img) {
+    if (!img || img.dataset.versucht) { cfBildFehlt(img); return; }
+    img.dataset.versucht = '1';
+    const pfad = img.dataset.pfad;
+    const neu = pfad && window.cfBildFrisch ? await window.cfBildFrisch(pfad) : null;
+    if (neu && neu !== img.src) img.src = neu;   // laedt es wieder nicht: onerror -> cfBildFehlt
+    else cfBildFehlt(img);
+}
+
+function cfBildFehlt(img) {
+    if (!img) return;
+    img.hidden = true;
+    const h = img.parentElement && img.parentElement.querySelector('.cf-bild-fehlt');
+    if (h) h.hidden = false;
+}
+
+// Bilder ohne Adresse, aber mit Pfad (z.B. aus einem alten Zwischenstand):
+// gleich nach dem Einfuegen eine Adresse holen.
+document.addEventListener('DOMContentLoaded', function () {
+    new MutationObserver(function () {
+        document.querySelectorAll('.cf-bild img:not([src]):not([data-versucht])').forEach(cfBildLaden);
+    }).observe(document.body, { childList: true, subtree: true });
+});
+
 /** Eingeklappte Formulare (js/aufklapp.js) - ohne die Datei kein Fehler. */
 function cfKlapp(was, id, arg) {
     if (window.cfAufklapp && typeof window.cfAufklapp[was] === 'function') {
@@ -1525,7 +1570,7 @@ function loadTrades() {
                 </div>
             </div>
             <div style="margin-bottom: 15px; margin-top: 10px;">
-                <span class="setup-type-badge ${getSetupTypeBadgeClass(trade.setupType || 'Sonstiges')}">${trade.setupType || 'Sonstiges'}</span>
+                <span class="setup-type-badge ${getSetupTypeBadgeClass(trade.setupType || 'Sonstiges')}">${escapeHtml(trade.setupType || 'Sonstiges')}</span>
             </div>
             <div class="trade-detail">
                 <span class="trade-detail-label">Kauf / Verkauf</span>
@@ -1533,7 +1578,7 @@ function loadTrades() {
             </div>
             <div class="trade-detail">
                 <span class="trade-detail-label">Grund</span>
-                <span class="trade-detail-value">${trade.reason || '-'}</span>
+                <span class="trade-detail-value">${escapeHtml(trade.reason || '–')}</span>
             </div>
             <div class="trade-detail">
                 <span class="trade-detail-label">Positionsgröße</span>
@@ -1545,14 +1590,14 @@ function loadTrades() {
             </div>
             <div class="trade-detail">
                 <span class="trade-detail-label">Fehler</span>
-                <span class="trade-detail-value">${trade.errorType || 'Keine'}</span>
+                <span class="trade-detail-value">${escapeHtml(trade.errorType || 'Keine')}</span>
             </div>
             <div class="trade-detail">
                 <span class="trade-detail-label">Datum</span>
                 <span class="trade-detail-value">${trade.date}</span>
             </div>
             ${trade.notes ? `<div class="trade-detail"><span class="trade-detail-label">Notizen</span><span class="trade-detail-value">${escapeHtml(trade.notes)}</span></div>` : ''}
-            ${trade.screenshot && trade.screenshot.trim() ? `<div class="trade-screenshot"><img src="${trade.screenshot}" alt="Trade Setup" onclick="openScreenshotModal('${trade.screenshot}')" style="cursor: pointer;"></div>` : ''}
+            ${cfBildHtml(trade.screenshot, trade.screenshotPfad, 'trade-screenshot', 'Screenshot zu ' + trade.ticker)}
             ${nachtragenHinweis(trade)}
             <div class="trade-aktionen">
                 <button class="trade-edit" onclick="tradeBearbeiten('${trade.id}')">Bearbeiten</button>
@@ -3216,11 +3261,7 @@ function loadPositions() {
                     Keine These hinterlegt — kannst du nachtragen.
                 </div>`}
                 
-                ${pos.screenshot ? `
-                    <div class="position-screenshot">
-                        <img src="${pos.screenshot}" alt="Position Setup" onclick="openScreenshotModal(this.src)">
-                    </div>
-                ` : ''}
+                ${cfBildHtml(pos.screenshot, pos.screenshotPfad, 'position-screenshot', 'Screenshot zu ' + pos.ticker)}
                 
                 <div class="position-actions">
                     <button class="position-close-btn" onclick="closePosition(${idx})">Position schließen</button>
@@ -3623,11 +3664,7 @@ function displayClosedPositions() {
                     <strong>Grund zum Schließen:</strong> ${escapeHtml(pos.exitReason)}
                 </div>
                 
-                ${pos.screenshot ? `
-                    <div class="position-screenshot">
-                        <img src="${pos.screenshot}" alt="Position Setup" onclick="openScreenshotModal(this.src)">
-                    </div>
-                ` : ''}
+                ${cfBildHtml(pos.screenshot, pos.screenshotPfad, 'position-screenshot', 'Screenshot zu ' + pos.ticker)}
                 
                 <div class="position-actions">
                     <button class="position-delete-btn" onclick="deleteClosedPosition(${idx})">Löschen</button>
@@ -4879,7 +4916,7 @@ function loadSetups() {
 
             ${w.thesis ? `<div class="setups-thesis">${escapeHtml(w.thesis)}</div>` : ''}
 
-            ${w.screenshot ? `<div class="position-screenshot"><img src="${w.screenshot}" alt="Setup" onclick="openScreenshotModal(this.src)"></div>` : ''}
+            ${cfBildHtml(w.screenshot, w.screenshotPfad, 'position-screenshot', 'Screenshot zu ' + w.ticker)}
 
             ${erledigt ? '' : `<div class="setups-status-row">${statusBtns}</div>`}
 
