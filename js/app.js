@@ -908,12 +908,16 @@ function handleTabChange(tabId) {
 function setupFilterButtons() {
     // Event Delegation: funktioniert auch für dynamisch hinzugefügte Buttons
     document.addEventListener('click', (e) => {
-        if (e.target.classList.contains('filter-btn')) {
-            // Entferne active von allen Buttons
-            document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
-            // Setze current Filter und add active
-            currentFilter = e.target.getAttribute('data-filter');
-            e.target.classList.add('active');
+        // Nur die Trade-Filter (Alle / Hebel / Normal). Kalender und Setups
+        // tragen dieselbe Klasse fuer das Aussehen - vorher setzte ein Klick
+        // auf "Monatlich" oder "Verworfen" den Trade-Filter auf null und nahm
+        // allen Filterleisten der App die Markierung.
+        const fb = e.target.closest && e.target.closest('.filter-btn[data-filter]');
+        if (fb) {
+            currentFilter = fb.getAttribute('data-filter');
+            // Alle Leisten zeigen denselben Filter
+            document.querySelectorAll('.filter-btn[data-filter]').forEach(b =>
+                b.classList.toggle('active', b.getAttribute('data-filter') === currentFilter));
             // Reload je nach aktuellem Tab
             loadTrades();
             if (currentTab === 'dashboard') loadDashboard();
@@ -1667,127 +1671,165 @@ function confirmDeleteTrade() {
 // ===== CALENDAR =====
 let currentCalendarView = 'daily';
 
+// ===== P&L-KALENDER =====
+//
+// Ein echtes Monatsblatt, Montag bis Sonntag: Tageszahl oben rechts,
+// Ergebnis und Anzahl Trades (mit R, wo ein Stop bekannt ist) unten links,
+// gruener oder roter Schein von oben. Mit Pfeilen durch die Monate.
+// Tage nach heute sind gedimmt - sie gehoeren zum Blatt, haben aber noch
+// nichts zu sagen. Die Monatsansicht ist dasselbe im Jahresblatt.
+const cfKal = { jahr: new Date().getFullYear(), monat: new Date().getMonth() };
+const CF_MONATE = ['Januar', 'Februar', 'März', 'April', 'Mai', 'Juni', 'Juli', 'August', 'September', 'Oktober', 'November', 'Dezember'];
+
 function loadCalendar() {
     const calendarContent = document.getElementById('calendarContent');
     const trades = JSON.parse(localStorage.getItem('trades')) || [];
-    
-    // Setup event listeners für Buttons
+
     const calendarBtns = document.querySelectorAll('.calendar-btn');
     calendarBtns.forEach(btn => {
+        if (btn.dataset.gebunden) return;     // sonst haengt jeder Aufruf einen Handler mehr an
+        btn.dataset.gebunden = '1';
         btn.addEventListener('click', () => {
-            const view = btn.getAttribute('data-view');
-            currentCalendarView = view;
-            
-            // Aktiven Button umschalten - Styling kommt aus .filter-btn/.active
-            calendarBtns.forEach(b => b.classList.remove('active'));
-            btn.classList.add('active');
-            
-            // Render new calendar
-            if (view === 'daily') renderDailyCalendar(trades, calendarContent);
-            else if (view === 'monthly') renderMonthlyCalendar(trades, calendarContent);
-            updateCalendarStats(trades);
+            currentCalendarView = btn.getAttribute('data-view');
+            calendarBtns.forEach(b => b.classList.toggle('active', b === btn));
+            loadCalendar();
         });
     });
-    
-    // Render initial (daily)
-    renderDailyCalendar(trades, calendarContent);
+    calendarBtns.forEach(b => b.classList.toggle('active', b.getAttribute('data-view') === currentCalendarView));
+
+    if (currentCalendarView === 'monthly') renderMonthlyCalendar(trades, calendarContent);
+    else renderDailyCalendar(trades, calendarContent);
     updateCalendarStats(trades);
 }
 
-function renderDailyCalendar(trades, container) {
-    const groupedByDate = {};
-    trades.forEach(t => {
-        groupedByDate[t.date] = (groupedByDate[t.date] || []).concat(t);
-    });
-    
-    let allDates = [];
-    const today = new Date();
-    const heuteEnde = new Date(today.getFullYear(), today.getMonth(), today.getDate());
-
-    // Gezeigt werden die letzten 30 Tage bis heute - nicht mehr der
-    // Kalendermonat des juengsten Trades. Der zeigte am Monatsanfang zwei
-    // Kacheln und liess die Vorwoche verschwinden; davor war der halbe
-    // Monat graue Zukunftstage, die nichts bedeuten konnten.
-    // Liegt der juengste Trade laenger zurueck, enden die 30 Tage
-    // bei ihm statt bei heute. Ein Tag mit Trades bleibt immer sichtbar,
-    // auch mit vertipptem Datum in der Zukunft.
-    const TAGE = 30;
-    const gueltig = Object.keys(groupedByDate)
-        .map(d => new Date(d.split('.').reverse().join('-') + 'T00:00:00'))
-        .filter(d => !isNaN(d.getTime()));
-    const juengster = gueltig.length ? new Date(Math.max(...gueltig)) : heuteEnde;
-    const grenze = new Date(heuteEnde); grenze.setDate(grenze.getDate() - (TAGE - 1));
-    const endDate = juengster < grenze ? juengster : heuteEnde;
-    const startDate = new Date(endDate); startDate.setDate(startDate.getDate() - (TAGE - 1));
-    const schluessel = (d) => `${String(d.getDate()).padStart(2, '0')}.${String(d.getMonth() + 1).padStart(2, '0')}.${d.getFullYear()}`;
-    for (let d = new Date(startDate); d <= endDate; d.setDate(d.getDate() + 1)) {
-        allDates.push(schluessel(d));
+function cfKalBlaettern(schritt) {
+    if (currentCalendarView === 'monthly') {
+        cfKal.jahr += schritt;
+    } else {
+        const d = new Date(cfKal.jahr, cfKal.monat + schritt, 1);
+        cfKal.jahr = d.getFullYear(); cfKal.monat = d.getMonth();
     }
-    gueltig.forEach(d => {
-        if (d > endDate) allDates.push(schluessel(d));
+    loadCalendar();
+}
+
+function cfKalHeute() {
+    const h = new Date();
+    cfKal.jahr = h.getFullYear(); cfKal.monat = h.getMonth();
+    loadCalendar();
+}
+
+/** Ergebnis, Anzahl und R einer Gruppe von Trades. */
+function cfKalSumme(liste) {
+    const pnl = liste.reduce((s, t) => s + (parseFloat(t.pnl) || 0), 0);
+    const mitRisiko = liste.filter(t => parseFloat(t.risk) > 0);
+    const r = mitRisiko.length ? mitRisiko.reduce((s, t) => s + (parseFloat(t.pnl) || 0) / parseFloat(t.risk), 0) : null;
+    return { pnl, anzahl: liste.length, r };
+}
+
+function cfKalZelle(opt) {
+    // opt: { zahl, titel, summe, zukunft, heute, leer, aria }
+    if (opt.leer) return '<div class="kal-tag kal-leer" aria-hidden="true"></div>';
+    const s = opt.summe;
+    const art = !s || !s.anzahl ? 'ohne' : (s.pnl > 0 ? 'gewinn' : s.pnl < 0 ? 'verlust' : 'null');
+    const klassen = ['kal-tag', 'kal-' + art];
+    if (opt.zukunft) klassen.push('kal-zukunft');
+    if (opt.heute) klassen.push('kal-heute');
+    const inhalt = s && s.anzahl
+        ? `<div class="kal-wert">${cfGeld(s.pnl, { stellen: 0, vorzeichen: true })}</div>`
+          + `<div class="kal-info">${s.anzahl} ${s.anzahl === 1 ? 'Trade' : 'Trades'}${s.r !== null ? ' · ' + cfZahl(s.r, Math.abs(s.r) < 10 ? 2 : 1).replace(/,?0+$/, '') + 'R' : ''}</div>`
+        : '';
+    return `<div class="${klassen.join(' ')}" title="${escapeHtml(opt.titel || '')}"${opt.aria ? ` aria-label="${escapeHtml(opt.aria)}"` : ''}>`
+        + `<span class="kal-zahl">${opt.zahl}</span>${inhalt}</div>`;
+}
+
+function cfKalKopf(titel, zeitraum, summe, zurueckOk, vorOk) {
+    return `
+        <div class="kal-kopf">
+            <div class="kal-kopf-links">
+                <svg class="kal-icon" viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path fill="currentColor" d="M19 4h-1V2h-2v2H8V2H6v2H5c-1.11 0-2 .9-2 2v14a2 2 0 0 0 2 2h14c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 16H5V9h14v11zM7 11h5v5H7z"/></svg>
+                <div>
+                    <div class="kal-titel">${escapeHtml(titel)}</div>
+                    <div class="kal-summe">${summe.anzahl
+                        ? `<b style="color:${farbeFuer(summe.pnl)}">${cfGeld(summe.pnl, { vorzeichen: true })}</b> · ${summe.anzahl} ${summe.anzahl === 1 ? 'Trade' : 'Trades'} · ${summe.tage} ${summe.tage === 1 ? 'Handelstag' : 'Handelstage'}`
+                        : 'Keine Trades in diesem Zeitraum'}</div>
+                </div>
+            </div>
+            <div class="kal-nav" role="group" aria-label="Zeitraum wechseln">
+                <button type="button" class="kal-pfeil" onclick="cfKalBlaettern(-1)" aria-label="Zurück"${zurueckOk ? '' : ' disabled'}>
+                    <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path fill="currentColor" d="M15.41 7.41 14 6l-6 6 6 6 1.41-1.41L10.83 12z"/></svg></button>
+                <button type="button" class="kal-monat" onclick="cfKalHeute()" title="Zurück zu heute">${escapeHtml(zeitraum)}</button>
+                <button type="button" class="kal-pfeil" onclick="cfKalBlaettern(1)" aria-label="Weiter"${vorOk ? '' : ' disabled'}>
+                    <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path fill="currentColor" d="M8.59 16.59 10 18l6-6-6-6-1.41 1.41L13.17 12z"/></svg></button>
+            </div>
+        </div>`;
+}
+
+function cfKalDatum(s) {
+    const [d, m, j] = String(s || '').split('.').map(Number);
+    return (d && m && j) ? new Date(j, m - 1, d) : null;
+}
+
+function renderDailyCalendar(trades, container) {
+    const jeTag = {};
+    let fruehester = null, spaetester = null;
+    trades.forEach(t => {
+        const d = cfKalDatum(t.date);
+        if (!d) return;
+        (jeTag[t.date] = jeTag[t.date] || []).push(t);
+        if (!fruehester || d < fruehester) fruehester = d;
+        if (!spaetester || d > spaetester) spaetester = d;
     });
 
-    // Neuester Tag zuerst, also oben links.
-    const sortedDates = allDates.sort((a, b) => new Date(b.split('.').reverse().join('-')) - new Date(a.split('.').reverse().join('-')));
-    
-    // Berechne Stats
-    const monthTrades = sortedDates.flatMap(d => groupedByDate[d] || []);
-    const totalPnL = monthTrades.reduce((sum, t) => sum + t.pnl, 0);
-    const tradingDays = sortedDates.filter(d => groupedByDate[d]?.length > 0).length;
-    const wins = monthTrades.filter(t => t.pnl > 0).length;
-    const winRate = monthTrades.length > 0 ? ((wins / monthTrades.length) * 100).toFixed(1) : 0;
-    const avgPerDay = tradingDays > 0 ? (totalPnL / tradingDays).toFixed(2) : 0;
-    
-    // Beste & Schlechteste Tage finden
-    let bestDay = { date: '-', pnl: 0 };
-    let worstDay = { date: '-', pnl: 0 };
-    sortedDates.forEach(date => {
-        const dayTrades = groupedByDate[date] || [];
-        const dayPnL = dayTrades.reduce((sum, t) => sum + t.pnl, 0);
-        if (dayTrades.length > 0) {
-            if (dayPnL > bestDay.pnl) bestDay = { date, pnl: dayPnL };
-            if (dayPnL < worstDay.pnl) worstDay = { date, pnl: dayPnL };
-        }
-    });
-    
-    // HTML
-    const html = `
-        <!-- Legende -->
-        <div style="display: flex; gap: 20px; margin-bottom: 30px; padding: 16px; background: rgba(138, 134, 160, 0.1); border-radius: 8px;">
-            <div style="display: flex; align-items: center; gap: 8px;">
-                <div style="width: 24px; height: 24px; background: #34D399; border-radius: 6px;"></div>
-                <span style="color: #D5D2E2; font-size: 13px;">Gewinn</span>
+    const heute = new Date(); heute.setHours(0, 0, 0, 0);
+    // Beim ersten Oeffnen: der laufende Monat - es sei denn, dort gibt es
+    // noch nichts und die letzten Trades liegen frueher. Dann deren Monat,
+    // statt mit einem leeren Blatt zu begruessen.
+    if (!cfKal.gesetzt) {
+        cfKal.gesetzt = true;
+        const diesen = Object.keys(jeTag).some(k => { const d = cfKalDatum(k); return d && d.getFullYear() === heute.getFullYear() && d.getMonth() === heute.getMonth(); });
+        if (!diesen && spaetester && spaetester < heute) { cfKal.jahr = spaetester.getFullYear(); cfKal.monat = spaetester.getMonth(); }
+    }
+    const { jahr, monat } = cfKal;
+    const erster = new Date(jahr, monat, 1);
+    const tageImMonat = new Date(jahr, monat + 1, 0).getDate();
+    const versatz = (erster.getDay() + 6) % 7;   // Montag zuerst
+
+    const zellen = [];
+    for (let i = 0; i < versatz; i++) zellen.push(cfKalZelle({ leer: true }));
+    const imMonat = [];
+    for (let tag = 1; tag <= tageImMonat; tag++) {
+        const d = new Date(jahr, monat, tag);
+        const key = `${String(tag).padStart(2, '0')}.${String(monat + 1).padStart(2, '0')}.${jahr}`;
+        const liste = jeTag[key] || [];
+        imMonat.push(...liste);
+        const summe = cfKalSumme(liste);
+        const titel = liste.length
+            ? key + '\n' + liste.map(t => `${t.ticker}: ${cfGeld(t.pnl, { vorzeichen: true })}`).join('\n')
+            : key + ': keine Trades';
+        zellen.push(cfKalZelle({
+            zahl: tag, summe, titel,
+            zukunft: d > heute && !liste.length,
+            heute: d.getTime() === heute.getTime(),
+            aria: liste.length ? `${tag}. ${CF_MONATE[monat]}: ${cfGeld(summe.pnl, { vorzeichen: true })}, ${liste.length} ${liste.length === 1 ? 'Trade' : 'Trades'}` : null,
+        }));
+    }
+    while (zellen.length % 7) zellen.push(cfKalZelle({ leer: true }));
+
+    const gesamt = cfKalSumme(imMonat);
+    gesamt.tage = new Set(imMonat.map(t => t.date)).size;
+    const grenzeVor = new Date(Math.max(heute.getTime(), spaetester ? spaetester.getTime() : 0));
+    const vorOk = new Date(jahr, monat + 1, 1) <= grenzeVor;
+    const zurueckOk = !fruehester || new Date(jahr, monat, 1) > new Date(fruehester.getFullYear(), fruehester.getMonth(), 1);
+
+    container.className = '';
+    container.innerHTML = `
+        <section class="kal-blatt">
+            ${cfKalKopf('Monatsergebnis', CF_MONATE[monat] + ' ' + jahr, gesamt, zurueckOk, vorOk)}
+            <div class="kal-raster kal-raster-tage" role="grid">
+                ${['Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa', 'So'].map(t => `<div class="kal-wochentag">${t}</div>`).join('')}
+                ${zellen.join('')}
             </div>
-            <div style="display: flex; align-items: center; gap: 8px;">
-                <div style="width: 24px; height: 24px; background: #FB7185; border-radius: 6px;"></div>
-                <span style="color: #D5D2E2; font-size: 13px;">Verlust</span>
-            </div>
-            <div style="display: flex; align-items: center; gap: 8px;">
-                <div style="width: 24px; height: 24px; background: #8A86A0; border-radius: 6px;"></div>
-                <span style="color: #D5D2E2; font-size: 13px;">Keine Trades</span>
-            </div>
-        </div>
-        
-        <!-- Calendar Grid -->
-        <div class="calendar-grid-daily">
-            ${sortedDates.map(date => {
-                const dayTrades = groupedByDate[date] || [];
-                const dayPnL = dayTrades.reduce((sum, t) => sum + t.pnl, 0);
-                const status = dayTrades.length === 0 ? 'neutral' : (dayPnL > 0 ? 'profit' : 'loss');
-                const isSpecial = (bestDay.date === date) ? 'style="box-shadow: 0 0 20px rgba(52, 211, 153, 0.6);"' : (worstDay.date === date) ? 'style="box-shadow: 0 0 20px rgba(251, 113, 133, 0.6);"' : '';
-                
-                return `
-                    <div class="calendar-day ${status}" ${isSpecial} title="${date}: ${dayTrades.length} Trades, ${cfGeld(dayPnL, { vorzeichen: true })}">
-                        <div class="calendar-day-header">${date}</div>
-                        <div class="calendar-day-pnl">${dayTrades.length > 0 ? cfGeld(dayPnL, { vorzeichen: true, stellen: 0 }) : '—'}</div>
-                        <div class="calendar-day-trades">${dayTrades.length} T.</div>
-                    </div>
-                `;
-            }).join('')}
-        </div>
-    `;
-    
-    container.innerHTML = html;
+        </section>`;
 }
 
 function renderWeeklyCalendar(trades, container) {
@@ -1848,101 +1890,48 @@ function renderWeeklyCalendar(trades, container) {
 }
 
 function renderMonthlyCalendar(trades, container) {
-    const groupedByMonth = {};
-    
-    // Gruppiere Trades nach Monat
+    const jeMonat = {};
+    let fruehester = null, spaetester = null;
     trades.forEach(t => {
-        const [day, month, year] = t.date.split('.');
-        const monthKey = `${year}-${String(month).padStart(2, '0')}`;
-        groupedByMonth[monthKey] = (groupedByMonth[monthKey] || []).concat(t);
+        const d = cfKalDatum(t.date);
+        if (!d) return;
+        const k = d.getFullYear() + '-' + d.getMonth();
+        (jeMonat[k] = jeMonat[k] || []).push(t);
+        if (!fruehester || d < fruehester) fruehester = d;
+        if (!spaetester || d > spaetester) spaetester = d;
     });
-    
-    const today = new Date();
-    const currentYear = today.getFullYear();
-    
-    // Monate bis einschliesslich heute - keine leeren Zukunftsmonate.
-    // Zurueck bis Januar oder bis zum fruehesten Trade, je nachdem was
-    // weiter zurueckliegt; vorher fielen Trades aus dem Vorjahr einfach
-    // heraus. Monate mit Trades bleiben immer drin.
-    const heuteKey = `${currentYear}-${String(today.getMonth() + 1).padStart(2, '0')}`;
-    const mitTrades = Object.keys(groupedByMonth).filter(k => /^\d{4}-\d{2}$/.test(k)).sort();
-    let vonKey = `${currentYear}-01`;
-    if (mitTrades.length && mitTrades[0] < vonKey) vonKey = mitTrades[0];
-    const allMonths = [];
-    let [jj, mm] = vonKey.split('-').map(Number);
-    while (`${jj}-${String(mm).padStart(2, '0')}` <= heuteKey) {
-        allMonths.push(`${jj}-${String(mm).padStart(2, '0')}`);
-        mm++; if (mm > 12) { mm = 1; jj++; }
+    const heute = new Date();
+    const jahr = cfKal.jahr;
+    const zellen = [];
+    const imJahr = [];
+    for (let m = 0; m < 12; m++) {
+        const liste = jeMonat[jahr + '-' + m] || [];
+        imJahr.push(...liste);
+        const summe = cfKalSumme(liste);
+        const zukunft = new Date(jahr, m, 1) > heute && !liste.length;
+        zellen.push(cfKalZelle({
+            zahl: CF_MONATE[m].slice(0, 3), summe, zukunft,
+            heute: jahr === heute.getFullYear() && m === heute.getMonth(),
+            titel: CF_MONATE[m] + ' ' + jahr + (liste.length ? ': ' + cfGeld(summe.pnl, { vorzeichen: true }) : ': keine Trades'),
+        }).replace('class="kal-tag', 'data-monat="' + m + '" onclick="cfKalZuMonat(' + m + ')" class="kal-tag kal-klickbar'));
     }
-    mitTrades.forEach(k => { if (!allMonths.includes(k)) allMonths.push(k); });
+    const gesamt = cfKalSumme(imJahr);
+    gesamt.tage = new Set(imJahr.map(t => t.date)).size;
+    const vorOk = jahr < Math.max(heute.getFullYear(), spaetester ? spaetester.getFullYear() : 0);
+    const zurueckOk = !fruehester || jahr > fruehester.getFullYear();
+    container.className = '';
+    container.innerHTML = `
+        <section class="kal-blatt">
+            ${cfKalKopf('Jahresergebnis', String(jahr), gesamt, zurueckOk, vorOk)}
+            <div class="kal-raster kal-raster-monate">${zellen.join('')}</div>
+        </section>`;
+}
 
-    // Neuester Monat zuerst, also oben links.
-    allMonths.sort().reverse();
-    
-    // Berechne Stats
-    const allTrades = trades;
-    const totalPnL = allTrades.reduce((sum, t) => sum + t.pnl, 0);
-    const tradingMonths = allMonths.filter(m => groupedByMonth[m]?.length > 0).length;
-    const wins = allTrades.filter(t => t.pnl > 0).length;
-    const winRate = allTrades.length > 0 ? ((wins / allTrades.length) * 100).toFixed(1) : 0;
-    const avgPerMonth = tradingMonths > 0 ? (totalPnL / tradingMonths).toFixed(2) : 0;
-    
-    // Beste & Schlechteste Monate finden
-    let bestMonth = { key: '-', pnl: 0 };
-    let worstMonth = { key: '-', pnl: 0 };
-    allMonths.forEach(monthKey => {
-        const monthTrades = groupedByMonth[monthKey] || [];
-        const monthPnL = monthTrades.reduce((sum, t) => sum + t.pnl, 0);
-        if (monthTrades.length > 0) {
-            if (monthPnL > bestMonth.pnl) bestMonth = { key: monthKey, pnl: monthPnL };
-            if (monthPnL < worstMonth.pnl) worstMonth = { key: monthKey, pnl: monthPnL };
-        }
-    });
-    
-    const monthNames = ['Jan', 'Feb', 'Mär', 'Apr', 'Mai', 'Jun', 'Jul', 'Aug', 'Sep', 'Okt', 'Nov', 'Dez'];
-    const getMonthName = (monthKey) => {
-        const [y, m] = monthKey.split('-');
-        return `${monthNames[parseInt(m) - 1]} ${y}`;
-    };
-    
-    // HTML
-    const html = `
-        <!-- Legende -->
-        <div style="display: flex; gap: 20px; margin-bottom: 30px; padding: 16px; background: rgba(138, 134, 160, 0.1); border-radius: 8px;">
-            <div style="display: flex; align-items: center; gap: 8px;">
-                <div style="width: 24px; height: 24px; background: #34D399; border-radius: 6px;"></div>
-                <span style="color: #D5D2E2; font-size: 13px;">Gewinn</span>
-            </div>
-            <div style="display: flex; align-items: center; gap: 8px;">
-                <div style="width: 24px; height: 24px; background: #FB7185; border-radius: 6px;"></div>
-                <span style="color: #D5D2E2; font-size: 13px;">Verlust</span>
-            </div>
-            <div style="display: flex; align-items: center; gap: 8px;">
-                <div style="width: 24px; height: 24px; background: #8A86A0; border-radius: 6px;"></div>
-                <span style="color: #D5D2E2; font-size: 13px;">Keine Trades</span>
-            </div>
-        </div>
-        
-        <!-- Calendar Grid -->
-        <div class="calendar-grid-monthly">
-            ${allMonths.map(monthKey => {
-                const monthTrades = groupedByMonth[monthKey] || [];
-                const monthPnL = monthTrades.reduce((sum, t) => sum + t.pnl, 0);
-                const status = monthTrades.length === 0 ? 'neutral' : (monthPnL > 0 ? 'profit' : 'loss');
-                const isSpecial = (bestMonth.key === monthKey) ? 'style="box-shadow: 0 0 20px rgba(52, 211, 153, 0.6);"' : (worstMonth.key === monthKey) ? 'style="box-shadow: 0 0 20px rgba(251, 113, 133, 0.6);"' : '';
-                
-                return `
-                    <div class="calendar-day ${status}" ${isSpecial} title="${getMonthName(monthKey)}: ${monthTrades.length} Trades, ${cfGeld(monthPnL, { vorzeichen: true })}">
-                        <div class="calendar-day-header">${getMonthName(monthKey)}</div>
-                        <div class="calendar-day-pnl">${monthTrades.length > 0 ? cfGeld(monthPnL, { vorzeichen: true, stellen: 0 }) : '—'}</div>
-                        <div class="calendar-day-trades">${monthTrades.length} T.</div>
-                    </div>
-                `;
-            }).join('')}
-        </div>
-    `;
-    
-    container.innerHTML = html;
+/** Aus der Jahresansicht in den Monat springen. */
+function cfKalZuMonat(m) {
+    cfKal.monat = m;
+    currentCalendarView = 'daily';
+    loadCalendar();
 }
 
 function getWeekNumber(d) {
@@ -2725,12 +2714,24 @@ function loadAnalytics() {
 
         <div class="ana-reihe ana-eins">
             <!-- LEFT: Equity Curve -->
-            <div class="dashboard-section" style="background: linear-gradient(135deg, rgba(124, 92, 240, 0.06) 0%, rgba(124, 92, 240, 0.025) 100%); border: 1px solid rgba(124, 92, 240, 0.15); border-radius: 16px; padding: 24px;">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
-                    <div style="font-size: 14px; font-weight: 600; color: #D5D2E2;">Equity-Kurve</div>
+            <div class="dashboard-section ana-equity" style="padding: 24px;">
+                <div class="ana-equity-kopf">
+                    <div>
+                        <div class="ana-equity-titel">Equity-Kurve</div>
+                        <div class="ana-equity-zahlen" id="equityZahlen"></div>
+                    </div>
+                    <div class="ana-zeitraum" role="group" aria-label="Zeitraum der Equity-Kurve">
+                        ${[['alle', 'Alles'], ['90', '3 Monate'], ['30', '1 Monat']].map(([w, t]) =>
+                            `<button type="button" class="ana-zeit-btn${cfEquityZeit === w ? ' aktiv' : ''}" data-zeit="${w}" aria-pressed="${cfEquityZeit === w}" onclick="cfEquityZeitraum('${w}')">${t}</button>`).join('')}
+                    </div>
                 </div>
-                <p style="color: #A9A5BD; font-size: 12px; margin-bottom: 16px;">Dein Ergebnis Trade für Trade aufaddiert. Steigt die Linie, arbeitet dein Vorgehen für dich.</p>
-                <div class="cf-diagramm" style="height: 300px;"><canvas id="equityChart"></canvas></div>
+                <div class="cf-legende ana-equity-legende">
+                    <span><i class="cf-legende-linie"></i>Kontostand aus Trades</span>
+                    <span><i class="cf-legende-linie cf-legende-linie--2 ana-hoch-linie"></i>Bisheriger Höchststand</span>
+                    <span><i class="ana-punkt gewinn"></i>Gewinn-Trade</span>
+                    <span><i class="ana-punkt verlust"></i>Verlust-Trade</span>
+                </div>
+                <div class="cf-diagramm" style="height: 320px;"><canvas id="equityChart"></canvas></div>
             </div>
         </div>
 
@@ -2908,60 +2909,188 @@ function loadAnalytics() {
     renderAnalyticsCharts(trades, stats, wins, losses, behavioralScore);
 }
 
-function renderAnalyticsCharts(trades, stats, wins, losses, behavioralScore) {
-    // Equity Curve Chart (Line Chart)
+// ===== EQUITY-KURVE =====
+//
+// Vorher: Trades in Speicherreihenfolge (nicht nach Datum), x-Achse
+// "1, 2, 3 ...", y-Achse ohne Einheit, geglaettete Linie (tension 0.4),
+// die zwischen zwei Trades Hoch- und Tiefpunkte erfand, die es nie gab.
+// Schoen, aber nicht ablesbar.
+//
+// Jetzt: nach Datum sortiert, gerade Linie zwischen den echten Staenden,
+// Datum auf der x-Achse, Euro auf der y-Achse, Nulllinie betont, Flaeche
+// gruen ueber und rot unter null, Punkt je Trade in Gewinn-/Verlustfarbe,
+// gestrichelt der bisherige Hoechststand (Abstand dazu = Rueckgang).
+// Fahren mit der Maus: senkrechte Linie, Tooltip mit Trade, Ergebnis,
+// Stand und Abstand zum Hoch. Zeitraum waehlbar.
+let cfEquityZeit = 'alle';
+let cfEquityLetzte = [];
+
+function cfEquityZeitraum(w) {
+    cfEquityZeit = w;
+    document.querySelectorAll('#analytics .ana-zeit-btn').forEach(b => {
+        const an = b.dataset.zeit === w;
+        b.classList.toggle('aktiv', an);
+        b.setAttribute('aria-pressed', String(an));
+    });
+    cfEquityZeichnen(cfEquityLetzte);
+}
+
+function cfEquityPunkte(trades) {
+    const zeit = (t) => {
+        const [d, m, j] = String(t.date || '').split('.');
+        return new Date(`${j}-${m}-${d}T12:00:00`).getTime() || 0;
+    };
+    const sortiert = trades.map((t, i) => ({ t, i }))
+        .sort((a, b) => zeit(a.t) - zeit(b.t) || a.i - b.i).map(x => x.t);
+    let stand = 0, hoch = 0;
+    return sortiert.map(t => {
+        const pnl = parseFloat(t.pnl) || 0;
+        stand += pnl;
+        hoch = Math.max(hoch, stand);
+        return { zeit: zeit(t), datum: t.date || '', ticker: t.ticker || '', pnl, stand, hoch };
+    });
+}
+
+function cfEquityZeichnen(trades) {
+    cfEquityLetzte = trades || [];
+    const leinwand = document.getElementById('equityChart');
+    if (!leinwand) return;
     if (window.equityChartInstance) window.equityChartInstance.destroy();
-    const equityCanvas = document.getElementById('equityChart');
-    
-    if (equityCanvas) {
-        // Cumulative P&L
-        let cumulative = 0;
-        const cumulativeData = trades.map(t => {
-            cumulative += t.pnl;
-            return cumulative;
-        });
-        
-        const labels = trades.map((t, i) => i + 1);
-        
-        const ctx = equityCanvas.getContext('2d');
-        window.equityChartInstance = new Chart(ctx, {
-            type: 'line',
-            data: {
-                labels,
-                datasets: [{
-                    label: 'Equity',
-                    data: cumulativeData,
-                    borderColor: '#7C5CF0',
-                    backgroundColor: 'rgba(124, 92, 240, 0.08)',
-                    borderWidth: 2,
-                    fill: true,
-                    pointRadius: 0,
-                    pointHoverRadius: 6,
-                    tension: 0.4
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                cutout: '68%',
-                plugins: {
-                    legend: { display: false },
-                    tooltip: { enabled: true }
-                },
-                scales: {
-                    y: {
-                        ticks: { color: '#A9A5BD', font: { size: 10 } },
-                        grid: { color: 'rgba(124, 92, 240, 0.075)' }
-                    },
-                    x: {
-                        ticks: { color: '#A9A5BD', font: { size: 9 } },
-                        grid: { display: false }
-                    }
-                }
-            }
-        });
+    window.equityChartInstance = null;
+
+    const alle = cfEquityPunkte(cfEquityLetzte);
+    let punkte = alle, start = { stand: 0, hoch: 0, datum: 'Start' };
+    if (cfEquityZeit !== 'alle' && alle.length) {
+        const grenze = Date.now() - parseInt(cfEquityZeit, 10) * 86400000;
+        const erster = alle.findIndex(p => p.zeit >= grenze);
+        punkte = erster < 0 ? [] : alle.slice(erster);
+        if (erster > 0) start = { stand: alle[erster - 1].stand, hoch: alle[erster - 1].hoch, datum: 'Vorher' };
     }
-    
+
+    const zahlen = document.getElementById('equityZahlen');
+    if (!punkte.length) {
+        if (zahlen) zahlen.textContent = alle.length ? 'Keine Trades in diesem Zeitraum.' : 'Noch keine Trades.';
+        return;
+    }
+    const ende = punkte[punkte.length - 1];
+    const rueckgang = ende.stand - ende.hoch;
+    const veraenderung = ende.stand - start.stand;
+    if (zahlen) {
+        zahlen.innerHTML =
+            `<span>Stand <b style="color:${farbeFuer(ende.stand)}">${cfGeld(ende.stand, { vorzeichen: true })}</b></span>`
+            + (cfEquityZeit !== 'alle' ? `<span>im Zeitraum <b style="color:${farbeFuer(veraenderung)}">${cfGeld(veraenderung, { vorzeichen: true })}</b></span>` : '')
+            + `<span>Höchststand <b>${cfGeld(ende.hoch, { vorzeichen: true })}</b></span>`
+            + `<span>${rueckgang < 0 ? `Unter dem Hoch <b style="color:#FB7185">${cfGeld(rueckgang)}</b>` : '<b style="color:#34D399">Auf dem Höchststand</b>'}</span>`
+            + `<span>${punkte.length} ${punkte.length === 1 ? 'Trade' : 'Trades'}</span>`;
+    }
+
+    const labels = [start.datum].concat(punkte.map(p => p.datum));
+    const info = [{ datum: start.datum, ticker: '', pnl: null }].concat(punkte.map(p => ({ datum: p.datum, ticker: p.ticker, pnl: p.pnl })));
+    const stand = [start.stand].concat(punkte.map(p => p.stand));
+    const hoch = [start.hoch].concat(punkte.map(p => p.hoch));
+    const viele = punkte.length > 60;
+    const B = window.cfBasis;
+    const F = B ? B.FARBEN : { serie1: '#9F7AEA', gitter: '#1E1E23', text2: '#A1A1AA' };
+    const punktFarbe = info.map(x => x.pnl === null ? '#71717A' : (x.pnl >= 0 ? '#34D399' : '#FB7185'));
+
+    const fadenkreuz = {
+        id: 'cfFadenkreuz',
+        afterDatasetsDraw(chart) {
+            const aktiv = chart.tooltip && chart.tooltip.getActiveElements ? chart.tooltip.getActiveElements() : [];
+            if (!aktiv.length) return;
+            const x = aktiv[0].element.x, a = chart.chartArea, c = chart.ctx;
+            c.save();
+            c.strokeStyle = 'rgba(255, 255, 255, 0.22)';
+            c.lineWidth = 1;
+            c.setLineDash([3, 3]);
+            c.beginPath(); c.moveTo(x, a.top); c.lineTo(x, a.bottom); c.stroke();
+            c.restore();
+        },
+    };
+
+    const kurz = (d) => /^\d{2}\.\d{2}\.\d{4}$/.test(d) ? d.slice(0, 6) : d;
+    const geld0 = (v) => cfGeld(v, { stellen: 0, vorzeichen: v !== 0 });
+    const extra = {
+        layout: { padding: { right: 84, top: 10 } },
+        plugins: {
+            cfWerte: { format: geld0 },
+            tooltip: {
+                callbacks: {
+                    title: (items) => {
+                        const i = items[0].dataIndex, x = items[0].chart.data.datasets[0].cfInfo[i];
+                        return x.pnl === null ? (x.datum === 'Vorher' ? 'Stand vor dem Zeitraum' : 'Start') : x.datum + ' · ' + x.ticker;
+                    },
+                    label: (c) => {
+                        const d = c.chart.data.datasets;
+                        const x = d[0].cfInfo[c.dataIndex];
+                        if (c.datasetIndex === 0) {
+                            const zeilen = [];
+                            if (x.pnl !== null) zeilen.push(' Trade: ' + cfGeld(x.pnl, { vorzeichen: true }));
+                            zeilen.push(' Stand: ' + cfGeld(c.parsed.y, { vorzeichen: true }));
+                            return zeilen;
+                        }
+                        const abstand = d[0].data[c.dataIndex] - c.parsed.y;
+                        return ' Abstand zum Hoch: ' + (abstand < -0.004 ? cfGeld(abstand) : 'keiner');
+                    },
+                },
+            },
+        },
+        scales: {
+            x: { ticks: { maxTicksLimit: 7, callback: function (v, i) { return kurz(labels[i] || ''); } } },
+            y: {
+                grace: '8%',
+                ticks: { maxTicksLimit: 6, callback: (v) => geld0(v) },
+                grid: {
+                    color: (ctx) => ctx.tick && ctx.tick.value === 0 ? 'rgba(244, 244, 245, 0.35)' : F.gitter,
+                    lineWidth: (ctx) => ctx.tick && ctx.tick.value === 0 ? 1.5 : 1,
+                },
+            },
+        },
+    };
+    const optionen = B ? B.diagrammOptionen('linie', { format: geld0, extra })
+                       : Object.assign({ responsive: true, maintainAspectRatio: false }, extra);
+
+    window.equityChartInstance = new Chart(leinwand.getContext('2d'), {
+        type: 'line',
+        data: {
+            labels,
+            datasets: [{
+                label: 'Kontostand aus Trades',
+                data: stand,
+                cfInfo: info,
+                borderColor: F.serie1,
+                backgroundColor: F.serie1,
+                borderWidth: 2,
+                tension: 0,
+                fill: { target: { value: 0 }, above: 'rgba(52, 211, 153, 0.10)', below: 'rgba(251, 113, 133, 0.12)' },
+                pointRadius: viele ? 0 : 3,
+                pointHoverRadius: 6,
+                pointBackgroundColor: punktFarbe,
+                pointBorderColor: 'rgba(9, 9, 11, 0.9)',
+                pointBorderWidth: 1,
+                pointHoverBackgroundColor: punktFarbe,
+            }, {
+                label: 'Bisheriger Höchststand',
+                data: hoch,
+                borderColor: 'rgba(244, 244, 245, 0.38)',
+                backgroundColor: 'rgba(244, 244, 245, 0.38)',
+                borderWidth: 1,
+                borderDash: [4, 4],
+                tension: 0,
+                fill: false,
+                pointRadius: 0,
+                pointHoverRadius: 0,
+            }],
+        },
+        options: optionen,
+        plugins: (B ? [B.wertePlugin] : []).concat([fadenkreuz]),
+    });
+}
+
+function renderAnalyticsCharts(trades, stats, wins, losses, behavioralScore) {
+    // Equity-Kurve: eigene Funktion, damit der Zeitraum sie neu zeichnen kann
+    cfEquityZeichnen(trades);
+
     // Behavioral Score Radar Chart
     if (window.behavioralChartInstance) window.behavioralChartInstance.destroy();
     const behavioralCanvas = document.getElementById('behavioralChart');

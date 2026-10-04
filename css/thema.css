@@ -1317,3 +1317,152 @@ body {
 }
 .cf-bild-fehlt[hidden] { display: none; }
 .trade-card > .cf-bild { margin-top: 14px; }
+
+/* ================================================ FEINSCHLIFF (04.10.) */
+/* Zahlen in Kreisen und Kaestchen: Inter setzt Ziffern minimal zu hoch
+   (die Zeile ist nach Ober- und Unterlaenge gebaut, Ziffern haben keine
+   Unterlaenge). Ein Pixel Ausgleich oben, feste Box, Ziffern gleich breit. */
+.zert-nr, .hilfe-nr, .nav-zahl {
+    box-sizing: border-box !important;
+    line-height: 1 !important;
+    padding: 1px 0 0 0 !important;
+    font-variant-numeric: tabular-nums;
+    text-align: center;
+}
+.zert-nr { display: inline-grid !important; place-items: center; width: 20px !important; height: 20px !important; }
+
+/* Daten-Tab: die drei Karten einer Reihe gleich hoch, Knoepfe unten auf
+   einer Linie. Vorher richtete sich jede Karte nach ihrem Inhalt, und die
+   mittlere ragte weit nach unten. */
+.daten-raster { align-items: stretch !important; }
+.daten-raster > .daten-karte { display: flex; flex-direction: column; }
+.daten-raster > .daten-karte > .daten-text + :not(.daten-text) { margin-top: auto !important; }
+.daten-karte > .daten-status:empty { display: none; }
+
+/* Vergroesserte Ansicht: die Karte ist dort nur Inhalt, kein Bedienelement -
+   kein Anheben, kein violetter Schein beim Ueberfahren. */
+dialog.cf-gross .cf-gross-inhalt,
+dialog.cf-gross .cf-gross-inhalt:hover {
+    background: transparent !important;
+    border: 0 !important;
+    box-shadow: none !important;
+    transform: none !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    transition: none !important;
+}
+
+/* Equity-Kurve */
+.ana-equity-kopf { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; flex-wrap: wrap; margin-bottom: 14px; padding-right: 46px; }
+dialog.cf-gross .ana-equity-kopf { padding-right: 0; }
+.ana-equity-titel { font-size: 15px; font-weight: 600; color: var(--cf-text); margin-bottom: 6px; }
+.ana-equity-zahlen { display: flex; flex-wrap: wrap; gap: 6px 16px; font-size: 13px; color: var(--cf-text-2); }
+.ana-equity-zahlen b { color: var(--cf-text); font-weight: 600; font-variant-numeric: tabular-nums; }
+.ana-zeitraum { display: inline-flex; gap: 4px; padding: 4px; border-radius: 999px; background: rgba(54, 37, 92, 0.18); border: 1px solid rgba(255, 255, 255, 0.08); }
+.ana-zeit-btn {
+    border: 0; background: transparent; color: var(--cf-text-2); font: inherit; font-size: 12px; font-weight: 600;
+    padding: 7px 12px; border-radius: 999px; cursor: pointer;
+}
+.ana-zeit-btn:hover { color: var(--cf-text); background: rgba(255, 255, 255, 0.05); }
+.ana-zeit-btn.aktiv { color: #F4F4F5; background: linear-gradient(180deg, rgba(74, 52, 124, 0.95), rgba(54, 37, 92, 0.95)); box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.1); }
+.ana-zeit-btn:focus-visible { outline: 2px solid #C9B8FF; outline-offset: 2px; }
+.ana-equity-legende { font-size: 12px !important; margin-bottom: 8px !important; }
+.ana-hoch-linie { border-top-color: rgba(244, 244, 245, 0.45) !important; }
+.ana-punkt { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 6px; vertical-align: middle; }
+.ana-punkt.gewinn { background: #34D399; } .ana-punkt.verlust { background: #FB7185; }
+dialog.cf-gross .ana-zeitraum { display: none; }
+
+/* ================================================ P&L-KALENDER (04.10.)
+   Monatsblatt nach Vorlage: dunkle Kacheln, Tageszahl oben rechts,
+   Ergebnis unten links, farbiger Schein von oben fuer Gewinn/Verlust. */
+.kal-blatt {
+    border-radius: 24px;
+    background: var(--g-glas);
+    border: 1px solid var(--g-glas-rand);
+    box-shadow: var(--g-glas-licht), 0 30px 60px -30px rgba(0, 0, 0, 0.9);
+    backdrop-filter: var(--g-blur) !important;
+    -webkit-backdrop-filter: var(--g-blur) !important;
+    overflow: hidden;
+}
+.kal-kopf {
+    display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap;
+    padding: 20px 24px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+}
+.kal-kopf-links { display: flex; align-items: center; gap: 14px; min-width: 0; }
+.kal-icon { color: #A78BFA; flex: none; }
+.kal-titel { font-size: 18px; font-weight: 600; color: var(--cf-text); }
+.kal-summe { font-size: 13px; color: var(--cf-text-2); margin-top: 3px; }
+.kal-summe b { font-variant-numeric: tabular-nums; }
+.kal-nav {
+    display: inline-flex; align-items: center; gap: 2px; padding: 4px;
+    border-radius: 999px; background: rgba(9, 8, 15, 0.45); border: 1px solid rgba(255, 255, 255, 0.10);
+}
+.kal-pfeil, .kal-monat {
+    border: 0; background: transparent; color: var(--cf-text); font: inherit; cursor: pointer;
+    height: 36px; border-radius: 999px; display: inline-grid; place-items: center;
+}
+.kal-pfeil { width: 36px; }
+.kal-pfeil:hover:not(:disabled), .kal-monat:hover { background: rgba(54, 37, 92, 0.6); }
+.kal-pfeil:disabled { opacity: 0.3; cursor: default; }
+.kal-monat { padding: 0 14px; min-width: 150px; font-size: 13px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; }
+.kal-pfeil:focus-visible, .kal-monat:focus-visible { outline: 2px solid #C9B8FF; outline-offset: 2px; }
+
+.kal-raster { display: grid; gap: 8px; padding: 18px 24px 24px; }
+.kal-raster-tage { grid-template-columns: repeat(7, minmax(0, 1fr)); }
+.kal-raster-monate { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+.kal-wochentag { font-size: 12px; font-weight: 600; color: var(--cf-text-2); letter-spacing: 0.06em; text-transform: uppercase; padding: 0 4px 6px; }
+
+.kal-tag {
+    position: relative;
+    min-height: 96px;
+    padding: 10px 12px;
+    border-radius: 14px;
+    background: rgba(16, 15, 22, 0.78);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    display: flex; flex-direction: column; justify-content: flex-end;
+    overflow: hidden;
+    transition: border-color 0.2s ease, transform 0.2s ease;
+}
+.kal-raster-monate .kal-tag { min-height: 110px; }
+.kal-leer { background: transparent; border-color: rgba(255, 255, 255, 0.03); }
+.kal-zahl { position: absolute; top: 9px; right: 12px; font-size: 13px; font-weight: 500; color: var(--cf-text-2); font-variant-numeric: tabular-nums; }
+.kal-wert { font-size: 17px; font-weight: 700; color: #F4F4F5; font-variant-numeric: tabular-nums; line-height: 1.2; white-space: nowrap; }
+.kal-info { font-size: 12px; color: rgba(244, 244, 245, 0.62); margin-top: 3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.kal-gewinn {
+    background:
+        radial-gradient(120% 95% at 50% 0%, rgba(34, 197, 94, 0.55) 0%, rgba(34, 197, 94, 0.14) 50%, transparent 78%),
+        rgba(14, 16, 16, 0.92);
+    border-color: rgba(52, 211, 153, 0.35);
+    box-shadow: inset 0 1.5px 0 rgba(74, 222, 128, 0.95), 0 10px 30px -18px rgba(34, 197, 94, 0.7);
+}
+.kal-verlust {
+    background:
+        radial-gradient(120% 95% at 50% 0%, rgba(239, 68, 68, 0.55) 0%, rgba(239, 68, 68, 0.14) 50%, transparent 78%),
+        rgba(18, 13, 14, 0.92);
+    border-color: rgba(248, 113, 113, 0.35);
+    box-shadow: inset 0 1.5px 0 rgba(248, 113, 113, 0.95), 0 10px 30px -18px rgba(239, 68, 68, 0.7);
+}
+.kal-null { border-color: rgba(255, 255, 255, 0.14); }
+.kal-gewinn .kal-zahl, .kal-verlust .kal-zahl { color: rgba(244, 244, 245, 0.85); }
+.kal-zukunft { opacity: 0.4; }
+.kal-heute { border-color: rgba(167, 139, 250, 0.7); box-shadow: 0 0 0 1px rgba(167, 139, 250, 0.35); }
+.kal-heute .kal-zahl { color: #E4DBFF; font-weight: 700; }
+.kal-gewinn:hover, .kal-verlust:hover { transform: translateY(-2px); }
+.kal-klickbar { cursor: pointer; }
+.kal-klickbar:hover { border-color: rgba(167, 139, 250, 0.45); }
+
+@media (max-width: 900px) {
+    .kal-raster { gap: 5px; padding: 12px; }
+    .kal-tag { min-height: 64px; padding: 6px 7px; border-radius: 10px; }
+    .kal-zahl { top: 5px; right: 7px; font-size: 11px; }
+    .kal-wert { font-size: 12px; }
+    .kal-info { display: none; }
+    .kal-raster-monate { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    .kal-monat { min-width: 0; }
+}
+@media (max-width: 480px) {
+    .kal-wert { font-size: 10.5px; letter-spacing: -0.02em; }
+    .kal-wochentag { font-size: 10px; padding: 0 0 4px; text-align: center; }
+}
+.daten-raster { grid-template-columns: repeat(auto-fit, minmax(min(100%, 260px), 1fr)) !important; }
