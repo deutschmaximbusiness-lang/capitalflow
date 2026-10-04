@@ -1668,3 +1668,8 @@ input[type="number"] { -moz-appearance: textfield; appearance: textfield; }
 .cf-datum-aktion { background: none; border: 0; padding: 6px 8px; border-radius: 8px; cursor: pointer; color: #C9B8FF; font: inherit; font-size: 13px; font-weight: 500; }
 .cf-datum-aktion:hover { background: rgba(54, 37, 92, 0.7); color: #FFFFFF; }
 .pb-aktionen .trade-edit, .pb-aktionen .trade-delete { width: auto !important; flex: none !important; margin: 0 !important; }
+/* Abstand ueber den Knoepfen wie im Trade-Formular (vorher klebten sie
+   direkt an den Grenzfeldern) */
+#pbForm .pb-grenzen-raster { margin-bottom: 24px; }
+#pbForm .pb-regel-raster { margin-bottom: 8px; }
+#pbForm .pb-fehler { margin: 0 0 16px; }
