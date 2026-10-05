@@ -988,7 +988,32 @@
                             </div>
                         </div>
 
+                        <!-- Strategie aus dem Playbook: die Regeln hakst du dann auf der
+                             Karte ab, sobald sie eintreten - vor dem Einstieg, nicht
+                             hinterher aus der Erinnerung. -->
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label id="suStrategieLabel">Strategie <span class="feld-zusatz">optional</span></label>
+                                <div class="custom-select-wrapper">
+                                    <input type="hidden" id="suStrategie" value="">
+                                    <div class="custom-select pb-auswahl su-auswahl" data-select-id="suStrategie">
+                                        <div class="custom-select-header" tabindex="0" role="button" aria-haspopup="listbox" aria-labelledby="suStrategieLabel">
+                                            <span class="custom-select-value">Keine Strategie</span>
+                                            <svg class="custom-select-arrow" viewBox="0 0 24 24" width="16" height="16"><path fill="currentColor" d="M7 10l5 5 5-5z"/></svg>
+                                        </div>
+                                        <div class="custom-select-dropdown" role="listbox" id="suStrategieListe"></div>
+                                    </div>
+                                </div>
+                                <p class="pb-formular-leer" id="suStrategieLeer" hidden>Noch keine Strategie. <button type="button" class="pb-link" data-pb-zum-playbook>Im Playbook anlegen</button></p>
+                            </div>
+                            <div class="form-group">
+                                <label for="suEarnings">Nächste Earnings <span class="feld-zusatz">optional</span></label>
+                                <input type="date" id="suEarnings">
+                            </div>
+                        </div>
+
                         <div id="setupsCrvPreview" class="setups-crv-preview">Einstieg, Stop und Ziel eintragen, um das Chance-Risiko-Verhältnis zu sehen</div>
+                        <ul id="suPruefung" class="su-pruefung" hidden aria-live="polite"></ul>
 
                         <div class="form-group">
                             <label for="setupsThesis">These</label>

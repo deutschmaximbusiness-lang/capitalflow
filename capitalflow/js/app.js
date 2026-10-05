@@ -4802,6 +4802,12 @@ function getSetups() {
             leverage: parseFloat(w.leverage) > 0 ? parseFloat(w.leverage) : 1,
             thesis: w.thesis || '',
             screenshot: w.screenshot || null,
+            // Fehlte bisher: ohne Pfad laesst sich ein abgelaufenes Bild
+            // nicht neu signieren, und die Karte zeigte nur "Setup".
+            screenshotPfad: w.screenshotPfad || null,
+            strategyId: w.strategyId || null,
+            regelnErfuellt: w.regelnErfuellt && typeof w.regelnErfuellt === 'object' ? w.regelnErfuellt : null,
+            earningsAm: w.earningsAm || null,
             status: SETUPS_STATUS[w.status] ? w.status : 'watching',
             created: w.created || new Date().toISOString(),
             updated: w.updated || w.created || new Date().toISOString()
@@ -4899,6 +4905,7 @@ function setupsCrvColor(crv) {
 function updateSetupsCrvPreview() {
     const box = document.getElementById('setupsCrvPreview');
     if (!box) return;
+    setupsPlaybookPruefen();
     const dir = document.getElementById('setupsDirection').value;
     const entry = setupsEntryPrice(
         parseFloat(document.getElementById('setupsEntryFrom').value) || 0,
@@ -4975,6 +4982,31 @@ function updateSetupsCrvPreview() {
     }
 }
 
+/**
+ * Grenzen der gewaehlten Strategie gegen das geplante Setup: Mindest-CRV,
+ * Hebel, Earnings-Abstand. Steht unter der CRV-Vorschau.
+ */
+function setupsPlaybookPruefen() {
+    const liste = document.getElementById('suPruefung');
+    if (!liste) return;
+    const pb = window.cfPlaybookSetup ? window.cfPlaybookSetup.lesen() : {};
+    if (!pb.strategyId) { liste.hidden = true; liste.innerHTML = ''; return; }
+    const dir = document.getElementById('setupsDirection').value;
+    const entry = setupsEntryPrice(
+        parseFloat(document.getElementById('setupsEntryFrom').value) || 0,
+        parseFloat(document.getElementById('setupsEntryTo').value) || 0);
+    const stop = parseFloat(document.getElementById('setupsStop').value) || 0;
+    const target = parseFloat(document.getElementById('setupsTarget').value) || 0;
+    const koFeld = document.getElementById('setupsKo');
+    const koInfo = setupsKoPruefen(dir, entry, stop, koFeld ? (parseFloat(koFeld.value) || 0) : 0);
+    let lev = parseFloat(document.getElementById('setupsLeverage').value) || 1;
+    if (koInfo && koInfo.hebel) lev = koInfo.hebel;
+    const r = setupsCalcCrv(dir, entry, stop, target, lev);
+    const warn = window.cfPlaybookSetup.pruefen(pb, r.ok ? r.crv : null, lev);
+    liste.hidden = !warn.length;
+    liste.innerHTML = warn.map(t => '<li><span class="pb-pruef-zeichen" aria-hidden="true">!</span><span>' + escapeHtml(t) + '</span></li>').join('');
+}
+
 function addSetupsItem(e) {
     e.preventDefault();
     try {
@@ -5021,6 +5053,7 @@ function addSetupsItem(e) {
 
         const list = getSetups();
         const now = new Date().toISOString();
+        const pb = window.cfPlaybookSetup ? window.cfPlaybookSetup.lesen() : {};
         list.push({
             id: Date.now(), ticker, direction,
             entryFrom: Math.min(entryFrom || entryTo, entryTo || entryFrom),
@@ -5028,11 +5061,17 @@ function addSetupsItem(e) {
             stop, target, leverage, thesis,
             ko: ko || null,
             screenshot: setupsScreenshotData,
+            strategyId: pb.strategyId || null,
+            regelnErfuellt: pb.strategyId ? {} : null,
+            earningsAm: pb.earningsAm || null,
             status: 'watching', created: now, updated: now
         });
         saveSetups(list);
+        // Die Karte geht mit offener Checkliste auf - abgehakt wird dort
+        if (pb.strategyId) setupsRegelnOffen.add(String(list[list.length - 1].id));
 
         document.getElementById('setupsForm').reset();
+        if (window.cfPlaybookSetup) window.cfPlaybookSetup.zuruecksetzen();
         resetSetupsDirection();
         setupsScreenshotData = null;
         document.getElementById('setupsScreenshotPreview').innerHTML = '';
@@ -5116,6 +5155,17 @@ function setupsToJournal(id) {
         if (dirField) dirField.value = w.direction;
         document.querySelectorAll('[data-target="direction"] .direction-btn')
             .forEach(b => b.classList.toggle('active', b.dataset.direction === w.direction));
+
+        // Strategie, Haken und Earnings kommen mit. Die Haken wurden VOR
+        // dem Einstieg gesetzt - genau die will das Journal haben, nicht
+        // die aus der Erinnerung von hinterher.
+        if (w.strategyId && window.cfPlaybookFormular) {
+            window.cfPlaybookFormular.setzen({
+                strategyId: w.strategyId,
+                regelnErfuellt: w.regelnErfuellt || {},
+                earningsAm: w.earningsAm || null,
+            });
+        }
 
         setSetupsStatus(id, 'entered');
 
@@ -5225,6 +5275,8 @@ function loadSetups() {
                 <span style="color:#34D399;">Chance ${cfProz(r.rewardPct, 2, { vorzeichen: true })}</span>
             </div>` : ''}
 
+            ${setupsPlaybookKarte(w, r)}
+
             ${w.thesis ? `<div class="setups-thesis">${escapeHtml(w.thesis)}</div>` : ''}
 
             ${cfBildHtml(w.screenshot, w.screenshotPfad, 'position-screenshot', 'Screenshot zu ' + w.ticker)}
@@ -5240,6 +5292,31 @@ function loadSetups() {
             </div>
         </div>`;
     }).join('');
+}
+
+// Welche Checklisten offen stehen - sonst klappt jede Aenderung (und
+// jedes Neuladen aus der Datenbank) sie wieder zu.
+const setupsRegelnOffen = new Set();
+
+function setupsPlaybookKarte(w, r) {
+    if (!window.cfPlaybookSetup || !w.strategyId) return '';
+    const erledigt = w.status === 'entered' || w.status === 'discarded';
+    const warn = erledigt ? [] : window.cfPlaybookSetup.pruefen(w, r && r.ok ? r.crv : null, w.leverage);
+    const e = w.earningsAm ? w.earningsAm.split('-').reverse().join('.') : '';
+    return (e ? `<div class="su-earnings"><span>Earnings</span><strong>${escapeHtml(e)}</strong></div>` : '')
+        + (warn.length ? `<ul class="su-pruefung">${warn.map(t => `<li><span class="pb-pruef-zeichen" aria-hidden="true">!</span><span>${escapeHtml(t)}</span></li>`).join('')}</ul>` : '')
+        + window.cfPlaybookSetup.karte(w, setupsRegelnOffen.has(String(w.id)));
+}
+
+function setupsRegelUmschalten(id, regel, an) {
+    const list = getSetups().map(w => {
+        if (String(w.id) !== String(id)) return w;
+        const m = Object.assign({}, w.regelnErfuellt || {});
+        m[regel] = Boolean(an);
+        return { ...w, regelnErfuellt: m, updated: new Date().toISOString() };
+    });
+    saveSetups(list);
+    loadSetups();
 }
 
 // Gemeinsame Anzeige fuer Upload und Strg+V
@@ -5270,6 +5347,20 @@ function initSetups() {
     form.dataset.bound = '1';
 
     form.addEventListener('submit', addSetupsItem);
+
+    const karten = document.getElementById('setupsContainer');
+    if (karten) {
+        karten.addEventListener('change', (e) => {
+            const cb = e.target.closest('.su-regel');
+            if (cb) setupsRegelUmschalten(cb.dataset.setup, cb.value, cb.checked);
+        });
+        // Offen/zu merken (toggle blubbert nicht - deshalb in der Einfangphase)
+        karten.addEventListener('toggle', (e) => {
+            const d = e.target;
+            if (!d.classList || !d.classList.contains('su-regeln')) return;
+            if (d.open) setupsRegelnOffen.add(d.dataset.setup); else setupsRegelnOffen.delete(d.dataset.setup);
+        }, true);
+    }
 
     // Live-Vorschau der Positions-Hebelzahlen
     ['positionsKo', 'positionsHebel', 'positionsStop', 'positionsSize']

@@ -1701,3 +1701,32 @@ input[type="number"] { -moz-appearance: textfield; appearance: textfield; }
 .aus-leise { color: var(--cf-text-2); font-weight: 400; }
 .aus-wenig { display: block; margin-top: 6px; color: var(--cf-text-2); font-size: 12px; }
 .aus-unter { margin: 18px 0 8px; font-size: 13px; font-weight: 600; color: #C9B8FF; }
+
+/* ================================================================
+   M3 Teil 4: Strategie im Setup (05.10.)
+   ================================================================ */
+.su-pruefung { list-style: none; margin: 10px 0 0; padding: 12px 14px; border-radius: 14px; display: grid; gap: 6px;
+    background: rgba(251, 191, 36, 0.07); border: 1px solid rgba(251, 191, 36, 0.35); }
+.su-pruefung[hidden] { display: none; }
+.su-pruefung li { display: flex; gap: 10px; align-items: flex-start; font-size: 13px; line-height: 1.45; color: var(--cf-text); }
+.su-pruefung .pb-pruef-zeichen { background: rgba(251, 191, 36, 0.2); color: #FCD34D; }
+.setups-card .su-pruefung { margin: 12px 0 0; }
+.su-earnings { display: flex; justify-content: space-between; margin-top: 12px; font-size: 13px; color: var(--cf-text-2); }
+.su-earnings strong { color: var(--cf-text); font-weight: 600; font-variant-numeric: tabular-nums; }
+.su-regeln { margin-top: 12px; border-radius: 14px; background: rgba(9, 9, 11, 0.35); border: 1px solid rgba(255, 255, 255, 0.07); }
+.su-regeln > summary {
+    list-style: none; cursor: pointer; display: flex; align-items: center; flex-wrap: wrap; gap: 6px;
+    padding: 10px 12px; border-radius: 14px;
+}
+.su-regeln > summary::-webkit-details-marker { display: none; }
+.su-regeln > summary .pb-abzeichen, .su-regeln > summary .pb-regel-abzeichen { margin-left: 0; }
+.su-regeln-auf { margin-left: auto; font-size: 12px; color: #C9B8FF; }
+.su-regeln-auf::after { content: ''; display: inline-block; width: 6px; height: 6px; margin-left: 8px; border-right: 1.5px solid currentColor; border-bottom: 1.5px solid currentColor; transform: translateY(-2px) rotate(45deg); transition: transform 0.2s ease; }
+.su-regeln[open] .su-regeln-auf::after { transform: translateY(1px) rotate(-135deg); }
+.su-regeln > summary:focus-visible { outline: 2px solid #C9B8FF; outline-offset: 2px; }
+.su-regeln-inhalt { padding: 2px 12px 12px; display: grid; gap: 8px; }
+.su-gruppe-titel { display: block; font-size: 12px; font-weight: 600; color: #C9B8FF; margin: 4px 0 0; }
+.su-gruppe-titel span { font-weight: 400; color: var(--cf-text-2); }
+.su-regeln .pb-check-zeile { font-size: 13px; padding: 4px 0; }
+.su-voll { margin: 4px 0 0; font-size: 13px; color: var(--cf-gewinn); }
+#setupsForm .su-pruefung { margin: -6px 0 18px; }

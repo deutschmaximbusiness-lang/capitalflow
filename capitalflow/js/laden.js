@@ -377,6 +377,10 @@
                     thesis: z.thesis || '',
                     screenshot: setupBilder[z.id] || null,
                     screenshotPfad: z.screenshot_path || null,
+                    strategyId: z.strategy_id || null,
+                    regelnErfuellt: z.rules_followed && typeof z.rules_followed === 'object'
+                        ? z.rules_followed : null,
+                    earningsAm: z.earnings_at ? String(z.earnings_at).slice(0, 10) : null,
                     status: ({ beobachten: 'watching', bereit: 'ready',
                                eingestiegen: 'entered', verworfen: 'discarded'
                              })[z.status] || 'watching',

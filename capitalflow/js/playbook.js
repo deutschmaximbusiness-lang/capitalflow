@@ -572,52 +572,103 @@
     // ------------------------------------------------------- Trade-Formular
 
     /**
-     * Die Auswahl im Journal. Archivierte Strategien stehen nur drin,
-     * wenn der Trade im Formular sie schon hat - sonst verschwaende beim
-     * Bearbeiten die Zuordnung still.
+     * Klappliste fuer eine Strategie - dieselbe wie beim Fehlertyp. Gibt
+     * es zweimal: im Journal und im Setup-Formular.
+     *
+     * Archivierte Strategien stehen nur drin, wenn der Eintrag sie schon
+     * hat - sonst verschwaende beim Bearbeiten die Zuordnung still.
      */
-    function formularAuswahl(behalten) {
-        const sel = el('pbStrategie');
-        if (!sel) return;
-        const liste = el('pbStrategieListe');
-        const wert = behalten !== undefined ? behalten : sel.value;
-        const alle = strategien();
-        const sichtbar = alle.filter(function (s) { return !s.archiviert || s.id === wert; });
-        const option = function (id, name) {
-            return '<div class="custom-option" role="option" tabindex="-1" data-value="' + esc(id) + '">' + esc(name) + '</div>';
+    function auswahl(cfg) {
+        const api = {
+            fuellen: function (behalten) {
+                const sel = el(cfg.hidden), liste = el(cfg.liste);
+                if (!sel || !liste) return false;
+                const wert = behalten !== undefined ? behalten : sel.value;
+                const sichtbar = strategien().filter(function (s) { return !s.archiviert || s.id === wert; });
+                const option = function (id, name) {
+                    return '<div class="custom-option" role="option" tabindex="-1" data-value="' + esc(id) + '">' + esc(name) + '</div>';
+                };
+                liste.innerHTML = option('', 'Keine Strategie') + sichtbar.map(function (s) {
+                    return option(s.id, s.name + (s.archiviert ? ' (archiviert)' : ''));
+                }).join('');
+                const da = sichtbar.some(function (s) { return s.id === wert; });
+                api.setzen(da ? wert : '');
+                return da;
+            },
+            setzen: function (id) {
+                const sel = el(cfg.hidden), liste = el(cfg.liste);
+                if (!sel || !liste) return;
+                sel.value = id || '';
+                let text = 'Keine Strategie';
+                liste.querySelectorAll('.custom-option').forEach(function (o) {
+                    const an = o.getAttribute('data-value') === sel.value;
+                    o.classList.toggle('selected', an);
+                    o.setAttribute('aria-selected', an ? 'true' : 'false');
+                    if (an) text = o.textContent;
+                });
+                const kopf = liste.closest('.custom-select').querySelector('.custom-select-value');
+                if (kopf) kopf.textContent = text;
+            },
+            wert: function () { const sel = el(cfg.hidden); return sel ? sel.value : ''; },
+            binden: function () {
+                const liste = el(cfg.liste);
+                if (!liste) return;
+                const box = liste.closest('.custom-select');
+                const kopf = box.querySelector('.custom-select-header');
+                const nehmen = function (o) {
+                    api.setzen(o.getAttribute('data-value'));
+                    box.classList.remove('open');
+                    if (cfg.beiWahl) cfg.beiWahl(api.wert());
+                    kopf.focus();
+                };
+                liste.addEventListener('click', function (e) {
+                    const o = e.target.closest('.custom-option');
+                    if (!o) return;
+                    e.stopPropagation();
+                    nehmen(o);
+                });
+                // Mit der Tastatur: Pfeile wandern, Enter waehlt, Escape schliesst
+                liste.addEventListener('keydown', function (e) {
+                    const o = e.target.closest('.custom-option');
+                    if (!o) return;
+                    if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); nehmen(o); }
+                    else if (e.key === 'ArrowDown' && o.nextElementSibling) { e.preventDefault(); o.nextElementSibling.focus(); }
+                    else if (e.key === 'ArrowUp' && o.previousElementSibling) { e.preventDefault(); o.previousElementSibling.focus(); }
+                    else if (e.key === 'Escape') { box.classList.remove('open'); kopf.focus(); }
+                });
+                kopf.addEventListener('keydown', function (e) {
+                    if (e.key !== 'ArrowDown') return;
+                    e.preventDefault();
+                    box.classList.add('open');
+                    const z = liste.querySelector('.selected') || liste.firstElementChild;
+                    if (z) z.focus();
+                });
+            },
         };
-        if (liste) {
-            liste.innerHTML = option('', 'Keine Strategie') + sichtbar.map(function (s) {
-                return option(s.id, s.name + (s.archiviert ? ' (archiviert)' : ''));
-            }).join('');
-        }
-        const da = sichtbar.some(function (s) { return s.id === wert; });
-        auswahlSetzen(da ? wert : '');
+        return api;
+    }
+
+    const journalAuswahl = auswahl({
+        hidden: 'pbStrategie', liste: 'pbStrategieListe',
+        beiWahl: function (id) { checklisteZeichnen(strategie(id)); },
+    });
+    const setupAuswahl = auswahl({
+        hidden: 'suStrategie', liste: 'suStrategieListe',
+        beiWahl: function () { if (typeof updateSetupsCrvPreview === 'function') updateSetupsCrvPreview(); },
+    });
+
+    function formularAuswahl(behalten) {
+        const wert = behalten !== undefined ? behalten : journalAuswahl.wert();
+        const da = journalAuswahl.fuellen(behalten);
         const leer = el('pbFormularLeer');
-        if (leer) leer.hidden = alle.some(function (s) { return !s.archiviert; });
+        if (leer) leer.hidden = strategien().some(function (s) { return !s.archiviert; });
         if (!da && wert) checklisteZeichnen(null);
+        setupAuswahl.fuellen();
+        const suLeer = el('suStrategieLeer');
+        if (suLeer) suLeer.hidden = strategien().some(function (s) { return !s.archiviert; });
     }
 
-    /** Wert und Anzeige der Auswahl - dieselbe Klappliste wie beim Fehlertyp. */
-    function auswahlSetzen(id) {
-        const sel = el('pbStrategie');
-        if (!sel) return;
-        sel.value = id || '';
-        let text = 'Keine Strategie';
-        document.querySelectorAll('#pbStrategieListe .custom-option').forEach(function (o) {
-            const an = o.getAttribute('data-value') === sel.value;
-            o.classList.toggle('selected', an);
-            o.setAttribute('aria-selected', an ? 'true' : 'false');
-            if (an) text = o.textContent;
-        });
-        const kopf = document.querySelector('.pb-auswahl .custom-select-value');
-        if (kopf) kopf.textContent = text;
-    }
-
-    function auswahlZu() {
-        const a = document.querySelector('.pb-auswahl');
-        if (a) a.classList.remove('open');
-    }
+    function auswahlSetzen(id) { journalAuswahl.setzen(id); }
 
     function checklisteZeichnen(s, haken) {
         const box = el('pbCheckliste');
@@ -833,6 +884,92 @@
         },
     };
 
+    // ------------------------------------------------------- Setups
+
+    /** Stand der Pflichtregeln eines Setups. Nicht abgehakt = offen. */
+    function setupStand(w, s) {
+        const m = (w && w.regelnErfuellt) || {};
+        const pflicht = s.regeln.filter(function (r) { return r.gruppe !== 'bonus'; });
+        return { erfuellt: pflicht.filter(function (r) { return m[r.id] === true; }).length, von: pflicht.length };
+    }
+
+    function tageBis(iso) {
+        const m = String(iso || '').match(/^(\d{4})-(\d{2})-(\d{2})$/);
+        if (!m) return null;
+        const heute = new Date(); heute.setHours(0, 0, 0, 0);
+        return Math.round((new Date(+m[1], +m[2] - 1, +m[3]) - heute) / 86400000);
+    }
+
+    /**
+     * Pruefung VOR dem Einstieg - hier ist sie am meisten wert. Im Journal
+     * waere dieselbe Warnung nur noch die Erklaerung, warum es schiefging.
+     */
+    function setupPruefen(w, crv, hebel) {
+        const s = strategie(w && w.strategyId);
+        if (!s) return [];
+        const g = s.grenzen;
+        const aus = [];
+        if (g.crvMin && crv !== null && crv !== undefined && crv < g.crvMin - 1e-9) {
+            aus.push('Chance-Risiko 1 : ' + cfZahl(crv, 2) + ' – deine Strategie verlangt mindestens 1 : '
+                + cfZahl(g.crvMin, 1, { min: 0 }) + '.');
+        }
+        if (g.hebelMax && hebel > g.hebelMax + 1e-9) {
+            aus.push('Hebel ' + cfZahl(hebel, 1, { min: 0 }) + 'x – erlaubt sind höchstens '
+                + cfZahl(g.hebelMax, 1, { min: 0 }) + 'x.');
+        }
+        const t = tageBis(w.earningsAm);
+        if (t !== null && g.earningsTage !== null && t >= 0 && t <= g.earningsTage) {
+            aus.push(t === 0 ? 'Earnings sind heute – laut deiner Regel kein Einstieg.'
+                : 'Earnings in ' + t + (t === 1 ? ' Tag' : ' Tagen') + ' – laut deiner Regel kein Einstieg in den '
+                  + g.earningsTage + ' Tagen davor.');
+        }
+        return aus;
+    }
+
+    function setupKarteHtml(w, offen) {
+        const s = strategie(w && w.strategyId);
+        if (!s) return '';
+        const m = w.regelnErfuellt || {};
+        const st = setupStand(w, s);
+        const voll = st.von > 0 && st.erfuellt === st.von;
+        const gruppen = GRUPPEN.map(function (g) {
+            const liste = s.regeln.filter(function (r) { return r.gruppe === g.key; });
+            if (!liste.length) return '';
+            return '<div class="su-gruppe"><span class="su-gruppe-titel">' + g.titel
+                + (g.key === 'bonus' ? ' <span>keine Pflicht</span>' : '') + '</span>'
+                + liste.map(function (r) {
+                    return '<label class="pb-check-zeile"><input type="checkbox" class="su-regel" data-setup="'
+                        + esc(w.id) + '" value="' + esc(r.id) + '"' + (m[r.id] === true ? ' checked' : '') + '><span>'
+                        + esc(r.text) + '</span></label>';
+                }).join('') + '</div>';
+        }).join('');
+        return '<details class="su-regeln" data-setup="' + esc(w.id) + '"' + (offen ? ' open' : '') + '>'
+            + '<summary><span class="pb-abzeichen">' + esc(s.name) + '</span>'
+            + '<span class="pb-regel-abzeichen ' + (voll ? 'pb-voll' : 'pb-teil') + '">' + (voll ? '✓ ' : '')
+            + st.erfuellt + '/' + st.von + ' Regeln</span>'
+            + '<span class="su-regeln-auf">Abhaken</span></summary>'
+            + '<div class="su-regeln-inhalt">' + gruppen
+            + (voll ? '<p class="su-voll">Alle Pflichtregeln erfüllt – das Setup ist bereit.</p>' : '')
+            + '</div></details>';
+    }
+
+    window.cfPlaybookSetup = {
+        lesen: function () {
+            const e = el('suEarnings') && el('suEarnings').value;
+            return {
+                strategyId: strategie(setupAuswahl.wert()) ? setupAuswahl.wert() : null,
+                earningsAm: /^\d{4}-\d{2}-\d{2}$/.test(e || '') ? e : null,
+            };
+        },
+        zuruecksetzen: function () {
+            setupAuswahl.fuellen('');
+            if (el('suEarnings')) el('suEarnings').value = '';
+        },
+        pruefen: setupPruefen,
+        karte: setupKarteHtml,
+        stand: function (w) { const s = strategie(w && w.strategyId); return s ? setupStand(w, s) : null; },
+    };
+
     /** Strategie und Regeltreue auf der Trade-Karte. */
     window.cfPlaybookAbzeichen = function (trade) {
         const s = trade && trade.strategyId ? strategie(trade.strategyId) : null;
@@ -885,39 +1022,8 @@
             if (k) aktion(k.getAttribute('data-id'), a.getAttribute('data-pb-aktion'));
         });
 
-        const auswahlListe = el('pbStrategieListe');
-        if (auswahlListe) {
-            const nehmen = function (o) {
-                auswahlSetzen(o.getAttribute('data-value'));
-                auswahlZu();
-                checklisteZeichnen(strategie(el('pbStrategie').value));
-                const kopf = document.querySelector('.pb-auswahl .custom-select-header');
-                if (kopf) kopf.focus();
-            };
-            auswahlListe.addEventListener('click', function (e) {
-                const o = e.target.closest('.custom-option');
-                if (!o) return;
-                e.stopPropagation();
-                nehmen(o);
-            });
-            // Mit der Tastatur: Pfeile wandern, Enter waehlt, Escape schliesst
-            auswahlListe.addEventListener('keydown', function (e) {
-                const o = e.target.closest('.custom-option');
-                if (!o) return;
-                if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); nehmen(o); }
-                else if (e.key === 'ArrowDown' && o.nextElementSibling) { e.preventDefault(); o.nextElementSibling.focus(); }
-                else if (e.key === 'ArrowUp' && o.previousElementSibling) { e.preventDefault(); o.previousElementSibling.focus(); }
-                else if (e.key === 'Escape') { auswahlZu(); document.querySelector('.pb-auswahl .custom-select-header').focus(); }
-            });
-            const kopf = document.querySelector('.pb-auswahl .custom-select-header');
-            if (kopf) kopf.addEventListener('keydown', function (e) {
-                if (e.key !== 'ArrowDown') return;
-                e.preventDefault();
-                document.querySelector('.pb-auswahl').classList.add('open');
-                const z = auswahlListe.querySelector('.selected') || auswahlListe.firstElementChild;
-                if (z) z.focus();
-            });
-        }
+        journalAuswahl.binden();
+        setupAuswahl.binden();
         const check = el('pbCheckliste');
         if (check) check.addEventListener('change', standZeichnen);
 
@@ -930,9 +1036,14 @@
             });
         }
 
-        const zum = document.querySelector('[data-pb-zum-playbook]');
-        if (zum) zum.addEventListener('click', function () {
-            if (typeof handleTabChange === 'function') handleTabChange('playbook');
+        document.querySelectorAll('[data-pb-zum-playbook]').forEach(function (zum) {
+            zum.addEventListener('click', function () {
+                if (typeof handleTabChange === 'function') handleTabChange('playbook');
+            });
+        });
+        const suE = el('suEarnings');
+        if (suE) suE.addEventListener('change', function () {
+            if (typeof updateSetupsCrvPreview === 'function') updateSetupsCrvPreview();
         });
 
         formularAuswahl('');

@@ -249,7 +249,7 @@
      * Trade mit "column does not exist" scheitern. Dann lieber ohne die
      * neue Spalte speichern und deutlich sagen, was fehlt.
      */
-    const NEUE_SPALTEN = ['earnings_at', 'settings'];
+    const NEUE_SPALTEN = ['earnings_at', 'settings', 'rules_followed'];
     let spaltenHinweis = false;
     async function ohneFehlendeSpalte(fn, zeile) {
         let r = await fn(zeile);
@@ -268,6 +268,15 @@
             r = await fn(ohne);
         }
         return r;
+    }
+
+    function setupPlaybook(s) {
+        return {
+            strategy_id: alsUuid(s.strategyId),
+            rules_followed: s.strategyId && s.regelnErfuellt && typeof s.regelnErfuellt === 'object'
+                ? s.regelnErfuellt : null,
+            earnings_at: s.earningsAm || null,
+        };
     }
 
     window.cfDbStrategieSpeichern = function (s) {
@@ -550,7 +559,7 @@
             const nutzer = await uid();
             for (const s of nachher) {
                 if (ausDb(s.id)) continue;
-                const { error } = await window.cfDb.from('setups').insert({
+                const zeile = Object.assign({
                     user_id: nutzer,
                     instrument_id: await instrumentId(s.ticker),
                     direction: s.direction === 'short' ? 'short' : 'long',
@@ -562,7 +571,10 @@
                     // der Datenbank geladen, und der Screenshot war weg.
                     screenshot_path: await screenshotHoch(s.screenshot),
                     status: STATUS[s.status] || 'beobachten',
-                });
+                }, setupPlaybook(s));
+                const { error } = await ohneFehlendeSpalte(function (z) {
+                    return window.cfDb.from('setups').insert(z);
+                }, zeile);
                 pruefe(error, 'Setup anlegen');
             }
 
@@ -572,10 +584,16 @@
             for (const s of nachher) {
                 if (!ausDb(s.id)) continue;
                 const a = altNach[s.id];
-                if (!a || a.status === s.status) continue;
-                const { error } = await window.cfDb.from('setups').update({
-                    status: STATUS[s.status] || 'beobachten',
-                }).eq('id', s.id);
+                if (!a) continue;
+                // Status ODER Haken geaendert. Vorher wurde nur der Status
+                // verglichen - abgehakte Regeln waeren beim naechsten Laden
+                // wieder weg gewesen.
+                const pbAlt = JSON.stringify(setupPlaybook(a));
+                const pbNeu = JSON.stringify(setupPlaybook(s));
+                if (a.status === s.status && pbAlt === pbNeu) continue;
+                const { error } = await ohneFehlendeSpalte(function (z) {
+                    return window.cfDb.from('setups').update(z).eq('id', s.id);
+                }, Object.assign({ status: STATUS[s.status] || 'beobachten' }, setupPlaybook(s)));
                 pruefe(error, 'Setup ändern');
             }
         }, 'Setups');
