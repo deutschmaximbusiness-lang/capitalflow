@@ -1673,3 +1673,31 @@ input[type="number"] { -moz-appearance: textfield; appearance: textfield; }
 #pbForm .pb-grenzen-raster { margin-bottom: 24px; }
 #pbForm .pb-regel-raster { margin-bottom: 8px; }
 #pbForm .pb-fehler { margin: 0 0 16px; }
+
+/* ================================================================
+   M3 Teil 3: Strategie-Filter und Playbook-Auswertungen (05.10.)
+   ================================================================ */
+.cf-strat-filter-platz:empty { display: none; }
+.cf-strat-filter { min-width: 200px; }
+.cf-strat-filter .custom-select-header {
+    min-height: 40px; padding: 8px 14px !important; border-radius: 999px !important; box-sizing: border-box;
+    font-size: 13px; font-weight: 500; white-space: nowrap;
+}
+.cf-strat-filter .custom-select-value { overflow: hidden; text-overflow: ellipsis; max-width: 220px; }
+.cf-strat-filter.gesetzt .custom-select-header {
+    background: linear-gradient(90deg, rgba(54, 37, 92, 0.95), rgba(54, 37, 92, 0.55)) !important;
+    border-color: rgba(167, 139, 250, 0.45) !important; color: #F4F0FF;
+}
+.cf-strat-filter .custom-select-dropdown { min-width: 240px; right: auto !important; border-radius: 16px !important; margin-top: 6px !important; border-top: 1px solid rgba(124, 92, 240, 0.225) !important; }
+.cf-strat-filter .custom-option:focus-visible { outline: none; background: rgba(124, 92, 240, 0.16); color: #E4DBFF; }
+.cf-strat-filter .custom-select-header:focus-visible { outline: 2px solid #C9B8FF; outline-offset: 2px; }
+.trades-filter { align-items: center; }
+@media (max-width: 640px) {
+    .cf-strat-filter-platz { flex-basis: 100%; }
+    .cf-strat-filter { width: 100%; }
+    .cf-strat-filter .custom-select-dropdown { min-width: 0; right: 0 !important; }
+}
+
+.aus-leise { color: var(--cf-text-2); font-weight: 400; }
+.aus-wenig { display: block; margin-top: 6px; color: var(--cf-text-2); font-size: 12px; }
+.aus-unter { margin: 18px 0 8px; font-size: 13px; font-weight: 600; color: #C9B8FF; }

@@ -596,6 +596,7 @@ const deleteModal = document.getElementById('deleteModal');
 let tradeToDelete = null;
 let currentFilter = 'all'; // 'all', 'leverage', 'normal'
 let currentSetupTypeFilter = 'all'; // Setup-Type Filter
+let currentStrategieFilter = 'alle'; // 'alle', 'ohne' oder die id einer Strategie
 let screenshotData = null;
 let currentTab = 'dashboard'; // Tracke aktuellen Tab
 
@@ -954,8 +955,101 @@ function getFilteredTrades(trades) {
     if (currentSetupTypeFilter !== 'all') {
         filtered = filtered.filter(t => t.setupType === currentSetupTypeFilter);
     }
+
+    // Strategie aus dem Playbook
+    if (currentStrategieFilter === 'ohne') {
+        filtered = filtered.filter(t => !t.strategyId);
+    } else if (currentStrategieFilter !== 'alle') {
+        filtered = filtered.filter(t => String(t.strategyId || '') === currentStrategieFilter);
+    }
     
     return filtered;
+}
+
+/**
+ * Klappliste "nach Strategie" neben Alle / Hebel / Normal. Steht in
+ * Journal, Dashboard und Analytics und filtert alle drei gemeinsam -
+ * wie die Knoepfe daneben. Ohne Strategien im Playbook erscheint sie gar
+ * nicht: eine Auswahl mit nur "Alle" ist keine.
+ */
+function strategieFilterHtml() {
+    const liste = window.cfPlaybook ? window.cfPlaybook.strategien() : [];
+    if (!liste.length) { currentStrategieFilter = 'alle'; return ''; }
+    let trades = [];
+    try { trades = JSON.parse(localStorage.getItem('trades')) || []; } catch (e) { trades = []; }
+    const mitTrades = new Set(trades.map(t => t && t.strategyId).filter(Boolean).map(String));
+    const sichtbar = liste.filter(s => !s.archiviert || mitTrades.has(s.id));
+    if (currentStrategieFilter !== 'alle' && currentStrategieFilter !== 'ohne'
+        && !sichtbar.some(s => s.id === currentStrategieFilter)) currentStrategieFilter = 'alle';
+    const optionen = [['alle', 'Alle Strategien'], ['ohne', 'Ohne Strategie']]
+        .concat(sichtbar.map(s => [s.id, s.name]));
+    const aktiv = optionen.find(o => o[0] === currentStrategieFilter) || optionen[0];
+    return `<div class="custom-select cf-strat-filter${currentStrategieFilter !== 'alle' ? ' gesetzt' : ''}">
+        <div class="custom-select-header" tabindex="0" role="button" aria-haspopup="listbox" aria-label="Nach Strategie filtern: ${escapeHtml(aktiv[1])}">
+            <span class="custom-select-value">${escapeHtml(aktiv[1])}</span>
+            <svg class="custom-select-arrow" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path fill="currentColor" d="M7 10l5 5 5-5z"/></svg>
+        </div>
+        <div class="custom-select-dropdown" role="listbox">${optionen.map(o =>
+            `<div class="custom-option${o[0] === currentStrategieFilter ? ' selected' : ''}" role="option" tabindex="-1" aria-selected="${o[0] === currentStrategieFilter}" data-strategie="${escapeHtml(o[0])}">${escapeHtml(o[1])}</div>`).join('')}</div>
+    </div>`;
+}
+
+function strategieFilterPlaetze() {
+    document.querySelectorAll('.cf-strat-filter-platz').forEach(p => { p.innerHTML = strategieFilterHtml(); });
+}
+
+function strategieFilterWaehlen(wert) {
+    currentStrategieFilter = wert || 'alle';
+    loadTrades();
+    if (currentTab === 'dashboard') loadDashboard();
+    if (currentTab === 'analytics') loadAnalytics();
+    strategieFilterPlaetze();
+}
+
+// In der Einfangphase: die allgemeine Klapplisten-Logik schliesst bei
+// jedem Klick alle offenen Listen. Liefe dieser Handler danach, ginge
+// die Liste beim Klick auf den Kopf zu und sofort wieder auf.
+document.addEventListener('click', function (e) {
+    const kopf = e.target.closest && e.target.closest('.cf-strat-filter .custom-select-header');
+    const opt = e.target.closest && e.target.closest('.cf-strat-filter .custom-option');
+    if (!kopf && !opt) return;
+    e.stopPropagation();
+    if (kopf) {
+        const box = kopf.parentElement;
+        const war = box.classList.contains('open');
+        document.querySelectorAll('.custom-select.open').forEach(x => x.classList.remove('open'));
+        if (!war) box.classList.add('open');
+        return;
+    }
+    strategieFilterWaehlen(opt.getAttribute('data-strategie'));
+}, true);
+document.addEventListener('keydown', function (e) {
+    const box = e.target.closest && e.target.closest('.cf-strat-filter');
+    if (!box) return;
+    const opt = e.target.closest('.custom-option');
+    if (!opt && (e.key === 'Enter' || e.key === ' ' || e.key === 'ArrowDown')) {
+        e.preventDefault();
+        box.classList.add('open');
+        const z = box.querySelector('.custom-option.selected') || box.querySelector('.custom-option');
+        if (z) z.focus();
+    } else if (opt && (e.key === 'Enter' || e.key === ' ')) {
+        e.preventDefault();
+        strategieFilterWaehlen(opt.getAttribute('data-strategie'));
+    } else if (opt && e.key === 'ArrowDown' && opt.nextElementSibling) {
+        e.preventDefault(); opt.nextElementSibling.focus();
+    } else if (opt && e.key === 'ArrowUp' && opt.previousElementSibling) {
+        e.preventDefault(); opt.previousElementSibling.focus();
+    } else if (e.key === 'Escape') {
+        box.classList.remove('open');
+        const k = box.querySelector('.custom-select-header');
+        if (k) k.focus();
+    }
+}, true);
+
+/** Durchschnitt in R ueber alle Trades mit Stop, null ohne solche. */
+function durchschnittR(liste) {
+    const rs = liste.map(tradeR).filter(r => r !== null && Number.isFinite(r));
+    return rs.length ? { wert: rs.reduce((a, b) => a + b, 0) / rs.length, anzahl: rs.length } : null;
 }
 
 // ===== TRADES =====
@@ -1596,6 +1690,7 @@ function loadTrades() {
     });
     localStorage.setItem('trades', JSON.stringify(trades));
     
+    strategieFilterPlaetze();
     const filteredTrades = getFilteredTrades(trades);
     
     // Update Display Stats oben (ALLE Trades, nicht gefiltert)
@@ -2040,9 +2135,9 @@ function calculateDashboardStats(trades) {
     
     let tradeScore = 0;
     if (trades.length > 0) {
-        const winRateScore = Math.min(winRate / 0.6 * 20, 20);
+        const winRateScore = Math.min(winRate / 60 * 20, 20);   // winRate in Prozent
         const profitFactorScore = Math.min((profitFactor / 2) * 25, 25);
-        const consistencyScore = Math.min((Math.abs(avgWin) / (Math.abs(avgWin) + Math.abs(avgLoss))) * 25, 25);
+        const consistencyScore = Math.min((Math.abs(avgWin) / ((Math.abs(avgWin) + Math.abs(avgLoss)) || 1)) * 25, 25);
         const tradeCountScore = Math.min((trades.length / 100) * 30, 30);
         tradeScore = Math.round(winRateScore + profitFactorScore + consistencyScore + tradeCountScore);
         tradeScore = Math.min(100, Math.max(0, tradeScore));
@@ -2312,6 +2407,7 @@ function loadDashboard() {
                 <button class="filter-btn ${currentFilter === 'all' ? 'active' : ''}" data-filter="all">Alle Trades</button>
                 <button class="filter-btn ${currentFilter === 'leverage' ? 'active' : ''}" data-filter="leverage">Nur Hebel</button>
                 <button class="filter-btn ${currentFilter === 'normal' ? 'active' : ''}" data-filter="normal">Nur Normal</button>
+                <div class="cf-strat-filter-platz">${strategieFilterHtml()}</div>
             </div>
         </div>
 
@@ -2371,9 +2467,12 @@ function renderDashboardCharts(trades, stats) {
     // Trade Score Calculation
     let tradeScore = 0;
     if (trades.length > 0) {
-        const winRateScore = Math.min(stats.winRate / 0.6 * 20, 20);
+        // winRate ist in Prozent (62,5), nicht als Anteil (0,625). Mit
+        // "/ 0.6" war die volle Punktzahl schon ab 0,6 % Trefferquote
+        // erreicht - der Score kannte faktisch keine Trefferquote.
+        const winRateScore = Math.min(stats.winRate / 60 * 20, 20);
         const profitFactorScore = Math.min((stats.profitFactor / 2) * 25, 25);
-        const consistencyScore = Math.min((Math.abs(stats.avgWin) / (Math.abs(stats.avgWin) + Math.abs(stats.avgLoss))) * 25, 25);
+        const consistencyScore = Math.min((Math.abs(stats.avgWin) / ((Math.abs(stats.avgWin) + Math.abs(stats.avgLoss)) || 1)) * 25, 25);
         const tradeCountScore = Math.min((trades.length / 100) * 30, 30);
         tradeScore = Math.round(winRateScore + profitFactorScore + consistencyScore + tradeCountScore);
         tradeScore = Math.min(100, Math.max(0, tradeScore));
@@ -2396,15 +2495,19 @@ function renderDashboardCharts(trades, stats) {
         window.tradeScoreChartInstance = new Chart(ctx, {
             type: 'radar',
             data: {
-                labels: ['Trefferquote', 'Beständigkeit', 'Profit Factor', 'Anzahl Trades', 'Chance : Risiko'],
+                labels: ['Trefferquote', 'Beständigkeit', 'Profit Factor', 'Anzahl Trades', 'Ergebnis in R'],
                 datasets: [{
                     label: 'Performance',
+                    // Jede Achse auf 0..1 ihres Hoechstwerts, damit der
+                    // Radar nicht nach der Punkteverteilung verzerrt ist.
+                    // Die fuenfte Achse war vorher ein zweites Mal der
+                    // Profit Factor unter dem Namen "Chance : Risiko".
                     data: [
-                        Math.min(stats.winRate / 0.6 * 20, 20),
-                        Math.min((Math.abs(stats.avgWin) / (Math.abs(stats.avgWin) + Math.abs(stats.avgLoss))) * 25, 25),
+                        Math.min(stats.winRate / 60, 1) * 20,
+                        Math.min((Math.abs(stats.avgWin) / ((Math.abs(stats.avgWin) + Math.abs(stats.avgLoss)) || 1)) * 25, 25),
                         Math.min((stats.profitFactor / 2) * 25, 25),
                         Math.min((trades.length / 100) * 30, 30),
-                        Math.min((stats.profitFactor / 2) * 20, 20)
+                        (function () { const r = durchschnittR(trades); return r ? Math.min(Math.max(r.wert, 0), 1) * 20 : 0; })()
                     ],
                     borderColor: '#8B6CF3',
                     backgroundColor: 'rgba(124, 92, 240, 0.112)',
@@ -2644,15 +2747,17 @@ function loadAnalytics() {
     // Schnitt nach unten ziehen und damit genau die Zahl verfaelschen,
     // wegen der man hinschaut. Nach einem CSV-Import ist das die
     // Mehrheit - deshalb steht dabei, auf wie vielen Trades sie beruht.
-    const mitStop = trades.filter(t =>
-        Number.isFinite(parseFloat(t.riskReward)) && parseFloat(t.risk) > 0);
-    const avgRR = mitStop.length
-        ? mitStop.reduce((s, t) => s + parseFloat(t.riskReward), 0) / mitStop.length
-        : null;
-    const avgRRText = avgRR === null ? '—' : cfZahl(avgRR, 2) + ' : 1';
-    const avgRRZusatz = mitStop.length === 0
+    //
+    // 05.10.: Das war nie ein Chance-Risiko-Verhaeltnis (geplantes Ziel
+    // gegen geplanten Stop), sondern das ERREICHTE Ergebnis geteilt durch
+    // das Risiko - also R. Bei Verlusten kam "-0,80 : 1" heraus. Jetzt
+    // heisst es, was es ist, und rechnet mit derselben Funktion wie die
+    // Trade-Karte.
+    const rSchnitt = durchschnittR(trades);
+    const avgRRText = rSchnitt === null ? '—' : cfZahl(rSchnitt.wert, 2, { vorzeichen: true }) + ' R';
+    const avgRRZusatz = rSchnitt === null
         ? 'Kein Trade hat einen Stop'
-        : 'aus ' + mitStop.length + ' von ' + trades.length + ' Trades';
+        : 'aus ' + rSchnitt.anzahl + ' von ' + trades.length + ' Trades mit Stop';
 
 
     // Calculate Sharpe Ratio (simplified)
@@ -2740,6 +2845,7 @@ function loadAnalytics() {
             <button class="filter-btn ${currentFilter === 'all' ? 'active' : ''}" data-filter="all">Alle Trades</button>
             <button class="filter-btn ${currentFilter === 'leverage' ? 'active' : ''}" data-filter="leverage">Nur Hebel</button>
             <button class="filter-btn ${currentFilter === 'normal' ? 'active' : ''}" data-filter="normal">Nur Normal</button>
+            <div class="cf-strat-filter-platz">${strategieFilterHtml()}</div>
         </div>
         </div>
 
@@ -2872,8 +2978,8 @@ function loadAnalytics() {
                 <div style="font-size: 24px; font-weight: 700; color: #FB7185;">${cfGeld(-Math.abs(largestLoss))}</div>
             </div>
             <div class="analytics-metric-card-small">
-                <div style="font-size: 11px; text-transform: none; color: #A9A5BD; font-weight: 600; margin-bottom: 8px;">Ø Chance : Risiko</div>
-                <div style="font-size: 24px; font-weight: 700; color: #C9B8FF;">${avgRRText}</div>
+                <div style="font-size: 11px; text-transform: none; color: #A9A5BD; font-weight: 600; margin-bottom: 8px;">Ø Ergebnis in R</div>
+                <div style="font-size: 24px; font-weight: 700; color: ${rSchnitt === null ? '#C9B8FF' : rSchnitt.wert >= 0 ? '#34D399' : '#FB7185'};">${avgRRText}</div>
                 <div style="font-size: 11px; color: #8A86A0; margin-top: 4px;">${escapeHtml(avgRRZusatz)}</div>
             </div>
         </div>
@@ -2910,7 +3016,7 @@ function loadAnalytics() {
                         <div style="font-size: 20px; font-weight: 700; color: #D5D2E2;">${cfZahl(stats.profitFactor, 2)}</div>
                     </div>
                     <div style="text-align: center;">
-                        <div style="color: #A9A5BD; margin-bottom: 4px;">Ø Chance : Risiko</div>
+                        <div style="color: #A9A5BD; margin-bottom: 4px;">Ø Ergebnis in R</div>
                         <div style="font-size: 20px; font-weight: 700; color: #D5D2E2;">${avgRRText}</div>
                     </div>
                     <div style="text-align: center;">
@@ -4000,12 +4106,12 @@ function renderTradeScoreChart(tradeScore, stats) {
     window.tradeScoreChartInstance = new Chart(ctx, {
         type: 'radar',
         data: {
-            labels: ['Trefferquote', 'Beständigkeit', 'Profit Factor', 'Anzahl Trades', 'Chance : Risiko'],
+            labels: ['Trefferquote', 'Beständigkeit', 'Profit Factor', 'Anzahl Trades', 'Ergebnis in R'],
             datasets: [{
                 label: 'Performance Metrics',
                 data: [
-                    Math.min(stats.winRate / 0.6 * 20, 20),
-                    Math.min((Math.abs(stats.avgWin) / (Math.abs(stats.avgWin) + Math.abs(stats.avgLoss))) * 25, 25),
+                    Math.min(stats.winRate / 60 * 20, 20),
+                    Math.min((Math.abs(stats.avgWin) / ((Math.abs(stats.avgWin) + Math.abs(stats.avgLoss)) || 1)) * 25, 25),
                     Math.min((stats.profitFactor / 2) * 25, 25),
                     Math.min((stats.trades.length / 100) * 30, 30),
                     Math.min((stats.profitFactor / 2) * 20, 20)
