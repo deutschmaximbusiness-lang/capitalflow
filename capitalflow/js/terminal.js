@@ -75,7 +75,7 @@
     function kursZeigen(coin, k) {
         const box = document.querySelector('.tm-kurs[data-coin="' + coin + '"]');
         if (!box || !(k.preis > 0)) return;
-        box.querySelector('.tm-kurs-preis').textContent = window.cfGeld(k.preis, { waehrung: '$', stellen: coin === 'BTC' ? 0 : 2 });
+        box.querySelector('.tm-kurs-preis').textContent = window.cfGeld(k.preis, { waehrung: '$', stellen: window.cfMarkt.COINS[coin].kursStellen });
         const p = box.querySelector('.tm-kurs-24h');
         p.textContent = window.cfProz(k.prozent, 2, { vorzeichen: true });
         p.className = 'tm-kurs-24h ' + (k.prozent >= 0 ? 'tm-plus' : 'tm-minus');
@@ -87,12 +87,30 @@
         box.classList.toggle('tm-minus', f.rate < 0);
     }
 
+    const QUELLEN = [['orderbuch', 'Orderbuch'], ['binance', 'Binance'], ['bybit', 'Bybit'], ['okx', 'OKX']];
+    const letzte = {};
     function statusZeigen(s) {
         const live = el('tmLive');
-        const beide = s.binance === 'live' && s.bybit === 'live';
-        const eine = s.binance === 'live' || s.bybit === 'live';
-        live.setAttribute('data-stand', beide ? 'live' : eine ? 'teil' : 'aus');
-        live.querySelector('b').textContent = beide ? 'Live' : eine ? (s.binance === 'live' ? 'Bybit getrennt' : 'Binance getrennt') : 'Getrennt';
+        const an = QUELLEN.filter(function (q) { return s[q[0]] === 'live'; }).length;
+        live.setAttribute('data-stand', an === QUELLEN.length ? 'live' : an ? 'teil' : 'aus');
+        live.querySelector('b').textContent = an === QUELLEN.length ? 'Live' : an ? an + ' von ' + QUELLEN.length + ' live' : 'Getrennt';
+        quellenZeigen(s);
+    }
+    // Pro Boerse: verbunden? letzte Liquidation wann? So sieht man sofort,
+    // ob eine Quelle haengt oder es nur gerade ruhig ist.
+    let quellenStand = {};
+    function quellenZeigen(s) {
+        if (s) quellenStand = s;
+        const box = el('tmQuellen');
+        if (!box) return;
+        box.innerHTML = QUELLEN.slice(1).map(function (q) {
+            const st = quellenStand[q[0]] || 'verbinde';
+            const name = q[1] === 'Binance' ? 'Binance' : q[1];
+            const t = letzte[name];
+            return '<span class="tm-quelle-punkt" data-stand="' + st + '"><i aria-hidden="true"></i>' + name
+                + '<em>' + (st !== 'live' ? (st === 'verbinde' ? 'verbindet' : 'getrennt')
+                    : t ? 'zuletzt ' + uhr(t).slice(0, 5) : 'verbunden') + '</em></span>';
+        }).join('');
     }
 
     // -------------------------------------------------------- Orderbuch
@@ -108,7 +126,7 @@
             const g = karte.querySelector('.tm-stufen');
             g.innerHTML = c.stufen.map(function (s) {
                 return '<button type="button" data-stufe="' + s + '"' + (s === c.stufe ? ' class="aktiv"' : '') + '>'
-                    + window.cfZahl(s, s < 1 ? 1 : 0, { min: 0 }) + '</button>';
+                    + window.cfZahl(s, s < 0.1 ? 2 : s < 1 ? 1 : 0, { min: 0 }) + '</button>';
             }).join('');
             g.addEventListener('click', function (e) {
                 const b = e.target.closest('[data-stufe]');
@@ -128,8 +146,8 @@
         if (!k) return;
         const max = Math.max(g.bids.length ? g.bids[g.bids.length - 1].summe : 0,
                              g.asks.length ? g.asks[g.asks.length - 1].summe : 0) || 1;
-        const nk = stufe < 1 ? (stufe < 0.5 ? 2 : 1) : 0;
-        const mk = coin === 'BTC' ? 3 : 2;
+        const nk = stufe < 0.1 ? 2 : stufe < 1 ? 1 : 0;
+        const mk = window.cfMarkt.COINS[coin].mengeStellen;
         // Groesste Einzelstufe je Seite hervorheben - die "Wand"
         const wand = function (liste) { return liste.reduce(function (a, z) { return z.menge > a ? z.menge : a; }, 0); };
         const zeile = function (z, seite, groesste) {
@@ -142,7 +160,7 @@
         const wa = wand(g.asks), wb = wand(g.bids);
         karte.querySelector('.tm-buch-asks').innerHTML = g.asks.slice().reverse().map(function (z) { return zeile(z, 'ask', wa); }).join('');
         karte.querySelector('.tm-buch-bids').innerHTML = g.bids.map(function (z) { return zeile(z, 'bid', wb); }).join('');
-        karte.querySelector('.tm-buch-mitte').innerHTML = '<strong>' + window.cfZahl(k.mitte, coin === 'BTC' ? 1 : 2) + '</strong>'
+        karte.querySelector('.tm-buch-mitte').innerHTML = '<strong>' + window.cfZahl(k.mitte, window.cfMarkt.COINS[coin].preisStellen) + '</strong>'
             + '<span>Spread ' + window.cfZahl(k.spread, 2) + '</span>';
         karte.querySelector('.tm-druck-bid').style.width = (k.druck * 100).toFixed(1) + '%';
         karte.querySelector('.tm-druck-text').textContent = 'Käufer ' + window.cfProz(k.druck * 100, 0)
@@ -165,7 +183,7 @@
     function liqStatsZeigen() {
         if (!markt) return;
         const box = el('tmLiqStats');
-        box.innerHTML = ['BTC', 'ETH'].map(function (coin) {
+        box.innerHTML = window.cfMarkt.NAMEN.map(function (coin) {
             const s = markt.liq.summen(coin, liqZeit);
             const gesamt = s.long + s.short;
             const anteil = gesamt ? (s.long / gesamt) * 100 : 50;
@@ -179,7 +197,8 @@
                 +   '<div><span>Größte</span><strong>' + (s.groesste ? kurzGeld(s.groesste.wert) + ' ' + (s.groesste.seite === 'long' ? 'Long' : 'Short') : '—') + '</strong></div>'
                 + '</div></div>';
         }).join('');
-        el('tmLiqSeit').textContent = 'Binance + Bybit, gezählt seit ' + new Date(markt.liq.seit)
+        quellenZeigen();
+        el('tmLiqSeit').textContent = 'Binance, Bybit, OKX, gezählt seit ' + new Date(markt.liq.seit)
             .toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' });
     }
 
@@ -202,6 +221,7 @@
     }
 
     function neueLiquidation(l) {
+        letzte[l.boerse] = Date.now();
         if (l.wert < liqMin) return;
         const box = el('tmLiqListe');
         const leer = box.querySelector('.tm-leer');

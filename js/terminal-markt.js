@@ -6,7 +6,13 @@
  *   Orderbuch      Binance USDⓈ-M Futures (Perps), Diff-Stream + Snapshot
  *   Liquidationen  Binance (gedrosselt: max. 1 je Coin und Sekunde)
  *                  + Bybit (alle Liquidationen, alle 500 ms gebuendelt)
+ *                  + OKX (alle Liquidationen der Perps)
  *   Kurs, Funding  Binance Futures
+ *
+ * Binance hat die Futures-Streams 2026 auf zwei Adressen aufgeteilt:
+ * Orderbuch unter /public, Kurs, Funding und Liquidationen unter
+ * /market. Ueber die alte Sammeladresse kommen Kurs und Liquidationen
+ * nicht mehr an - genau deshalb blieben Kopfzeile und Liquidationen leer.
  *   Fear & Greed   alternative.me
  *
  * Liquidations-Summen zaehlen ab dem Oeffnen der Seite. 24h-Summen
@@ -15,12 +21,26 @@
 (function () {
     'use strict';
 
+    // ctVal: Groesse eines OKX-Kontrakts in Coins. Wird beim Start von OKX
+    // geholt, das hier ist nur der Rueckfall.
     const COINS = {
-        BTC: { binance: 'btcusdt', bybit: 'BTCUSDT', stufen: [1, 10, 50, 100], stufe: 10, nachkomma: 1 },
-        ETH: { binance: 'ethusdt', bybit: 'ETHUSDT', stufen: [0.1, 0.5, 1, 5], stufe: 0.5, nachkomma: 2 },
+        BTC: { binance: 'btcusdt', bybit: 'BTCUSDT', okx: 'BTC-USDT-SWAP', ctVal: 0.01,
+               stufen: [1, 10, 50, 100], stufe: 10, preisStellen: 1, mengeStellen: 3, kursStellen: 0 },
+        ETH: { binance: 'ethusdt', bybit: 'ETHUSDT', okx: 'ETH-USDT-SWAP', ctVal: 0.1,
+               stufen: [0.1, 0.5, 1, 5], stufe: 0.5, preisStellen: 2, mengeStellen: 2, kursStellen: 2 },
+        SOL: { binance: 'solusdt', bybit: 'SOLUSDT', okx: 'SOL-USDT-SWAP', ctVal: 1,
+               stufen: [0.01, 0.05, 0.1, 0.5], stufe: 0.05, preisStellen: 2, mengeStellen: 1, kursStellen: 2 },
     };
+    const NAMEN = Object.keys(COINS);
+    function coinVon(feld, wert) {
+        for (let i = 0; i < NAMEN.length; i++) if (COINS[NAMEN[i]][feld] === wert) return NAMEN[i];
+        return null;
+    }
 
-    const BINANCE_WS = 'wss://fstream.binance.com/stream?streams=';
+    const BINANCE_PUBLIC = 'wss://fstream.binance.com/public/stream?streams=';
+    const BINANCE_MARKET = 'wss://fstream.binance.com/market/stream?streams=';
+    const OKX_WS = 'wss://ws.okx.com:8443/ws/v5/public';
+    const OKX_REST = 'https://www.okx.com/api/v5/public/instruments?instType=SWAP&instId=';
     const BINANCE_REST = 'https://fapi.binance.com/fapi/v1/depth';
     const BYBIT_WS = 'wss://stream.bybit.com/v5/public/linear';
     const FNG_URL = 'https://api.alternative.me/fng/?limit=31';
@@ -138,7 +158,7 @@
      */
     function ausBinance(o) {
         if (!o || !o.s) return null;
-        const coin = o.s === 'BTCUSDT' ? 'BTC' : o.s === 'ETHUSDT' ? 'ETH' : null;
+        const coin = coinVon('binance', String(o.s).toLowerCase());
         if (!coin) return null;
         const menge = +(o.z || o.q), preis = +(o.ap || o.p);
         if (!(menge > 0) || !(preis > 0)) return null;
@@ -148,13 +168,29 @@
     }
     function ausBybit(d) {
         if (!d || !d.s) return null;
-        const coin = d.s === 'BTCUSDT' ? 'BTC' : d.s === 'ETHUSDT' ? 'ETH' : null;
+        const coin = coinVon('bybit', d.s);
         if (!coin) return null;
         const menge = +d.v, preis = +d.p;
         if (!(menge > 0) || !(preis > 0)) return null;
         // Bybit: "Buy" = eine Long-Position wurde liquidiert
         return { boerse: 'Bybit', coin: coin, seite: d.S === 'Buy' ? 'long' : 'short',
                  menge: menge, preis: preis, wert: menge * preis, zeit: +d.T || Date.now() };
+    }
+
+    /**
+     * OKX: sz ist die Zahl der Kontrakte, nicht die Coins. posSide sagt,
+     * welche Position liquidiert wurde; im Netto-Modus steht dort "net",
+     * dann gilt: Verkauf = Long liquidiert.
+     */
+    function ausOkx(zeile, d) {
+        const coin = coinVon('okx', zeile && zeile.instId);
+        if (!coin || !d) return null;
+        const menge = (+d.sz) * COINS[coin].ctVal, preis = +d.bkPx;
+        if (!(menge > 0) || !(preis > 0)) return null;
+        const seite = d.posSide === 'long' || d.posSide === 'short' ? d.posSide
+            : (d.side === 'sell' ? 'long' : 'short');
+        return { boerse: 'OKX', coin: coin, seite: seite,
+                 menge: menge, preis: preis, wert: menge * preis, zeit: +d.ts || Date.now() };
     }
 
     function LiqStatistik() { this.seit = Date.now(); this.liste = []; }
@@ -220,9 +256,10 @@
     // ------------------------------------------------------ Gesamtstart
 
     function starten(ui) {
-        const buecher = { BTC: new Orderbuch(), ETH: new Orderbuch() };
+        const buecher = {};
+        NAMEN.forEach(function (c) { buecher[c] = new Orderbuch(); });
         const liq = new LiqStatistik();
-        const status = { binance: 'verbinde', bybit: 'verbinde' };
+        const status = { orderbuch: 'verbinde', binance: 'verbinde', bybit: 'verbinde', okx: 'verbinde' };
         const melden = function () { if (ui.status) ui.status(status); };
 
         const laedt = {};
@@ -244,61 +281,94 @@
             if (nochmal) setTimeout(function () { snapshot(coin); }, nochmal);
         }
 
-        const streams = [];
-        Object.keys(COINS).forEach(function (c) {
-            const s = COINS[c].binance;
-            streams.push(s + '@depth@100ms', s + '@forceOrder', s + '@ticker', s + '@markPrice@1s');
-        });
+        const neueLiq = function (l) { if (l) { liq.neu(l); if (ui.liquidation) ui.liquidation(l); } };
+        const quelle = function (name) {
+            return function (s) { status[name] = s; melden(); };
+        };
 
-        const binance = new Leitung(BINANCE_WS + streams.join('/'), {
-            offen: function () { Object.keys(COINS).forEach(snapshot); },
-            status: function (s) { status.binance = s; melden(); },
+        // Orderbuch (Binance /public)
+        const buch = new Leitung(BINANCE_PUBLIC + NAMEN.map(function (c) { return COINS[c].binance + '@depth@100ms'; }).join('/'), {
+            offen: function () { NAMEN.forEach(snapshot); },
+            status: quelle('orderbuch'),
             nachricht: function (m) {
-                const name = m.stream || '', d = m.data || {};
-                const coin = name.indexOf('btcusdt') === 0 ? 'BTC' : name.indexOf('ethusdt') === 0 ? 'ETH' : null;
-                if (!coin) return;
-                if (name.indexOf('@depth') > 0) {
-                    if (!buecher[coin].ereignis(d)) snapshot(coin);
-                } else if (name.indexOf('@forceOrder') > 0) {
-                    const l = ausBinance(d.o);
-                    if (l) { liq.neu(l); if (ui.liquidation) ui.liquidation(l); }
-                } else if (name.indexOf('@ticker') > 0) {
-                    if (ui.kurs) ui.kurs(coin, { preis: +d.c, prozent: +d.P });
-                } else if (name.indexOf('@markPrice') > 0) {
-                    if (ui.funding) ui.funding(coin, { rate: +d.r, naechste: +d.T });
-                }
+                const coin = coinVon('binance', String(m.stream || '').split('@')[0]);
+                if (coin && m.data && !buecher[coin].ereignis(m.data)) snapshot(coin);
             },
         });
 
+        // Kurs, Funding, Liquidationen (Binance /market)
+        const marktStreams = [];
+        NAMEN.forEach(function (c) {
+            const s = COINS[c].binance;
+            marktStreams.push(s + '@forceOrder', s + '@ticker', s + '@markPrice@1s');
+        });
+        const binance = new Leitung(BINANCE_MARKET + marktStreams.join('/'), {
+            status: quelle('binance'),
+            nachricht: function (m) {
+                const name = String(m.stream || ''), d = m.data || {};
+                const coin = coinVon('binance', name.split('@')[0]);
+                if (!coin) return;
+                if (name.indexOf('@forceOrder') > 0) neueLiq(ausBinance(d.o));
+                else if (name.indexOf('@ticker') > 0) { if (ui.kurs) ui.kurs(coin, { preis: +d.c, prozent: +d.P }); }
+                else if (name.indexOf('@markPrice') > 0) { if (ui.funding) ui.funding(coin, { rate: +d.r, naechste: +d.T }); }
+            },
+        });
+
+        // Bybit: alle Liquidationen
         let ping = null;
         const bybit = new Leitung(BYBIT_WS, {
             offen: function (ws) {
-                ws.send(JSON.stringify({ op: 'subscribe', args: Object.keys(COINS).map(function (c) { return 'allLiquidation.' + COINS[c].bybit; }) }));
+                ws.send(JSON.stringify({ op: 'subscribe', args: NAMEN.map(function (c) { return 'allLiquidation.' + COINS[c].bybit; }) }));
                 clearInterval(ping);
                 ping = setInterval(function () { try { ws.send(JSON.stringify({ op: 'ping' })); } catch (e) { /* egal */ } }, 20000);
             },
             zu: function () { clearInterval(ping); },
-            status: function (s) { status.bybit = s; melden(); },
+            status: quelle('bybit'),
             nachricht: function (m) {
                 if (!m || typeof m.topic !== 'string' || m.topic.indexOf('allLiquidation.') !== 0) return;
-                (Array.isArray(m.data) ? m.data : [m.data]).forEach(function (d) {
-                    const l = ausBybit(d);
-                    if (l) { liq.neu(l); if (ui.liquidation) ui.liquidation(l); }
+                (Array.isArray(m.data) ? m.data : [m.data]).forEach(function (d) { neueLiq(ausBybit(d)); });
+            },
+        });
+
+        // OKX: alle Liquidationen der Perps, gefiltert auf unsere Coins
+        let pingOkx = null;
+        const okx = new Leitung(OKX_WS, {
+            offen: function (ws) {
+                ws.send(JSON.stringify({ op: 'subscribe', args: [{ channel: 'liquidation-orders', instType: 'SWAP' }] }));
+                clearInterval(pingOkx);
+                pingOkx = setInterval(function () { try { ws.send('ping'); } catch (e) { /* egal */ } }, 25000);
+            },
+            zu: function () { clearInterval(pingOkx); },
+            status: quelle('okx'),
+            nachricht: function (m) {
+                if (!m || !m.arg || m.arg.channel !== 'liquidation-orders' || !Array.isArray(m.data)) return;
+                m.data.forEach(function (z) {
+                    (z.details || []).forEach(function (d) { neueLiq(ausOkx(z, d)); });
                 });
             },
+        });
+        // Kontraktgroessen von OKX holen, falls sie sich geaendert haben
+        NAMEN.forEach(function (c) {
+            fetch(OKX_REST + COINS[c].okx).then(function (r) { return r.json(); }).then(function (j) {
+                const v = j && j.data && j.data[0] && +j.data[0].ctVal;
+                if (v > 0) COINS[c].ctVal = v;
+            }).catch(function () { /* Rueckfall bleibt */ });
         });
 
         // Orderbuch nicht bei jedem Ereignis zeichnen (10x pro Sekunde je
         // Coin), sondern hoechstens viermal pro Sekunde
         const tick = setInterval(function () {
-            if (ui.orderbuch) Object.keys(COINS).forEach(function (c) {
+            if (ui.orderbuch) NAMEN.forEach(function (c) {
                 if (buecher[c].bereit) ui.orderbuch(c, buecher[c]);
             });
         }, 250);
 
         return {
             buecher: buecher, liq: liq,
-            stoppen: function () { binance.schliessen(); bybit.schliessen(); clearInterval(tick); clearInterval(ping); },
+            stoppen: function () {
+                buch.schliessen(); binance.schliessen(); bybit.schliessen(); okx.schliessen();
+                clearInterval(tick); clearInterval(ping); clearInterval(pingOkx);
+            },
         };
     }
 
@@ -310,7 +380,7 @@
 
     window.cfMarkt = {
         COINS: COINS, Orderbuch: Orderbuch, gruppieren: gruppieren, kennzahlen: kennzahlen,
-        ausBinance: ausBinance, ausBybit: ausBybit, LiqStatistik: LiqStatistik,
+        ausBinance: ausBinance, ausBybit: ausBybit, ausOkx: ausOkx, LiqStatistik: LiqStatistik, NAMEN: NAMEN,
         fngLesen: fngLesen, fngHolen: fngHolen, starten: starten,
     };
 })();

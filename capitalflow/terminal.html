@@ -47,6 +47,12 @@
                     <span class="tm-kurs-24h">—</span>
                     <span class="tm-kurs-funding" title="Funding Rate (Binance Perp)">—</span>
                 </div>
+                <div class="tm-kurs" data-coin="SOL">
+                    <span class="tm-kurs-coin">SOL</span>
+                    <span class="tm-kurs-preis">—</span>
+                    <span class="tm-kurs-24h">—</span>
+                    <span class="tm-kurs-funding" title="Funding Rate (Binance Perp)">—</span>
+                </div>
             </div>
             <div class="tm-kopf-rechts">
                 <span class="tm-live" id="tmLive" data-stand="verbinde"><span aria-hidden="true"></span><b>Verbinde</b></span>
@@ -81,18 +87,19 @@
                     </article>
 
                     <article class="tm-karte" id="tmLiq">
-                        <header class="tm-karte-kopf"><h2>Liquidationen</h2><span class="tm-quelle" id="tmLiqSeit">Binance + Bybit</span></header>
+                        <header class="tm-karte-kopf"><h2>Liquidationen</h2><span class="tm-quelle" id="tmLiqSeit">Binance, Bybit, OKX</span></header>
                         <div class="tm-segment tm-liq-zeit" role="group" aria-label="Zeitraum">
                             <button type="button" data-zeit="300000">5 Min</button>
                             <button type="button" data-zeit="3600000" class="aktiv">1 Std</button>
                             <button type="button" data-zeit="0">Seit Öffnen</button>
                         </div>
                         <div class="tm-liq-stats" id="tmLiqStats"></div>
+                        <div class="tm-quellen" id="tmQuellen" aria-label="Verbindung zu den Börsen"></div>
                         <p class="tm-hinweis" id="tmLiqHinweis">Gezählt wird ab dem Öffnen des Terminals. 24h-Summen kommen mit Stufe 2.</p>
                     </article>
                 </div>
 
-                <div class="tm-zwei">
+                <div class="tm-buecher">
                     <article class="tm-karte tm-buch" data-coin="BTC">
                         <header class="tm-karte-kopf"><h2>Orderbuch BTC</h2><div class="tm-segment tm-stufen" role="group" aria-label="Preisstufe"></div></header>
                         <div class="tm-buch-druck"><span class="tm-druck-bid"></span><span class="tm-druck-text">—</span></div>
@@ -109,8 +116,14 @@
                         <div class="tm-buch-mitte">—</div>
                         <div class="tm-buch-bids"></div>
                     </article>
-                </div>
-
+                    <article class="tm-karte tm-buch" data-coin="SOL">
+                        <header class="tm-karte-kopf"><h2>Orderbuch SOL</h2><div class="tm-segment tm-stufen" role="group" aria-label="Preisstufe"></div></header>
+                        <div class="tm-buch-druck"><span class="tm-druck-bid"></span><span class="tm-druck-text">—</span></div>
+                        <div class="tm-buch-kopf"><span>Preis ($)</span><span>Menge (SOL)</span><span>Summe</span></div>
+                        <div class="tm-buch-asks"></div>
+                        <div class="tm-buch-mitte">—</div>
+                        <div class="tm-buch-bids"></div>
+                    </article>
                 <article class="tm-karte" id="tmLiqFeed">
                     <header class="tm-karte-kopf"><h2>Live-Liquidationen</h2>
                         <div class="tm-segment tm-liq-filter" role="group" aria-label="Mindestgröße">
@@ -121,6 +134,8 @@
                     </header>
                     <div class="tm-liq-liste" id="tmLiqListe" aria-live="off"><p class="tm-leer">Warte auf die erste Liquidation …</p></div>
                 </article>
+                </div>
+
             </section>
 
             <aside class="tm-feed" aria-label="Thesen und Feed">
@@ -141,6 +156,7 @@
                             <div class="tm-segment" data-feld="coin" role="group" aria-label="Coin">
                                 <button type="button" data-wert="BTC" class="aktiv">BTC</button>
                                 <button type="button" data-wert="ETH">ETH</button>
+                                <button type="button" data-wert="SOL">SOL</button>
                                 <button type="button" data-wert="ALLGEMEIN">Allgemein</button>
                             </div>
                             <div class="tm-segment" data-feld="richtung" role="group" aria-label="Einschätzung">
