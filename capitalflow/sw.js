@@ -10,7 +10,7 @@
  * Bei jedem Release CACHE_VERSION hochzaehlen.
  */
 
-const CACHE_VERSION = 'cf-v72';
+const CACHE_VERSION = 'cf-v73';
 const CACHE_APP = CACHE_VERSION + '-app';
 const CACHE_ASSETS = CACHE_VERSION + '-assets';
 
@@ -50,6 +50,11 @@ const PRECACHE = [
     './js/import.js',
     './js/auswertung.js',
     './js/admin.js',
+    './terminal.html',
+    './css/terminal.css',
+    './js/terminal.js',
+    './js/terminal-markt.js',
+    './logo/terminal-icon.svg',
     './manifest.json',
     './img/capitalflow-icon.png',
     './img/capitalflow-icon-192.png',

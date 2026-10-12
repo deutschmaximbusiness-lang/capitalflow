@@ -54,8 +54,10 @@
      * vorbei. Dass er nur das Panel aufmachte und keine Daten, hat das
      * ertraeglich gemacht - gut war es nie.
      */
+    let istVip = false;
     window.cfAdminPruefen = async function () {
         istAdmin = false;
+        istVip = false;
         const nav = document.querySelector('.nav-item[data-tab="admin"]');
 
         try {
@@ -63,10 +65,14 @@
             const s = await window.cfSitzung();
             if (!s) return false;
 
+            // '*' statt einzelner Spalten: is_vip gibt es erst mit
+            // 09_terminal.sql, und eine fehlende Spalte darf die
+            // Admin-Erkennung nicht kaputt machen.
             const { data, error } = await window.cfDb.from('profiles')
-                .select('is_admin').eq('id', s.user.id).maybeSingle();
+                .select('*').eq('id', s.user.id).maybeSingle();
             if (error) throw error;
             istAdmin = Boolean(data && data.is_admin);
+            istVip = Boolean(data && data.is_vip);
         } catch (e) {
             // Kein Adminrecht ist der Normalfall, kein Fehler. Nur wenn
             // die Abfrage selbst scheitert, gehoert das in die Konsole.
@@ -75,6 +81,8 @@
         }
 
         if (nav) nav.style.display = istAdmin ? '' : 'none';
+        const term = document.getElementById('navTerminal');
+        if (term) term.style.display = (istAdmin || istVip) ? '' : 'none';
         return istAdmin;
     };
 
@@ -228,6 +236,10 @@
                       + 'passt nicht zum Namen auf der Einladung — '
                       + 'möglicherweise weitergegeben.</div>' : '')
                 + '</div>'
+                + (e.used && !e.revoked ? '<button type="button" class="admin-zeile-btn admin-vip-btn'
+                +   (e.vip ? ' aktiv' : '') + '" data-id="' + text(e.id) + '" data-vip="' + (e.vip ? 'false' : 'true')
+                +   '" aria-pressed="' + (e.vip ? 'true' : 'false') + '" title="Zugang zum Krypto Terminal">'
+                +   (e.vip ? 'VIP ✓' : 'VIP geben') + '</button>' : '')
                 + '<button type="button" class="admin-zeile-btn'
                 +   (e.revoked ? ' auf' : '') + '" data-id="' + text(e.id)
                 +   '" data-sperren="' + (e.revoked ? 'false' : 'true') + '">'
@@ -237,7 +249,26 @@
         }).join('');
     }
 
+    async function vipKlick(btn) {
+        const vip = btn.getAttribute('data-vip') === 'true';
+        const name = btn.closest('.admin-zeile').querySelector('.admin-zeile-name').textContent.trim();
+        btn.disabled = true;
+        try {
+            const { data, error } = await window.cfDb.rpc('vip_setzen', { id: btn.getAttribute('data-id'), vip: vip });
+            if (error) throw new Error(/vip_setzen/.test(error.message)
+                ? '09_terminal.sql ist in Supabase noch nicht ausgeführt' : error.message);
+            if (!data || !data.ok) throw new Error('Unerwartete Antwort.');
+            meldung(vip ? name + ' ist jetzt VIP' : name + ' ist kein VIP mehr');
+            await listeLaden();
+        } catch (e) {
+            meldung('' + e.message, 'error');
+            btn.disabled = false;
+        }
+    }
+
     async function sperrenKlick(ev) {
+        const vipBtn = ev.target.closest('.admin-vip-btn');
+        if (vipBtn) { vipKlick(vipBtn); return; }
         const btn = ev.target.closest('.admin-zeile-btn');
         if (!btn) return;
 

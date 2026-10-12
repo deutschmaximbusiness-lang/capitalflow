@@ -263,6 +263,12 @@
                 <span>Playbook</span>
                 <span class="nav-zahl" id="navZahl-playbook" aria-label=""></span>
             </div>
+            <!-- Nur fuer VIPs und Admins sichtbar (js/admin.js). Die Sperre
+                 sitzt in der Datenbank - das Ausblenden ist Bequemlichkeit. -->
+            <a class="nav-item nav-terminal" href="terminal.html" id="navTerminal" style="display: none;">
+                <img class="nav-icon nav-terminal-icon" src="logo/terminal-icon.svg" alt="" width="20" height="20">
+                <span>Krypto Terminal</span>
+            </a>
             <div class="nav-item" data-tab="setups">
                 <svg class="nav-icon" viewBox="0 0 24 24" width="20" height="20"><path fill="currentColor" d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/></svg>
                 <span>Setups</span>

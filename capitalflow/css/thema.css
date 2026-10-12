@@ -1730,3 +1730,10 @@ input[type="number"] { -moz-appearance: textfield; appearance: textfield; }
 .su-regeln .pb-check-zeile { font-size: 13px; padding: 4px 0; }
 .su-voll { margin: 4px 0 0; font-size: 13px; color: var(--cf-gewinn); }
 #setupsForm .su-pruefung { margin: -6px 0 18px; }
+
+/* ================================================================
+   Krypto Terminal: Link in der Seitenleiste, VIP im Admin-Bereich
+   ================================================================ */
+.nav-terminal { text-decoration: none; }
+.nav-terminal-icon { border-radius: 6px; flex: none; }
+.admin-vip-btn.aktiv { background: rgba(54, 37, 92, 0.95) !important; border-color: rgba(167, 139, 250, 0.55) !important; color: #F4F0FF !important; }

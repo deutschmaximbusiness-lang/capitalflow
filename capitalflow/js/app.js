@@ -836,6 +836,8 @@ function setupTabs() {
     navItems.forEach(item => {
         item.addEventListener('click', () => {
             const tabId = item.getAttribute('data-tab');
+            // Links ohne Tab (Krypto Terminal) fuehren auf eine eigene Seite
+            if (!tabId) return;
             handleTabChange(tabId);
         });
     });
