@@ -239,7 +239,19 @@
 
     // ------------------------------------------------------ App starten
 
+    // Solange Journal, Setups & Co. noch nicht veroeffentlicht sind, landet
+    // jeder nach der Anmeldung im Krypto Terminal. Nur der Admin kommt
+    // ueber app.html?verwaltung an die App (Einladungen, VIP vergeben).
+    function zumTerminal() {
+        return !(profil && profil.is_admin && /[?&]verwaltung\b/.test(location.search));
+    }
+
     function appStarten() {
+        if (zumTerminal()) {
+            loginScreenAn(true);
+            location.replace('terminal.html');
+            return;
+        }
         if (appLaeuft) { badgeSetzen(); return; }
         appLaeuft = true;
 
@@ -348,7 +360,7 @@
     async function profilLaden() {
         const { data, error } = await window.cfDb
             .from('profiles')
-            .select('id, name, invite_name, activated, avatar_url')
+            .select('id, name, invite_name, activated, avatar_url, is_admin')
             .eq('id', nutzer.id)
             .maybeSingle();
         if (error) {

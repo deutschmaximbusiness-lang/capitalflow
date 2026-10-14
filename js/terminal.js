@@ -34,25 +34,43 @@
 
     let profil = null;
 
+    // knoepfe: 'anmelden' (zur Anmeldung in app.html) oder 'abmelden'
+    // (anderes Konto). Andere Bereiche der App sind noch gesperrt.
     function tor(text, knoepfe) {
         el('tmTorText').textContent = text;
         el('tmTorKnoepfe').hidden = !knoepfe;
+        if (knoepfe) {
+            el('tmTorKnoepfe').innerHTML = knoepfe === 'abmelden'
+                ? '<button type="button" class="tm-knopf tm-knopf-leise" id="tmAbmelden">Mit anderem Konto anmelden</button>'
+                : '<a class="tm-knopf tm-knopf-haupt" href="app.html">Anmelden</a>';
+            const ab = el('tmAbmelden');
+            if (ab) ab.addEventListener('click', async function () {
+                try { await window.cfDb.auth.signOut(); } catch (e) { /* weiter */ }
+                location.href = 'app.html';
+            });
+        }
         if (knoepfe) el('tmTor').setAttribute('data-stand', 'hinweis');
     }
 
     async function zugang() {
         if (!window.cfDb) { tor('Keine Verbindung zur Datenbank.', true); return false; }
         const s = await window.cfSitzung();
-        if (!s) { tor('Melde dich zuerst in CapitalFlow an. Danach findest du das Terminal in der Seitenleiste.', true); return false; }
+        if (!s) { tor('Melde dich an, um das Krypto Terminal zu öffnen.', 'anmelden'); return false; }
         const { data, error } = await window.cfDb.from('profiles')
             .select('*').eq('id', s.user.id).maybeSingle();
         if (error || !data) { tor('Dein Profil konnte nicht geladen werden.', true); return false; }
-        if (!data.activated) { tor('Dein Zugang ist nicht freigeschaltet.', true); return false; }
+        if (!data.activated) { tor('Dein Zugang ist noch nicht freigeschaltet. Löse deinen Access Key ein.', 'anmelden'); return false; }
         if (!(data.is_vip || data.is_admin)) {
-            tor('Das Krypto Terminal ist für VIP-Member. Melde dich bei uns, wenn du dazugehören willst.', true);
+            tor('Das Krypto Terminal ist für VIP-Member. Melde dich bei uns, wenn du dazugehören willst.', 'abmelden');
             return false;
         }
         profil = data;
+        // Kopf: Admin kommt zur Verwaltung, alle anderen sehen nur das Terminal
+        const k = el('tmZurApp');
+        if (k) {
+            k.hidden = !data.is_admin;
+            if (data.is_admin) { k.href = 'app.html?verwaltung'; k.textContent = 'Verwaltung'; }
+        }
         return true;
     }
 
@@ -104,7 +122,8 @@
         rand();
     }
 
-    const zuletzt = {};
+    const zuletzt = {}, blitz = {};
+    const ruhig = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     function kursZeigen(coin, k) {
         const box = document.querySelector('.tm-kurs[data-coin="' + coin + '"]');
         if (!box || !(k.preis > 0)) return;
@@ -112,12 +131,14 @@
         const text = window.cfGeld(k.preis, { waehrung: '$', stellen: window.cfMarkt.COINS[coin].kursStellen });
         if (feld.textContent !== text) {
             feld.textContent = text;
-            // Kurz gruen oder rot aufleuchten, je nach Richtung
-            const vorher = zuletzt[coin];
-            if (vorher) {
-                feld.classList.remove('tm-hoch', 'tm-tief');
-                void feld.offsetWidth;
-                feld.classList.add(k.preis > vorher ? 'tm-hoch' : 'tm-tief');
+            // Kurz gruen oder rot einfaerben, je nach Richtung. Hoechstens
+            // alle 700 ms je Coin und ohne Neuberechnung des Layouts -
+            // sonst flackert die Leiste bei schnellen Maerkten durchgehend.
+            const vorher = zuletzt[coin], jetzt = Date.now();
+            if (vorher && k.preis !== vorher && jetzt - (blitz[coin] || 0) > 700 && feld.animate && !ruhig) {
+                blitz[coin] = jetzt;
+                feld.animate([{ color: k.preis > vorher ? '#6EE7B7' : '#FDA4AF' }, { color: 'inherit' }],
+                    { duration: 700, easing: 'ease-out' });
             }
         }
         zuletzt[coin] = k.preis;
@@ -390,7 +411,7 @@
         const da = {};
         box.querySelectorAll('.tm-kachel').forEach(function (k) { da[k.getAttribute('data-name')] = k; });
         rects.forEach(function (q) {
-            const w = q.w, gross = q.b > 150 && q.h > 100, mittel = q.b > 74 && q.h > 46, klein = q.b > 34 && q.h > 20;
+            const w = q.w, gross = q.b > 150 && q.h > 100, mittel = q.b > 96 && q.h > 46, klein = q.b > 34 && q.h > 20;
             const lAnteil = Math.round((w.long / w.wert) * 100);
             const ueber = w.long >= w.short ? 'Long ' + lAnteil + ' %' : 'Short ' + (100 - lAnteil) + ' %';
             const groesse = gross ? Math.max(18, Math.min(42, Math.sqrt(q.b * q.h) / 6)) : 0;
