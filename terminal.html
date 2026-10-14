@@ -55,6 +55,10 @@
                 </div>
             </div>
             <div class="tm-kopf-rechts">
+                <button type="button" class="tm-glocke" id="tmGlocke" aria-pressed="false" title="Benachrichtigung bei neuer These" aria-label="Benachrichtigungen">
+                    <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 1 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>
+                    <span class="tm-glocke-text">Glocke</span>
+                </button>
                 <span class="tm-live" id="tmLive" data-stand="verbinde"><span aria-hidden="true"></span><b>Verbinde</b></span>
                 <a class="tm-knopf tm-knopf-leise" href="app.html">Zum Journal</a>
             </div>
@@ -150,6 +154,7 @@
 
                 <!-- Nur fuer den Admin sichtbar. Die Sperre sitzt in der
                      Datenbank (09_terminal.sql) - das Ausblenden ist Bequemlichkeit. -->
+                <button type="button" class="tm-knopf tm-knopf-haupt tm-neu-knopf" id="tmNeu" hidden>Neue These schreiben</button>
                 <form class="tm-karte tm-composer" id="tmComposer" hidden novalidate>
                     <div class="tm-segment tm-art" role="group" aria-label="Art">
                         <button type="button" data-art="these" class="aktiv">These</button>
@@ -180,7 +185,10 @@
                         <div class="tm-bild-vorschau" id="tmBildVorschau" hidden></div>
                     </div>
                     <p class="tm-fehler" id="tmFehler" role="alert" hidden></p>
-                    <button type="submit" class="tm-knopf tm-knopf-haupt" id="tmSenden">Veröffentlichen</button>
+                    <div class="tm-composer-knoepfe">
+                        <button type="button" class="tm-knopf tm-knopf-leise" id="tmAbbrechen">Abbrechen</button>
+                        <button type="submit" class="tm-knopf tm-knopf-haupt" id="tmSenden">Veröffentlichen</button>
+                    </div>
                 </form>
 
                 <div class="tm-posts" id="tmPosts"><p class="tm-leer">Feed wird geladen …</p></div>

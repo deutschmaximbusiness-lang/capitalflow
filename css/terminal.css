@@ -123,6 +123,7 @@ a { color: var(--t-akzent); }
 .tm-quelle-punkt i { width: 7px; height: 7px; border-radius: 50%; background: var(--t-text-3); }
 .tm-quelle-punkt[data-stand="live"] i { background: var(--t-gruen); }
 .tm-quelle-punkt[data-stand="getrennt"] i { background: var(--t-rot); }
+.tm-quelle-punkt[data-stand="fehler"] i { background: var(--t-rot); }
 .tm-quelle-punkt em { font-style: normal; color: var(--t-text-3); }
 .tm-feed { position: sticky; top: 92px; max-height: calc(100vh - 112px); overflow-y: auto; padding-right: 4px; display: grid; gap: 14px; align-content: start; scrollbar-width: thin; }
 
@@ -433,4 +434,62 @@ body.tm {
     .tm-kurs-preis { font-size: 14px; white-space: nowrap; }
     .tm-kurs-24h { text-align: right; font-size: 11px; }
     .tm-kurs-funding { display: none; }
+}
+
+/* ===================================================== v3: mehr Luft
+ * Groessere Abstaende zwischen und in den Karten, Eingabe fuer Thesen
+ * nur offen, wenn man sie braucht, Orderbuch mit 10 statt 12 Stufen. */
+.tm-raster { gap: 28px; margin-top: 24px; }
+.tm-markt, .tm-zwei, .tm-buecher { gap: 28px; }
+.tm-karte { padding: 22px 24px; }
+.tm-karte-kopf { margin-bottom: 18px; }
+.tm-feed { gap: 18px; top: 96px; max-height: calc(100vh - 120px); }
+.tm-posts { gap: 18px; }
+.tm-post { padding: 18px 20px; }
+.tm-liq-stats { gap: 12px; }
+.tm-liq-coin { padding: 14px 16px; }
+.tm-liq-balken { margin: 10px 0 12px; }
+.tm-liq-liste { gap: 6px; max-height: 420px; }
+.tm-liq-zeile { padding: 9px 12px; }
+.tm-buch-zeile { padding: 4px 8px; }
+.tm-buch-mitte { padding: 10px 8px; margin: 6px 0; }
+.tm-fng-verlauf { gap: 10px; margin-top: 20px; }
+.tm-fng-30 { margin-top: 20px; }
+
+.tm-neu-knopf { width: 100%; min-height: 46px; }
+.tm-composer-knoepfe { display: flex; gap: 10px; margin-top: 4px; }
+.tm-composer-knoepfe .tm-knopf-haupt { flex: 1; }
+.tm-post-ziel { box-shadow: 0 0 0 2px rgba(192, 132, 252, 0.7), 0 22px 56px -22px rgba(124, 92, 240, 0.8) !important; }
+
+/* Glocke */
+.tm-glocke {
+    display: inline-flex; align-items: center; gap: 8px; min-height: 40px; padding: 0 14px;
+    border-radius: 999px; border: 1px solid var(--t-rand); background: rgba(255, 255, 255, 0.04);
+    color: var(--t-text-2); font: inherit; font-size: 13px; font-weight: 600; cursor: pointer;
+    transition: background 0.2s ease, color 0.2s ease, box-shadow 0.2s ease;
+}
+.tm-glocke:hover { color: var(--t-text); background: rgba(255, 255, 255, 0.08); }
+.tm-glocke:focus-visible { outline: 2px solid rgba(192, 132, 252, 0.8); outline-offset: 2px; }
+.tm-glocke[aria-pressed="true"] {
+    color: #fff; border-color: rgba(192, 132, 252, 0.55);
+    background: linear-gradient(135deg, rgba(124, 92, 240, 0.55), rgba(192, 132, 252, 0.35));
+    box-shadow: 0 0 18px -4px rgba(192, 132, 252, 0.7);
+}
+.tm-glocke[aria-pressed="true"] svg { fill: currentColor; animation: tm-klingeln 0.6s ease; }
+@keyframes tm-klingeln { 20% { transform: rotate(14deg); } 45% { transform: rotate(-12deg); } 70% { transform: rotate(6deg); } }
+
+.tm-toast { max-width: min(460px, calc(100vw - 32px)); border-radius: 16px; line-height: 1.45; }
+
+@media (max-width: 1080px) {
+    .tm-raster { gap: 20px; }
+}
+@media (max-width: 760px) {
+    .tm-markt, .tm-zwei, .tm-buecher { gap: 16px; }
+    .tm-karte { padding: 16px; }
+    .tm-glocke { min-height: 34px; padding: 0 10px; }
+    .tm-glocke-text { display: none; }
+    .tm-toast { left: 16px; right: 16px; bottom: 16px; max-width: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+    .tm-glocke svg { animation: none !important; }
 }

@@ -27,7 +27,7 @@
         t.classList.toggle('tm-toast-fehler', !!fehler);
         t.hidden = false;
         clearTimeout(toast.zeit);
-        toast.zeit = setTimeout(function () { t.hidden = true; }, 3200);
+        toast.zeit = setTimeout(function () { t.hidden = true; }, Math.max(3200, text.length * 60));
     }
 
     // ------------------------------------------------------------ Zugang
@@ -123,7 +123,7 @@
             const name = q[1] === 'Binance' ? 'Binance' : q[1];
             const t = letzte[name];
             return '<span class="tm-quelle-punkt" data-stand="' + st + '"><i aria-hidden="true"></i>' + name
-                + '<em>' + (st !== 'live' ? (st === 'verbinde' ? 'verbindet' : 'getrennt')
+                + '<em>' + (st !== 'live' ? (st === 'verbinde' ? 'verbindet' : st === 'fehler' ? 'Abo abgelehnt' : 'getrennt')
                     : t ? 'zuletzt ' + uhr(t).slice(0, 5) : 'verbunden') + '</em></span>';
         }).join('');
     }
@@ -131,7 +131,7 @@
     // -------------------------------------------------------- Orderbuch
 
     const stufen = {};
-    const ZEILEN = 12;
+    const ZEILEN = 10;
 
     function buchAufbauen() {
         document.querySelectorAll('.tm-buch').forEach(function (karte) {
@@ -433,7 +433,10 @@
 
     function uuid() {
         if (window.crypto && crypto.randomUUID) return crypto.randomUUID();
-        return Date.now().toString(16) + Math.random().toString(16).slice(2);
+        return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
+            const r = Math.random() * 16 | 0;
+            return (c === 'x' ? r : (r & 3 | 8)).toString(16);
+        });
     }
 
     async function senden(e) {
@@ -443,7 +446,7 @@
         const text = el('tmText').value.trim();
         const chart = el('tmChart').value.trim();
         const tweet = el('tmTweet').value.trim();
-        const zeile = { art: auswahl.art };
+        const zeile = { id: uuid(), art: auswahl.art };
         if (auswahl.art === 'tweet') {
             if (!tweetTeile(tweet)) { fehler('Das ist kein Link zu einem X-Post (x.com/name/status/…).'); return; }
             zeile.tweet_url = tweet;
@@ -467,9 +470,9 @@
             }
             const { error } = await window.cfDb.from('terminal_posts').insert(zeile);
             if (error) throw new Error(error.message);
-            el('tmComposer').reset();
-            bildWeg();
+            composerZu();
             toast('Veröffentlicht – alle VIPs sehen es jetzt');
+            pushSenden(zeile.id);
             await feedLaden();
         } catch (err) {
             fehler('Nicht veröffentlicht: ' + err.message);
@@ -538,9 +541,13 @@
         el('tmDialogNein').addEventListener('click', function () { el('tmDialog').hidden = true; });
         document.addEventListener('keydown', function (e) { if (e.key === 'Escape') el('tmDialog').hidden = true; });
 
+        glockeEinrichten();
+
         if (profil.is_admin) {
             const f = el('tmComposer');
-            f.hidden = false;
+            el('tmNeu').hidden = false;
+            el('tmNeu').addEventListener('click', composerAuf);
+            el('tmAbbrechen').addEventListener('click', composerZu);
             f.addEventListener('submit', senden);
             document.querySelector('.tm-art').addEventListener('click', function (e) {
                 const b = e.target.closest('[data-art]');
@@ -567,6 +574,110 @@
         }
     }
 
+    // Eingabe nur bei Bedarf offen - sonst nimmt sie dem Feed den Platz
+    function composerAuf() {
+        el('tmNeu').hidden = true;
+        el('tmComposer').hidden = false;
+        el(auswahl.art === 'tweet' ? 'tmTweet' : 'tmTitel').focus();
+    }
+    function composerZu() {
+        el('tmComposer').reset();
+        bildWeg();
+        fehler('');
+        el('tmComposer').hidden = true;
+        el('tmNeu').hidden = false;
+    }
+
+    // ---------------------------------------------------- Glocke (Push)
+    //
+    // Desktop (Chrome, Edge, Firefox, Safari) und Android: direkt.
+    // iPhone/iPad: nur, wenn CapitalFlow ueber "Zum Home-Bildschirm"
+    // installiert ist (Vorgabe von Apple, ab iOS 16.4).
+
+    const istIos = /iPad|iPhone|iPod/.test(navigator.userAgent)
+        || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+    const installiert = window.matchMedia && window.matchMedia('(display-mode: standalone)').matches
+        || navigator.standalone === true;
+    const pushGeht = 'serviceWorker' in navigator && 'PushManager' in window && 'Notification' in window;
+
+    function glockeStand(an) {
+        const g = el('tmGlocke');
+        g.setAttribute('aria-pressed', an ? 'true' : 'false');
+        g.querySelector('.tm-glocke-text').textContent = an ? 'Glocke an' : 'Glocke';
+    }
+
+    async function swBereit() {
+        await navigator.serviceWorker.register('sw.js');
+        return navigator.serviceWorker.ready;
+    }
+
+    function schluesselBytes(b64) {
+        const roh = atob((b64 + '='.repeat((4 - b64.length % 4) % 4)).replace(/-/g, '+').replace(/_/g, '/'));
+        const out = new Uint8Array(roh.length);
+        for (let i = 0; i < roh.length; i++) out[i] = roh.charCodeAt(i);
+        return out;
+    }
+
+    async function glockeEinrichten() {
+        const g = el('tmGlocke');
+        g.addEventListener('click', glockeKlick);
+        if (!pushGeht || Notification.permission !== 'granted') return;
+        try {
+            const reg = await swBereit();
+            glockeStand(!!(await reg.pushManager.getSubscription()));
+        } catch (e) { /* bleibt aus */ }
+    }
+
+    let glockeLaeuft = false;
+    async function glockeKlick() {
+        if (glockeLaeuft) return;
+        if (!pushGeht) {
+            toast(istIos && !installiert
+                ? 'Auf dem iPhone: Teilen → „Zum Home-Bildschirm“, CapitalFlow von dort öffnen und dann die Glocke antippen.'
+                : 'Dieser Browser kann keine Benachrichtigungen empfangen.', true);
+            return;
+        }
+        glockeLaeuft = true;
+        try {
+            const reg = await swBereit();
+            const alt = await reg.pushManager.getSubscription();
+            if (alt && el('tmGlocke').getAttribute('aria-pressed') === 'true') {
+                await window.cfDb.rpc('push_abo_loeschen', { p_endpoint: alt.endpoint });
+                await alt.unsubscribe();
+                glockeStand(false);
+                toast('Glocke aus – keine Benachrichtigungen mehr auf diesem Gerät');
+                return;
+            }
+            const recht = await Notification.requestPermission();
+            if (recht !== 'granted') {
+                toast('Benachrichtigungen sind blockiert. Erlaube sie in den Seiten-Einstellungen (Schloss links in der Adresszeile).', true);
+                return;
+            }
+            const { data, error } = await window.cfDb.functions.invoke('terminal-push', { body: { aktion: 'schluessel' } });
+            if (error || !data || !data.schluessel) throw new Error('Push ist noch nicht eingerichtet');
+            const abo = alt || await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: schluesselBytes(data.schluessel) });
+            const j = abo.toJSON();
+            const { error: fe } = await window.cfDb.rpc('push_abo_setzen', { p_endpoint: j.endpoint, p_p256dh: j.keys.p256dh, p_auth: j.keys.auth });
+            if (fe) throw new Error(fe.message);
+            glockeStand(true);
+            toast('Glocke an – du bekommst eine Nachricht bei jeder neuen These');
+        } catch (e) {
+            toast('Glocke nicht aktiviert: ' + e.message, true);
+        } finally {
+            glockeLaeuft = false;
+        }
+    }
+
+    async function pushSenden(id) {
+        try {
+            const { data, error } = await window.cfDb.functions.invoke('terminal-push', { body: { aktion: 'senden', id: id } });
+            if (error) throw error;
+            if (data && data.gesendet) toast('Veröffentlicht – Benachrichtigung an ' + data.gesendet + (data.gesendet === 1 ? ' Gerät' : ' Geräte'));
+        } catch (e) {
+            toast('Veröffentlicht, aber Benachrichtigung fehlgeschlagen', true);
+        }
+    }
+
     async function start() {
         let ok = false;
         try { ok = await zugang(); } catch (e) { tor('Zugang konnte nicht geprüft werden.', true); }
@@ -585,6 +696,23 @@
         setInterval(fng, 10 * 60 * 1000);
         await feedLaden();
         live();
+        zuPost();
+        window.addEventListener('hashchange', function () { feedLaden().then(zuPost); });
+    }
+
+    // Aus einer Benachrichtigung geoeffnet: zum Beitrag springen
+    function zuPost() {
+        const m = /^#post-([\w-]+)$/.exec(location.hash);
+        const ziel = m && document.querySelector('.tm-post[data-id="' + m[1] + '"]');
+        if (!ziel) return;
+        const r = document.querySelector('.tm-raster');
+        if (r && r.getAttribute('data-ansicht') !== 'feed') {
+            const k = document.querySelector('.tm-umschalter [data-ansicht="feed"]');
+            if (k && k.offsetParent) k.click();
+        }
+        document.querySelectorAll('.tm-post-ziel').forEach(function (p) { p.classList.remove('tm-post-ziel'); });
+        ziel.scrollIntoView({ block: 'center' });
+        ziel.classList.add('tm-post-ziel');
     }
 
     window.cfTerminal = { tvBild: tvBild, tweetTeile: tweetTeile, feedLaden: feedLaden };

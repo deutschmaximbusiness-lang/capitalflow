@@ -10,7 +10,7 @@
  * Bei jedem Release CACHE_VERSION hochzaehlen.
  */
 
-const CACHE_VERSION = 'cf-v75';
+const CACHE_VERSION = 'cf-v77';
 const CACHE_APP = CACHE_VERSION + '-app';
 const CACHE_ASSETS = CACHE_VERSION + '-assets';
 
@@ -153,4 +153,27 @@ self.addEventListener('fetch', (event) => {
                     : undefined)
             ))
     );
+});
+
+// ------------------------------------------------ Push (Terminal-Glocke)
+
+self.addEventListener('push', (event) => {
+    let d = {};
+    try { d = event.data ? event.data.json() : {}; } catch (e) { d = { text: event.data ? event.data.text() : '' }; }
+    event.waitUntil(self.registration.showNotification(d.titel || 'CapitalFlow Terminal', {
+        body: d.text || 'Neuer Beitrag im Feed',
+        icon: 'img/terminal-icon-192.png',
+        tag: d.id ? 'post-' + d.id : 'terminal',
+        data: { url: d.url || 'terminal.html' },
+    }));
+});
+
+self.addEventListener('notificationclick', (event) => {
+    event.notification.close();
+    const ziel = new URL((event.notification.data && event.notification.data.url) || 'terminal.html', self.registration.scope).href;
+    event.waitUntil(self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((fenster) => {
+        const offen = fenster.find((f) => f.url.split('#')[0] === ziel.split('#')[0]);
+        if (offen) { offen.navigate(ziel).catch(() => null); return offen.focus(); }
+        return self.clients.openWindow(ziel);
+    }));
 });
