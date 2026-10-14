@@ -215,6 +215,40 @@
         this.historie.sort(function (a, b) { return b.zeit - a.zeit; });
         if (this.historie.length > 5000) this.historie.length = 5000;
     };
+    // Alle Liquidationen (live + OKX-Historie) mit ihrer Zeit t
+    LiqStatistik.prototype.alle = function () {
+        const aus = [];
+        this.liste.forEach(function (l) { aus.push({ l: l, t: l.empfangen || l.zeit }); });
+        this.historie.forEach(function (l) { aus.push({ l: l, t: l.zeit }); });
+        return aus;
+    };
+    // Ab wann liegen Daten vor? (fruehester Eintrag oder Oeffnen)
+    LiqStatistik.prototype.abdeckung = function () {
+        let ab = this.seit;
+        this.historie.forEach(function (l) { if (l.zeit < ab) ab = l.zeit; });
+        return ab;
+    };
+    /**
+     * Auswertung eines Zeitfensters: Summen je Coin und je Boerse,
+     * Gesamt Long/Short, groesste einzelne Liquidation.
+     */
+    LiqStatistik.prototype.auswerten = function (fensterMs, jetzt) {
+        jetzt = jetzt || Date.now();
+        const ab = jetzt - fensterMs;
+        const r = { long: 0, short: 0, anzahl: 0, coins: {}, boersen: {}, groesste: null };
+        this.alle().forEach(function (e) {
+            if (e.t < ab || e.t > jetzt) return;
+            const l = e.l;
+            r[l.seite] += l.wert; r.anzahl++;
+            const c = r.coins[l.coin] || (r.coins[l.coin] = { long: 0, short: 0, anzahl: 0 });
+            c[l.seite] += l.wert; c.anzahl++;
+            const b = r.boersen[l.boerse] || (r.boersen[l.boerse] = { long: 0, short: 0, anzahl: 0 });
+            b[l.seite] += l.wert; b.anzahl++;
+            if (!r.groesste || l.wert > r.groesste.wert) r.groesste = l;
+        });
+        return r;
+    };
+
     /**
      * Heatmap: pro Coin und Zeitabschnitt Longs/Shorts in USD.
      * fensterMs: wie weit zurueck, spalten: Anzahl Abschnitte.
@@ -256,6 +290,19 @@
         }
         return r;
     };
+
+    // ------------------------------------------------- Kerzen (Kurslinie)
+
+    const BINANCE_KLINES = 'https://fapi.binance.com/fapi/v1/klines';
+    // Schlusskurse fuer die Kurslinie im Verlauf: [{ t, preis }]
+    async function kerzenHolen(coin, intervall, anzahl) {
+        const r = await fetch(BINANCE_KLINES + '?symbol=' + COINS[coin].binance.toUpperCase()
+            + '&interval=' + intervall + '&limit=' + anzahl);
+        const j = await r.json();
+        if (!Array.isArray(j)) return [];
+        return j.map(function (k) { return { t: +k[0], ende: +k[6], preis: +k[4] }; })
+            .filter(function (k) { return k.preis > 0; });
+    }
 
     // ---------------------------------------------------- Fear & Greed
 
@@ -481,7 +528,7 @@
 
     window.cfMarkt = {
         COINS: COINS, Orderbuch: Orderbuch, gruppieren: gruppieren, kennzahlen: kennzahlen,
-        ausBinance: ausBinance, ausBybit: ausBybit, ausOkx: ausOkx, LiqStatistik: LiqStatistik, NAMEN: NAMEN, BUCH_NAMEN: BUCH_NAMEN,
+        kerzenHolen: kerzenHolen, ausBinance: ausBinance, ausBybit: ausBybit, ausOkx: ausOkx, LiqStatistik: LiqStatistik, NAMEN: NAMEN, BUCH_NAMEN: BUCH_NAMEN,
         fngLesen: fngLesen, fngHolen: fngHolen, starten: starten,
     };
 })();

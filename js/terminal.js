@@ -307,8 +307,163 @@
         return 'rgba(' + c.join(',') + ',' + (0.18 + 0.82 * st).toFixed(2) + ')';
     }
 
+    let heatGruppe = 'coin';
     function heatZeigen() {
         if (!markt) return;
+        const raster = heatGruppe === 'raster';
+        el('tmHeatRaster').hidden = !raster;
+        el('tmHeatKacheln').hidden = raster;
+        if (raster) rasterZeigen(); else kachelnZeigen();
+        gesamtZeigen();
+    }
+
+    // ------------------------------------------- Kacheln (Treemap)
+    //
+    // Squarified Treemap: Flaeche = liquidierter Betrag, Farbe = was
+    // ueberwiegt (Rot: Longs, Gruen: Shorts, Grau: ausgeglichen).
+
+    function squarify(werte, x, y, b, h) {
+        const aus = [];
+        const summe = werte.reduce(function (n, w) { return n + w.wert; }, 0);
+        if (!summe) return aus;
+        const skala = (b * h) / summe;
+        let rest = werte.map(function (w) { return { w: w, flaeche: w.wert * skala }; });
+        function schlechtestes(reihe, seite) {
+            const s2 = reihe.reduce(function (n, r) { return n + r.flaeche; }, 0);
+            let max = 0, min = Infinity;
+            reihe.forEach(function (r) { max = Math.max(max, r.flaeche); min = Math.min(min, r.flaeche); });
+            return Math.max((seite * seite * max) / (s2 * s2), (s2 * s2) / (seite * seite * min));
+        }
+        function legen(reihe) {
+            const s2 = reihe.reduce(function (n, r) { return n + r.flaeche; }, 0);
+            if (b >= h) {
+                const breite = s2 / h; let yy = y;
+                reihe.forEach(function (r) { const hh = r.flaeche / breite; aus.push({ w: r.w, x: x, y: yy, b: breite, h: hh }); yy += hh; });
+                x += breite; b -= breite;
+            } else {
+                const hoehe = s2 / b; let xx = x;
+                reihe.forEach(function (r) { const bb = r.flaeche / hoehe; aus.push({ w: r.w, x: xx, y: y, b: bb, h: hoehe }); xx += bb; });
+                y += hoehe; h -= hoehe;
+            }
+        }
+        let reihe = [];
+        while (rest.length) {
+            const seite = Math.min(b, h);
+            const naechste = rest[0];
+            if (!reihe.length || schlechtestes(reihe.concat([naechste]), seite) <= schlechtestes(reihe, seite)) {
+                reihe.push(naechste); rest.shift();
+            } else { legen(reihe); reihe = []; }
+        }
+        if (reihe.length) legen(reihe);
+        return aus;
+    }
+
+    const K_ROT = [222, 62, 98], K_GRUEN = [14, 168, 120], K_GRAU = [72, 70, 92];
+    function kachelFarbe(long, short) {
+        const ges = long + short;
+        const d = ges ? (long - short) / ges : 0;
+        // Schon 60/40 soll klar farbig sein: Abstand zur Mitte verstaerkt
+        const pol = d >= 0 ? K_ROT : K_GRUEN, a = Math.min(1, Math.sqrt(Math.abs(d)) * 1.15);
+        return 'rgb(' + pol.map(function (v, i) { return Math.round(K_GRAU[i] + (v - K_GRAU[i]) * a); }).join(',') + ')';
+    }
+
+    let kachelDaten = {};
+    function kachelnZeigen() {
+        const box = el('tmHeatKacheln');
+        const r = markt.liq.auswerten(heatFenster);
+        const quelle = heatGruppe === 'boerse' ? r.boersen : r.coins;
+        const werte = Object.keys(quelle).map(function (k) {
+            const q = quelle[k];
+            return { name: k, wert: q.long + q.short, long: q.long, short: q.short, anzahl: q.anzahl };
+        }).filter(function (w) { return w.wert > 0; }).sort(function (a, b) { return b.wert - a.wert; });
+        kachelDaten = { werte: werte, gesamt: r.long + r.short };
+        const ges = r.long + r.short;
+        el('tmHeatStand').textContent = ges ? kurzGeld(ges) + ' liquidiert, ' + r.anzahl + ' Liquidationen' : 'Warte auf Liquidationen …';
+        if (!werte.length) { if (!box.querySelector('.tm-leer')) box.innerHTML = '<p class="tm-leer">Noch keine Liquidationen in diesem Zeitraum.</p>'; return; }
+        const B = box.clientWidth || 800, H = box.clientHeight || 420;
+        const rects = squarify(werte, 0, 0, B, H);
+        // Vorhandene Kacheln weiterverwenden: nur Lage, Groesse und Farbe
+        // aendern sich (weich per CSS), neue blenden einmal ein. Sonst
+        // wuerde alle 2 s alles neu aufflackern.
+        const leer = box.querySelector('.tm-leer');
+        if (leer) leer.remove();
+        const da = {};
+        box.querySelectorAll('.tm-kachel').forEach(function (k) { da[k.getAttribute('data-name')] = k; });
+        rects.forEach(function (q) {
+            const w = q.w, gross = q.b > 150 && q.h > 100, mittel = q.b > 74 && q.h > 46, klein = q.b > 34 && q.h > 20;
+            const lAnteil = Math.round((w.long / w.wert) * 100);
+            const ueber = w.long >= w.short ? 'Long ' + lAnteil + ' %' : 'Short ' + (100 - lAnteil) + ' %';
+            const groesse = gross ? Math.max(18, Math.min(42, Math.sqrt(q.b * q.h) / 6)) : 0;
+            let k = da[w.name];
+            if (!k) {
+                k = document.createElement('div');
+                k.setAttribute('data-name', w.name);
+                box.appendChild(k);
+            }
+            delete da[w.name];
+            k.className = 'tm-kachel' + (gross ? ' tm-kachel-gross' : mittel ? ' tm-kachel-mittel' : '');
+            k.style.left = q.x.toFixed(1) + 'px'; k.style.top = q.y.toFixed(1) + 'px';
+            k.style.width = q.b.toFixed(1) + 'px'; k.style.height = q.h.toFixed(1) + 'px';
+            k.style.background = kachelFarbe(w.long, w.short);
+            if (groesse) k.style.setProperty('--gr', groesse.toFixed(0) + 'px'); else k.style.removeProperty('--gr');
+            const html = (klein ? '<b>' + esc(w.name) + '</b>' : '') + (mittel ? '<strong>' + kurzGeld(w.wert) + '</strong>' : '') + (gross ? '<span>' + ueber + '</span>' : '');
+            if (k.innerHTML !== html) k.innerHTML = html;
+        });
+        Object.keys(da).forEach(function (n) { da[n].remove(); });
+    }
+
+    function kachelTipp(e) {
+        const k = e.target.closest('.tm-kachel');
+        const tipp = el('tmHeatTipp');
+        if (!k) { tipp.hidden = true; return; }
+        const w = (kachelDaten.werte || []).find(function (x) { return x.name === k.getAttribute('data-name'); });
+        if (!w) { tipp.hidden = true; return; }
+        tipp.innerHTML = '<strong>' + esc(w.name) + '</strong> <span>' + kurzGeld(w.wert) + ', ' + Math.round((w.wert / kachelDaten.gesamt) * 100) + ' % der Summe</span>'
+            + '<div><em class="tm-minus">Longs ' + kurzGeld(w.long) + '</em><em class="tm-plus">Shorts ' + kurzGeld(w.short) + '</em></div>'
+            + '<span>' + w.anzahl + (w.anzahl === 1 ? ' Liquidation' : ' Liquidationen') + '</span>';
+        tipp.hidden = false;
+        const karte = el('tmHeat').getBoundingClientRect(), r = k.getBoundingClientRect();
+        tipp.style.left = Math.min(Math.max(r.left + r.width / 2 - karte.left, 110), karte.width - 110) + 'px';
+        tipp.style.top = Math.max(r.top - karte.top + 18, 70) + 'px';
+    }
+
+    // ------------------------------------------- Gesamtliquidationen
+
+    const GESAMT_FENSTER = [['15 Min', 900000], ['1 Std', 3600000], ['4 Std', 14400000], ['Seit Öffnen', 0]];
+    function gesamtZeigen() {
+        if (!markt) return;
+        const kacheln = GESAMT_FENSTER.map(function (f) {
+            let long = 0, short = 0;
+            if (f[1]) { const r = markt.liq.auswerten(f[1]); long = r.long; short = r.short; }
+            else markt.liq.liste.forEach(function (l) { if (l.seite === 'long') long += l.wert; else short += l.wert; });
+            const ges = long + short, anteil = ges ? (long / ges) * 100 : 50;
+            return '<div class="tm-gesamt-kachel">'
+                + '<div class="tm-gesamt-kopf"><span>' + f[0] + '</span><strong>' + (ges ? kurzGeld(ges) : '—') + '</strong></div>'
+                + '<dl><div><dt>Long</dt><dd class="tm-minus">' + kurzGeld(long) + '</dd></div><div><dt>Short</dt><dd class="tm-plus">' + kurzGeld(short) + '</dd></div></dl>'
+                + '<span class="tm-gesamt-balken" role="img" aria-label="Long ' + Math.round(anteil) + ' %"><i style="width:' + anteil.toFixed(1) + '%"></i></span>'
+                + '</div>';
+        });
+        el('tmGesamtFenster').innerHTML = kacheln.join('');
+
+        const r = markt.liq.auswerten(14400000);
+        const ges = r.long + r.short;
+        if (!ges) { el('tmGesamtMehr').innerHTML = '<p class="tm-leer">Noch keine Liquidationen in den letzten 4 Std.</p>'; return; }
+        const lP = (r.long / ges) * 100;
+        const boersen = Object.keys(r.boersen).map(function (k) { return [k, r.boersen[k].long + r.boersen[k].short]; })
+            .sort(function (a, b) { return b[1] - a[1]; });
+        const g = r.groesste;
+        el('tmGesamtMehr').innerHTML =
+            '<p class="tm-gesamt-satz">In den letzten 4 Std. gesehen: <b>' + r.anzahl + ' Liquidationen</b> über zusammen <b>' + kurzGeld(ges) + '</b>.</p>'
+            + '<div class="tm-gesamt-zeile"><span>Verteilung, 4 Std.</span></div>'
+            + '<div class="tm-gesamt-vert"><span class="tm-minus">Long <b>' + window.cfProz(lP, 1) + '</b></span><span class="tm-plus">Short <b>' + window.cfProz(100 - lP, 1) + '</b></span></div>'
+            + '<span class="tm-gesamt-balken tm-gesamt-balken-dick"><i style="width:' + lP.toFixed(1) + '%"></i></span>'
+            + '<div class="tm-gesamt-zeile"><span>Größter Börsenanteil</span><b>' + esc(boersen[0][0]) + ' ' + window.cfProz((boersen[0][1] / ges) * 100, 1) + '</b></div>'
+            + '<div class="tm-gesamt-zeile tm-gesamt-groesste"><span>Größte Liquidation, 4 Std.</span><strong>' + kurzGeld(g.wert) + '</strong></div>'
+            + '<p class="tm-gesamt-detail">' + esc(g.boerse) + ', ' + g.coin + ' ' + (g.seite === 'long' ? 'Long' : 'Short') + ' @ '
+            + window.cfZahl(g.preis, (window.cfMarkt.COINS[g.coin] || {}).kursStellen || 2) + ', ' + uhr(g.zeit).slice(0, 5) + ' Uhr</p>';
+    }
+
+    function rasterZeigen() {
         const coins = window.cfMarkt.NAMEN;
         const spalten = HEAT_SPALTEN[heatFenster];
         const r = markt.liq.raster(coins, heatFenster, spalten);
@@ -353,6 +508,139 @@
         const x = Math.min(Math.max(r.left + r.width / 2 - karte.left, 90), karte.width - 90);
         tipp.style.left = x + 'px';
         tipp.style.top = (r.top - karte.top - 8) + 'px';
+    }
+
+    // ----------------------------------------------- Liquidationshistorie
+    //
+    // Unten: Long-Liquidationen nach oben, Short nach unten (eine Achse,
+    // Null in der Mitte). Darueber ein eigenes Feld mit der Kurslinie -
+    // bewusst keine zweite Achse im selben Bild.
+
+    const HIST = {
+        3600000: { spalten: 30, kerze: '1m', kerzen: 60, text: '2 Min. je Balken' },
+        14400000: { spalten: 24, kerze: '5m', kerzen: 48, text: '10 Min. je Balken' },
+        43200000: { spalten: 24, kerze: '15m', kerzen: 48, text: '30 Min. je Balken' },
+    };
+    let histFenster = 3600000, histCoin = 'alle', histKerzen = [], histBild = null;
+    const kerzenCache = {};
+
+    function histCoinsAufbauen() {
+        el('tmHistCoins').innerHTML = ['alle'].concat(window.cfMarkt.NAMEN).map(function (c) {
+            return '<button type="button" class="tm-chip' + (c === histCoin ? ' aktiv' : '') + '" data-coin="' + c + '">' + (c === 'alle' ? 'Alle Coins' : c) + '</button>';
+        }).join('');
+    }
+
+    async function histKerzenLaden() {
+        histKerzenFehler = false;
+        const coin = histCoin === 'alle' ? 'BTC' : histCoin;
+        const h = HIST[histFenster];
+        const key = coin + h.kerze;
+        el('tmHistKursName').textContent = coin;
+        const c = kerzenCache[key];
+        if (c && Date.now() - c.zeit < 60000) { histKerzen = c.daten; histZeichnen(); return; }
+        try {
+            const daten = await window.cfMarkt.kerzenHolen(coin, h.kerze, h.kerzen);
+            if (daten.length) kerzenCache[key] = { zeit: Date.now(), daten: daten };
+            else histKerzenFehler = true;
+            if ((histCoin === 'alle' ? 'BTC' : histCoin) === coin && HIST[histFenster].kerze === h.kerze) histKerzen = daten;
+        } catch (e) { histKerzen = []; histKerzenFehler = true; }
+        histZeichnen();
+    }
+    let histKerzenFehler = false;
+
+    function histZeichnen() {
+        if (!markt) return;
+        const box = el('tmHistGrafik');
+        const h = HIST[histFenster], n = h.spalten;
+        const jetzt = Date.now(), start = jetzt - histFenster, schritt = histFenster / n;
+        const eimer = [];
+        for (let i = 0; i < n; i++) eimer.push({ long: 0, short: 0, anzahl: 0, von: start + i * schritt });
+        let frueh = markt.liq.seit;
+        markt.liq.alle().forEach(function (e) {
+            const l = e.l;
+            if (histCoin !== 'alle' && l.coin !== histCoin) return;
+            if (l.alt && l.zeit < frueh) frueh = l.zeit;
+            if (e.t < start || e.t > jetzt) return;
+            const z = eimer[Math.min(n - 1, Math.floor((e.t - start) / schritt))];
+            z[l.seite] += l.wert; z.anzahl++;
+        });
+        const B = Math.max(280, box.clientWidth || 800), H = 300;
+        const L = 64, R = 70, oben = 8, kursH = 78, luecke = 18, balkenOben = oben + kursH + luecke, balkenH = H - balkenOben - 24;
+        const mitte = balkenOben + balkenH / 2, breite = B - L - R, slot = breite / n;
+        const max = Math.max(1, eimer.reduce(function (m, z) { return Math.max(m, z.long, z.short); }, 0));
+        const y = function (v) { return (v / max) * (balkenH / 2 - 4); };
+        const xZeit = function (t) { return L + ((t - start) / histFenster) * breite; };
+        let svg = '';
+        // Bereich ohne Daten (vor der fruehesten bekannten Liquidation)
+        if (frueh > start) {
+            const xf = Math.min(L + breite, xZeit(frueh));
+            svg += '<rect class="tm-hist-leer" x="' + L + '" y="' + balkenOben + '" width="' + (xf - L).toFixed(1) + '" height="' + balkenH + '"/>'
+                + (xf - L > 90 ? '<text class="tm-hist-leer-text" x="' + ((L + xf) / 2).toFixed(1) + '" y="' + (mitte + 4).toFixed(1) + '" text-anchor="middle">keine Daten</text>' : '');
+        }
+        // Gitter + Achse
+        [max, max / 2, 0, max / 2, max].forEach(function (v, i) {
+            const yy = balkenOben + 4 + (i * (balkenH - 8)) / 4;
+            svg += '<line class="tm-hist-gitter' + (i === 2 ? ' tm-hist-null' : '') + '" x1="' + L + '" x2="' + (L + breite) + '" y1="' + yy.toFixed(1) + '" y2="' + yy.toFixed(1) + '"/>'
+                + '<text class="tm-hist-achse" x="' + (L - 8) + '" y="' + (yy + 4).toFixed(1) + '" text-anchor="end">' + (i === 2 ? '0' : kurzGeld(v).replace(/\s\$$/, '').replace(/ \$$/, '')) + '</text>';
+        });
+        // Balken: Long nach oben (rot), Short nach unten (gruen)
+        const bb = Math.max(2, Math.min(18, slot * 0.62));
+        eimer.forEach(function (z, i) {
+            const x = L + i * slot + (slot - bb) / 2;
+            if (z.long) { const hh = Math.max(2, y(z.long)); svg += '<rect class="tm-hist-long" x="' + x.toFixed(1) + '" y="' + (mitte - hh).toFixed(1) + '" width="' + bb.toFixed(1) + '" height="' + hh.toFixed(1) + '" rx="2"/>'; }
+            if (z.short) { const hh = Math.max(2, y(z.short)); svg += '<rect class="tm-hist-short" x="' + x.toFixed(1) + '" y="' + mitte.toFixed(1) + '" width="' + bb.toFixed(1) + '" height="' + hh.toFixed(1) + '" rx="2"/>'; }
+        });
+        // Kurslinie im eigenen Feld
+        const k = histKerzen.filter(function (p) { return p.ende >= start; });
+        if (k.length > 1) {
+            let lo = Infinity, hi = -Infinity;
+            k.forEach(function (p) { lo = Math.min(lo, p.preis); hi = Math.max(hi, p.preis); });
+            const spanne = hi - lo || hi * 0.001 || 1;
+            const yk = function (p) { return oben + 6 + (1 - (p - lo) / spanne) * (kursH - 12); };
+            const punkte = k.map(function (p) { return Math.max(L, Math.min(L + breite, xZeit(Math.min(p.ende, jetzt)))).toFixed(1) + ',' + yk(p.preis).toFixed(1); });
+            const coin = histCoin === 'alle' ? 'BTC' : histCoin, st = (window.cfMarkt.COINS[coin] || {}).kursStellen || 2;
+            svg += '<rect class="tm-hist-kursfeld" x="' + L + '" y="' + oben + '" width="' + breite + '" height="' + kursH + '" rx="8"/>'
+                + '<polyline class="tm-hist-kurs" points="' + punkte.join(' ') + '"/>'
+                + '<text class="tm-hist-achse" x="' + (L + breite + 8) + '" y="' + (oben + 14) + '">' + window.cfZahl(hi, st) + '</text>'
+                + '<text class="tm-hist-achse" x="' + (L + breite + 8) + '" y="' + (oben + kursH - 4) + '">' + window.cfZahl(lo, st) + '</text>';
+        } else {
+            svg += '<text class="tm-hist-leer-text" x="' + (L + breite / 2) + '" y="' + (oben + kursH / 2 + 4) + '" text-anchor="middle">' + (histKerzenFehler ? 'Kurs gerade nicht erreichbar' : 'Kurs wird geladen …') + '</text>';
+        }
+        // Zeitachse
+        const zeit = function (ms) { return new Date(ms).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' }); };
+        [0, 0.25, 0.5, 0.75, 1].forEach(function (f) {
+            const t = start + f * histFenster;
+            svg += '<text class="tm-hist-achse" x="' + (L + f * breite).toFixed(1) + '" y="' + (H - 6) + '" text-anchor="' + (f === 0 ? 'start' : f === 1 ? 'end' : 'middle') + '">' + (f === 1 ? 'jetzt' : zeit(t)) + '</text>';
+        });
+        svg += '<line class="tm-hist-marke" id="tmHistMarke" x1="0" x2="0" y1="' + oben + '" y2="' + (balkenOben + balkenH) + '" visibility="hidden"/>';
+        box.innerHTML = '<svg viewBox="0 0 ' + B + ' ' + H + '" width="' + B + '" height="' + H + '" role="img" aria-label="Liquidationshistorie">' + svg + '</svg>';
+        histBild = { eimer: eimer, L: L, slot: slot, n: n, schritt: schritt, start: start, frueh: frueh };
+        const sl = eimer.reduce(function (s2, z) { return s2 + z.long; }, 0), ss = eimer.reduce(function (s2, z) { return s2 + z.short; }, 0);
+        el('tmHistStand').textContent = (sl + ss) ? 'Long ' + kurzGeld(sl) + ', Short ' + kurzGeld(ss) : 'Noch keine Liquidationen im Zeitraum';
+        el('tmHistHinweis').textContent = h.text + '. Daten ab ' + zeit(Math.max(frueh, start)) + ' Uhr' + (frueh > markt.liq.seit - 1000 ? '' : ', vor dem Öffnen nur OKX') + '.';
+    }
+
+    function histTipp(e) {
+        const tipp = el('tmHistTipp'), marke = document.getElementById('tmHistMarke');
+        if (!histBild || !marke) return;
+        const svgR = el('tmHistGrafik').querySelector('svg').getBoundingClientRect();
+        const x = e.clientX - svgR.left;
+        const i = Math.floor((x - histBild.L) / histBild.slot);
+        if (i < 0 || i >= histBild.n) { tipp.hidden = true; marke.setAttribute('visibility', 'hidden'); return; }
+        const z = histBild.eimer[i];
+        const mx = histBild.L + (i + 0.5) * histBild.slot;
+        marke.setAttribute('x1', mx); marke.setAttribute('x2', mx); marke.setAttribute('visibility', 'visible');
+        const uhrz = function (ms) { return new Date(ms).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' }); };
+        const kerze = histKerzen.filter(function (k) { return k.t <= z.von + histBild.schritt; }).pop();
+        const coin = histCoin === 'alle' ? 'BTC' : histCoin;
+        tipp.innerHTML = '<strong>' + uhrz(z.von) + '–' + uhrz(z.von + histBild.schritt) + '</strong>'
+            + (z.von + histBild.schritt < histBild.frueh ? '<div><span>keine Daten</span></div>'
+                : '<div><em class="tm-minus">Longs ' + kurzGeld(z.long) + '</em><em class="tm-plus">Shorts ' + kurzGeld(z.short) + '</em></div>')
+            + (kerze ? '<span>' + coin + ' ' + window.cfGeld(kerze.preis, { waehrung: '$', stellen: (window.cfMarkt.COINS[coin] || {}).kursStellen || 2 }) + '</span>' : '');
+        tipp.hidden = false;
+        const karte = el('tmHist').getBoundingClientRect();
+        tipp.style.left = Math.min(Math.max(svgR.left - karte.left + (mx / svgR.width) * svgR.width, 110), karte.width - 110) + 'px';
+        tipp.style.top = (svgR.top - karte.top + 30) + 'px';
     }
 
     // ------------------------------------------------------ Fear & Greed
@@ -783,6 +1071,40 @@
             segment(e.currentTarget, b.getAttribute('data-fenster'), 'data-fenster');
             heatZeigen();
         });
+        histCoinsAufbauen();
+        document.querySelector('.tm-hist-zeit').addEventListener('click', function (e) {
+            const b = e.target.closest('[data-fenster]');
+            if (!b) return;
+            histFenster = +b.getAttribute('data-fenster');
+            segment(e.currentTarget, b.getAttribute('data-fenster'), 'data-fenster');
+            histKerzen = []; histZeichnen(); histKerzenLaden();
+        });
+        el('tmHistCoins').addEventListener('click', function (e) {
+            const b = e.target.closest('[data-coin]');
+            if (!b) return;
+            histCoin = b.getAttribute('data-coin');
+            segment(e.currentTarget, histCoin, 'data-coin');
+            histKerzen = []; histZeichnen(); histKerzenLaden();
+        });
+        el('tmHistGrafik').addEventListener('mousemove', histTipp);
+        el('tmHistGrafik').addEventListener('click', histTipp);
+        el('tmHistGrafik').addEventListener('mouseleave', function () {
+            el('tmHistTipp').hidden = true;
+            const m = document.getElementById('tmHistMarke'); if (m) m.setAttribute('visibility', 'hidden');
+        });
+        document.querySelector('.tm-heat-gruppe').addEventListener('click', function (e) {
+            const b = e.target.closest('[data-gruppe]');
+            if (!b) return;
+            heatGruppe = b.getAttribute('data-gruppe');
+            segment(e.currentTarget, heatGruppe, 'data-gruppe');
+            el('tmHeatTipp').hidden = true;
+            heatZeigen();
+        });
+        el('tmHeatKacheln').addEventListener('mousemove', kachelTipp);
+        el('tmHeatKacheln').addEventListener('click', kachelTipp);
+        el('tmHeatKacheln').addEventListener('mouseleave', function () { el('tmHeatTipp').hidden = true; });
+        let groesseT = null;
+        window.addEventListener('resize', function () { clearTimeout(groesseT); groesseT = setTimeout(function () { heatZeigen(); histZeichnen(); }, 150); });
         el('tmHeatRaster').addEventListener('mouseover', heatTipp);
         el('tmHeatRaster').addEventListener('click', heatTipp);
         el('tmHeatRaster').addEventListener('mouseleave', function () { el('tmHeatTipp').hidden = true; });
@@ -1017,10 +1339,14 @@
         verdrahten();
         markt = window.cfMarkt.starten({
             orderbuch: buchZeigen, kurs: kursZeigen, funding: fundingZeigen, status: statusZeigen,
-            liquidation: neueLiquidation, historie: heatZeigen,
+            liquidation: neueLiquidation, historie: function () { heatZeigen(); histZeichnen(); },
         });
         heatZeigen();
         setInterval(heatZeigen, 2000);
+        histZeichnen();
+        histKerzenLaden();
+        setInterval(function () { if (!el('tmHistTipp').hidden) return; histZeichnen(); }, 5000);
+        setInterval(histKerzenLaden, 60000);
         liqStatsZeigen();
         setInterval(liqStatsZeigen, 1000);
         fng();
@@ -1046,7 +1372,7 @@
         ziel.classList.add('tm-post-ziel');
     }
 
-    window.cfTerminal = { tvBild: tvBild, tweetTeile: tweetTeile, feedLaden: feedLaden, heatZeigen: heatZeigen, heatFarbe: heatFarbe };
+    window.cfTerminal = { tvBild: tvBild, tweetTeile: tweetTeile, feedLaden: feedLaden, heatZeigen: heatZeigen, heatFarbe: heatFarbe, histZeichnen: histZeichnen, squarify: squarify };
 
     if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start);
     else start();

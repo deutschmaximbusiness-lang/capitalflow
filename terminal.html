@@ -86,6 +86,46 @@
 
         <main class="tm-raster" data-ansicht="markt">
             <section class="tm-markt" aria-label="Markt">
+                <div class="tm-heat-reihe">
+                <!-- Liquidations-Heatmap: Kachelflaeche = Betrag, Farbe = was ueberwiegt -->
+                <article class="tm-karte tm-heat" id="tmHeat">
+                    <header class="tm-karte-kopf">
+                        <div>
+                            <h2>Liquidations-Heatmap</h2>
+                            <span class="tm-quelle" id="tmHeatStand">Binance, Bybit, OKX</span>
+                        </div>
+                        <div class="tm-kopf-steuer">
+                            <div class="tm-segment tm-heat-zeit" role="group" aria-label="Zeitraum">
+                                <button type="button" data-fenster="900000">15 Min</button>
+                                <button type="button" data-fenster="3600000" class="aktiv">1 Std</button>
+                                <button type="button" data-fenster="14400000">4 Std</button>
+                            </div>
+                            <div class="tm-segment tm-heat-gruppe" role="group" aria-label="Gruppieren nach">
+                                <button type="button" data-gruppe="coin" class="aktiv">Coin</button>
+                                <button type="button" data-gruppe="boerse">Börse</button>
+                                <button type="button" data-gruppe="raster">Verlauf</button>
+                            </div>
+                        </div>
+                    </header>
+                    <div class="tm-kacheln" id="tmHeatKacheln" role="img" aria-label="Liquidationen je Coin als Kacheln"></div>
+                    <div class="tm-heat-raster" id="tmHeatRaster" role="img" aria-label="Liquidationen je Coin und Zeitabschnitt" hidden></div>
+                    <div class="tm-heat-fuss">
+                        <div class="tm-heat-legende" aria-hidden="true">
+                            <span class="tm-kachel-skala">Long überwiegt<b></b>Short überwiegt</span>
+                        </div>
+                        <p class="tm-heat-hinweis">Fläche = liquidierter Betrag. Echte Liquidationen, vor dem Öffnen nur OKX-Daten.</p>
+                    </div>
+                    <div class="tm-heat-tipp" id="tmHeatTipp" hidden></div>
+                </article>
+
+                <!-- Gesamtliquidationen ueber mehrere Zeitfenster -->
+                <article class="tm-karte tm-gesamt" id="tmGesamt">
+                    <header class="tm-karte-kopf"><h2>Gesamtliquidationen</h2><span class="tm-quelle">alle 13 Coins</span></header>
+                    <div class="tm-gesamt-fenster" id="tmGesamtFenster"></div>
+                    <div class="tm-gesamt-mehr" id="tmGesamtMehr"></div>
+                </article>
+                </div>
+
                 <div class="tm-zwei">
                     <article class="tm-karte" id="tmFng">
                         <header class="tm-karte-kopf"><h2>Fear &amp; Greed</h2><span class="tm-quelle">Bitcoin, Quelle alternative.me</span></header>
@@ -119,29 +159,32 @@
                     </article>
                 </div>
 
-                <!-- Liquidations-Heatmap: echte Liquidationen je Coin und Zeitabschnitt -->
-                <article class="tm-karte tm-heat" id="tmHeat">
+                <!-- Liquidationshistorie: Long nach oben, Short nach unten, Kurs als eigenes Feld darueber -->
+                <article class="tm-karte tm-hist" id="tmHist">
                     <header class="tm-karte-kopf">
                         <div>
-                            <h2>Liquidations-Heatmap</h2>
-                            <span class="tm-quelle" id="tmHeatStand">Binance, Bybit, OKX</span>
+                            <h2>Liquidationshistorie</h2>
+                            <span class="tm-quelle" id="tmHistStand">—</span>
                         </div>
-                        <div class="tm-segment tm-heat-zeit" role="group" aria-label="Zeitraum">
-                            <button type="button" data-fenster="900000">15 Min</button>
-                            <button type="button" data-fenster="3600000" class="aktiv">1 Std</button>
-                            <button type="button" data-fenster="14400000">4 Std</button>
+                        <div class="tm-kopf-steuer">
+                            <div class="tm-segment tm-hist-zeit" role="group" aria-label="Zeitraum">
+                                <button type="button" data-fenster="3600000" class="aktiv">1 Std</button>
+                                <button type="button" data-fenster="14400000">4 Std</button>
+                                <button type="button" data-fenster="43200000">12 Std</button>
+                            </div>
                         </div>
                     </header>
-                    <div class="tm-heat-raster" id="tmHeatRaster" role="img" aria-label="Liquidations-Heatmap"></div>
+                    <div class="tm-hist-coins" id="tmHistCoins" role="group" aria-label="Coin"></div>
+                    <div class="tm-hist-grafik" id="tmHistGrafik"></div>
                     <div class="tm-heat-fuss">
                         <div class="tm-heat-legende" aria-hidden="true">
-                            <span><i class="tm-heat-l"></i>mehr Longs liquidiert</span>
-                            <span><i class="tm-heat-s"></i>mehr Shorts liquidiert</span>
-                            <span class="tm-heat-skala">wenig<b></b>viel</span>
+                            <span><i class="tm-heat-l"></i>Long-Liquidationen (oben)</span>
+                            <span><i class="tm-heat-s"></i>Short-Liquidationen (unten)</span>
+                            <span><i class="tm-hist-linie"></i><b id="tmHistKursName">BTC</b>-Kurs</span>
                         </div>
-                        <p class="tm-heat-hinweis">Echte Liquidationen, keine Schätzung. Vor dem Öffnen des Terminals nur OKX-Daten.</p>
+                        <p class="tm-heat-hinweis" id="tmHistHinweis"></p>
                     </div>
-                    <div class="tm-heat-tipp" id="tmHeatTipp" hidden></div>
+                    <div class="tm-heat-tipp" id="tmHistTipp" hidden></div>
                 </article>
 
                 <div class="tm-buecher">
