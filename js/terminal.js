@@ -654,11 +654,12 @@
                 return;
             }
             const { data, error } = await window.cfDb.functions.invoke('terminal-push', { body: { aktion: 'schluessel' } });
-            if (error || !data || !data.schluessel) throw new Error('Push ist noch nicht eingerichtet');
+            if (error) throw new Error(await funktionsFehler(error));
+            if (!data || !data.schluessel) throw new Error('keine Antwort mit Schlüssel');
             const abo = alt || await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: schluesselBytes(data.schluessel) });
             const j = abo.toJSON();
             const { error: fe } = await window.cfDb.rpc('push_abo_setzen', { p_endpoint: j.endpoint, p_p256dh: j.keys.p256dh, p_auth: j.keys.auth });
-            if (fe) throw new Error(fe.message);
+            if (fe) throw new Error(/push_abo_setzen|schema cache/i.test(fe.message) ? '11_push.sql fehlt in Supabase' : fe.message);
             glockeStand(true);
             toast('Glocke an – du bekommst eine Nachricht bei jeder neuen These');
         } catch (e) {
@@ -668,13 +669,32 @@
         }
     }
 
+    // Fehler der Edge Function lesbar machen: Status + Meldung aus der Antwort
+    async function funktionsFehler(error) {
+        if (!error) return '';
+        let text = error.message || String(error);
+        const r = error.context;
+        if (r && typeof r.status === 'number') {
+            let detail = '';
+            try { const j = await r.clone().json(); detail = j.fehler || j.message || j.msg || ''; } catch (e) {
+                try { detail = (await r.text()).slice(0, 120); } catch (e2) { /* egal */ }
+            }
+            text = 'HTTP ' + r.status + (detail ? ' – ' + detail : '');
+            if (r.status === 404 && !detail) text += ' (Edge Function „terminal-push“ nicht gefunden)';
+        } else if (/Failed to send a request/i.test(text)) {
+            text = 'Edge Function „terminal-push“ nicht erreichbar – ist sie deployt?';
+        }
+        return text;
+    }
+
     async function pushSenden(id) {
         try {
             const { data, error } = await window.cfDb.functions.invoke('terminal-push', { body: { aktion: 'senden', id: id } });
-            if (error) throw error;
-            if (data && data.gesendet) toast('Veröffentlicht – Benachrichtigung an ' + data.gesendet + (data.gesendet === 1 ? ' Gerät' : ' Geräte'));
+            if (error) throw new Error(await funktionsFehler(error));
+            if (data && data.fehler) toast('Veröffentlicht – ' + (data.gesendet || 0) + ' zugestellt, ' + data.fehler + ' fehlgeschlagen (Logs der Function prüfen)', true);
+            else if (data && data.gesendet) toast('Veröffentlicht – Benachrichtigung an ' + data.gesendet + (data.gesendet === 1 ? ' Gerät' : ' Geräte'));
         } catch (e) {
-            toast('Veröffentlicht, aber Benachrichtigung fehlgeschlagen', true);
+            toast('Veröffentlicht, aber Benachrichtigung fehlgeschlagen: ' + e.message, true);
         }
     }
 
