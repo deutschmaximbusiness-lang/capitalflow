@@ -203,7 +203,7 @@
         const r = { long: 0, short: 0, anzahl: 0, groesste: null };
         for (let i = 0; i < this.liste.length; i++) {
             const l = this.liste[i];
-            if (l.coin !== coin || l.zeit < ab) continue;
+            if (l.coin !== coin || (l.empfangen || l.zeit) < ab) continue;
             r[l.seite] += l.wert; r.anzahl++;
             if (!r.groesste || l.wert > r.groesste.wert) r.groesste = l;
         }
@@ -303,7 +303,10 @@
             });
         }
 
-        const neueLiq = function (l) { if (l) { liq.neu(l); if (ui.liquidation) ui.liquidation(l); } };
+        // empfangen: eigene Uhr beim Eintreffen. Die Zeitfenster (5 Min, 1 Std)
+        // rechnen damit, nicht mit dem Boersen-Zeitstempel - sonst fallen
+        // nachgelieferte Liquidationen oder eine abweichende PC-Uhr raus.
+        const neueLiq = function (l) { if (l) { l.empfangen = Date.now(); liq.neu(l); if (ui.liquidation) ui.liquidation(l); } };
         const quelle = function (name) {
             return function (s) { status[name] = s; melden(); };
         };
@@ -351,6 +354,7 @@
             zu: function () { clearInterval(ping); },
             status: quelle('bybit'),
             nachricht: function (m) {
+                if (m && m.op === 'subscribe' && m.success === false) { status.bybit = 'fehler'; melden(); return; }
                 if (!m || typeof m.topic !== 'string' || m.topic.indexOf('allLiquidation.') !== 0) return;
                 (Array.isArray(m.data) ? m.data : [m.data]).forEach(function (d) { neueLiq(ausBybit(d)); });
             },
@@ -367,6 +371,7 @@
             zu: function () { clearInterval(pingOkx); },
             status: quelle('okx'),
             nachricht: function (m) {
+                if (m && m.event === 'error') { status.okx = 'fehler'; melden(); return; }
                 if (!m || !m.arg || m.arg.channel !== 'liquidation-orders' || !Array.isArray(m.data)) return;
                 m.data.forEach(function (z) {
                     (z.details || []).forEach(function (d) { neueLiq(ausOkx(z, d)); });

@@ -123,7 +123,7 @@
             const name = q[1] === 'Binance' ? 'Binance' : q[1];
             const t = letzte[name];
             return '<span class="tm-quelle-punkt" data-stand="' + st + '"><i aria-hidden="true"></i>' + name
-                + '<em>' + (st !== 'live' ? (st === 'verbinde' ? 'verbindet' : 'getrennt')
+                + '<em>' + (st !== 'live' ? (st === 'verbinde' ? 'verbindet' : st === 'fehler' ? 'Abo abgelehnt' : 'getrennt')
                     : t ? 'zuletzt ' + uhr(t).slice(0, 5) : 'verbunden') + '</em></span>';
         }).join('');
     }

@@ -123,6 +123,7 @@ a { color: var(--t-akzent); }
 .tm-quelle-punkt i { width: 7px; height: 7px; border-radius: 50%; background: var(--t-text-3); }
 .tm-quelle-punkt[data-stand="live"] i { background: var(--t-gruen); }
 .tm-quelle-punkt[data-stand="getrennt"] i { background: var(--t-rot); }
+.tm-quelle-punkt[data-stand="fehler"] i { background: var(--t-rot); }
 .tm-quelle-punkt em { font-style: normal; color: var(--t-text-3); }
 .tm-feed { position: sticky; top: 92px; max-height: calc(100vh - 112px); overflow-y: auto; padding-right: 4px; display: grid; gap: 14px; align-content: start; scrollbar-width: thin; }
 
