@@ -72,10 +72,25 @@
 
     // ------------------------------------------------------------ Kurse
 
+    const zuletzt = {};
     function kursZeigen(coin, k) {
         const box = document.querySelector('.tm-kurs[data-coin="' + coin + '"]');
         if (!box || !(k.preis > 0)) return;
-        box.querySelector('.tm-kurs-preis').textContent = window.cfGeld(k.preis, { waehrung: '$', stellen: window.cfMarkt.COINS[coin].kursStellen });
+        const feld = box.querySelector('.tm-kurs-preis');
+        const text = window.cfGeld(k.preis, { waehrung: '$', stellen: window.cfMarkt.COINS[coin].kursStellen });
+        if (feld.textContent !== text) {
+            feld.textContent = text;
+            // Kurz gruen oder rot aufleuchten, je nach Richtung
+            const vorher = zuletzt[coin];
+            if (vorher) {
+                feld.classList.remove('tm-hoch', 'tm-tief');
+                void feld.offsetWidth;
+                feld.classList.add(k.preis > vorher ? 'tm-hoch' : 'tm-tief');
+            }
+        }
+        zuletzt[coin] = k.preis;
+        if (coin === 'BTC') document.title = text + ' BTC – CapitalFlow Krypto Terminal';
+        if (k.prozent === null || !Number.isFinite(k.prozent)) return;
         const p = box.querySelector('.tm-kurs-24h');
         p.textContent = window.cfProz(k.prozent, 2, { vorzeichen: true });
         p.className = 'tm-kurs-24h ' + (k.prozent >= 0 ? 'tm-plus' : 'tm-minus');
@@ -163,8 +178,8 @@
         karte.querySelector('.tm-buch-mitte').innerHTML = '<strong>' + window.cfZahl(k.mitte, window.cfMarkt.COINS[coin].preisStellen) + '</strong>'
             + '<span>Spread ' + window.cfZahl(k.spread, 2) + '</span>';
         karte.querySelector('.tm-druck-bid').style.width = (k.druck * 100).toFixed(1) + '%';
-        karte.querySelector('.tm-druck-text').textContent = 'Käufer ' + window.cfProz(k.druck * 100, 0)
-            + ', Verkäufer ' + window.cfProz((1 - k.druck) * 100, 0) + ' im Band ±1' + NB + '%';
+        karte.querySelector('.tm-druck-text').innerHTML = '<span class="tm-plus">Käufer ' + window.cfProz(k.druck * 100, 0) + '</span>'
+            + '<span>Tiefe ±1' + NB + '%</span><span class="tm-minus">Verkäufer ' + window.cfProz((1 - k.druck) * 100, 0) + '</span>';
     }
 
     // ---------------------------------------------------- Liquidationen
@@ -194,7 +209,7 @@
                 + '<div class="tm-liq-zahlen">'
                 +   '<div><span>Longs liquidiert</span><strong class="tm-minus">' + kurzGeld(s.long) + '</strong></div>'
                 +   '<div><span>Shorts liquidiert</span><strong class="tm-plus">' + kurzGeld(s.short) + '</strong></div>'
-                +   '<div><span>Größte</span><strong>' + (s.groesste ? kurzGeld(s.groesste.wert) + ' ' + (s.groesste.seite === 'long' ? 'Long' : 'Short') : '—') + '</strong></div>'
+                +   '<div><span>Größte' + (s.groesste ? ' <b class="' + (s.groesste.seite === 'long' ? 'tm-minus' : 'tm-plus') + '">' + (s.groesste.seite === 'long' ? 'Long' : 'Short') + '</b>' : '') + '</span><strong>' + (s.groesste ? kurzGeld(s.groesste.wert) : '—') + '</strong></div>'
                 + '</div></div>';
         }).join('');
         quellenZeigen();
@@ -247,6 +262,13 @@
             z.setAttribute('cx', (100 + 84 * Math.cos(winkel)).toFixed(1));
             z.setAttribute('cy', (100 - 84 * Math.sin(winkel)).toFixed(1));
             el('tmFng').setAttribute('data-stufe', w < 25 ? 'angst-x' : w < 45 ? 'angst' : w <= 55 ? 'neutral' : w <= 75 ? 'gier' : 'gier-x');
+            const reihe = el('tmFngReihe');
+            if (reihe && d.reihe && d.reihe.length) {
+                reihe.innerHTML = d.reihe.map(function (v, i) {
+                    const farbe = v < 25 ? '#FB7185' : v < 45 ? '#FDA4AF' : v <= 55 ? '#FBBF24' : v <= 75 ? '#6EE7B7' : '#34D399';
+                    return '<i style="height:' + Math.max(6, v) + '%;background:' + farbe + '" title="' + v + '"></i>';
+                }).join('');
+            }
             el('tmFngVerlauf').innerHTML = [['Gestern', d.gestern], ['Vor einer Woche', d.woche], ['Vor einem Monat', d.monat]]
                 .filter(function (x) { return x[1]; })
                 .map(function (x) { return '<div><dt>' + x[0] + '</dt><dd><strong>' + x[1].wert + '</strong> ' + esc(x[1].text) + '</dd></div>'; }).join('');

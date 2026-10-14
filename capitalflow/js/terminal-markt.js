@@ -219,6 +219,8 @@
         if (!d.length) return null;
         const wert = function (i) { return d[i] ? { wert: +d[i].value, text: FNG_DE[d[i].value_classification] || d[i].value_classification } : null; };
         return { heute: wert(0), gestern: wert(1), woche: wert(7), monat: wert(30),
+                 // aelteste zuerst - fuer den Verlauf der letzten 30 Tage
+                 reihe: d.slice(0, 30).map(function (x) { return +x.value; }).reverse(),
                  naechstes: d[0].time_until_update ? +d[0].time_until_update : null };
     }
 
@@ -281,6 +283,26 @@
             if (nochmal) setTimeout(function () { snapshot(coin); }, nochmal);
         }
 
+        // Kurse sammeln und hoechstens einmal pro Bild zeichnen - BTC hat
+        // in hektischen Phasen hunderte Abschluesse pro Sekunde
+        const kurse = {};
+        NAMEN.forEach(function (c) { kurse[c] = { preis: 0, offen: 0 }; });
+        let kursGeplant = false;
+        function kursNeu(coin, preis, offen) {
+            if (preis > 0) kurse[coin].preis = preis;
+            if (offen > 0) kurse[coin].offen = offen;
+            if (kursGeplant || !ui.kurs) return;
+            kursGeplant = true;
+            (window.requestAnimationFrame || setTimeout)(function () {
+                kursGeplant = false;
+                NAMEN.forEach(function (c) {
+                    const k = kurse[c];
+                    if (!(k.preis > 0)) return;
+                    ui.kurs(c, { preis: k.preis, prozent: k.offen > 0 ? (k.preis / k.offen - 1) * 100 : null });
+                });
+            });
+        }
+
         const neueLiq = function (l) { if (l) { liq.neu(l); if (ui.liquidation) ui.liquidation(l); } };
         const quelle = function (name) {
             return function (s) { status[name] = s; melden(); };
@@ -300,7 +322,10 @@
         const marktStreams = [];
         NAMEN.forEach(function (c) {
             const s = COINS[c].binance;
-            marktStreams.push(s + '@forceOrder', s + '@ticker', s + '@markPrice@1s');
+            // aggTrade: jeder Abschluss, also der Kurs in Echtzeit. @ticker
+            // kommt nur einmal pro Sekunde - daher wirkte der Kurs verspaetet.
+            // Vom Ticker nehmen wir nur noch den Eroeffnungskurs vor 24 h.
+            marktStreams.push(s + '@aggTrade', s + '@forceOrder', s + '@ticker', s + '@markPrice@1s');
         });
         const binance = new Leitung(BINANCE_MARKET + marktStreams.join('/'), {
             status: quelle('binance'),
@@ -309,7 +334,8 @@
                 const coin = coinVon('binance', name.split('@')[0]);
                 if (!coin) return;
                 if (name.indexOf('@forceOrder') > 0) neueLiq(ausBinance(d.o));
-                else if (name.indexOf('@ticker') > 0) { if (ui.kurs) ui.kurs(coin, { preis: +d.c, prozent: +d.P }); }
+                else if (name.indexOf('@aggTrade') > 0) { kursNeu(coin, +d.p, null); }
+                else if (name.indexOf('@ticker') > 0) { kursNeu(coin, kurse[coin].preis ? null : +d.c, +d.o); }
                 else if (name.indexOf('@markPrice') > 0) { if (ui.funding) ui.funding(coin, { rate: +d.r, naechste: +d.T }); }
             },
         });
