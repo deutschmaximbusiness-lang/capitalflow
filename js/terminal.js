@@ -76,6 +76,34 @@
 
     // ------------------------------------------------------------ Kurse
 
+    // Kursleiste aus der Coin-Liste bauen. Mausrad scrollt waagerecht.
+    function kurseAufbauen() {
+        const box = el('tmKurse');
+        box.innerHTML = window.cfMarkt.NAMEN.map(function (c) {
+            return '<div class="tm-kurs" data-coin="' + c + '">'
+                + '<span class="tm-kurs-coin">' + c + '</span>'
+                + '<span class="tm-kurs-preis">—</span>'
+                + '<span class="tm-kurs-24h">—</span>'
+                + '<span class="tm-kurs-funding" title="Funding Rate (Binance Perp)">—</span></div>';
+        }).join('');
+        el('tmMiniKurse').innerHTML = window.cfMarkt.NAMEN.map(function (c) {
+            return '<div class="tm-mini" data-coin="' + c + '"><b>' + c + '</b><span class="tm-mini-preis">—</span><span class="tm-mini-24h">—</span></div>';
+        }).join('');
+        box.addEventListener('wheel', function (e) {
+            if (Math.abs(e.deltaY) <= Math.abs(e.deltaX) || box.scrollWidth <= box.clientWidth) return;
+            e.preventDefault();
+            box.scrollLeft += e.deltaY;
+        }, { passive: false });
+        const rand = function () {
+            const r = box.parentElement;
+            r.classList.toggle('tm-mehr-links', box.scrollLeft > 4);
+            r.classList.toggle('tm-mehr-rechts', box.scrollLeft + box.clientWidth < box.scrollWidth - 4);
+        };
+        box.addEventListener('scroll', rand, { passive: true });
+        window.addEventListener('resize', rand);
+        rand();
+    }
+
     const zuletzt = {};
     function kursZeigen(coin, k) {
         const box = document.querySelector('.tm-kurs[data-coin="' + coin + '"]');
@@ -94,6 +122,15 @@
         }
         zuletzt[coin] = k.preis;
         if (coin === 'BTC') document.title = text + ' BTC – CapitalFlow Krypto Terminal';
+        const mini = document.querySelector('.tm-mini[data-coin="' + coin + '"]');
+        if (mini) {
+            mini.querySelector('.tm-mini-preis').textContent = text;
+            if (k.prozent !== null && Number.isFinite(k.prozent)) {
+                const m = mini.querySelector('.tm-mini-24h');
+                m.textContent = window.cfProz(k.prozent, 2, { vorzeichen: true });
+                m.className = 'tm-mini-24h ' + (k.prozent >= 0 ? 'tm-plus' : 'tm-minus');
+            }
+        }
         if (k.prozent === null || !Number.isFinite(k.prozent)) return;
         const p = box.querySelector('.tm-kurs-24h');
         p.textContent = window.cfProz(k.prozent, 2, { vorzeichen: true });
@@ -202,7 +239,7 @@
     function liqStatsZeigen() {
         if (!markt) return;
         const box = el('tmLiqStats');
-        box.innerHTML = window.cfMarkt.NAMEN.map(function (coin) {
+        box.innerHTML = window.cfMarkt.BUCH_NAMEN.map(function (coin) {
             const s = markt.liq.summen(coin, liqZeit);
             const gesamt = s.long + s.short;
             const anteil = gesamt ? (s.long / gesamt) * 100 : 50;
@@ -228,7 +265,7 @@
             + '<span class="tm-liq-coinname">' + l.coin + '</span>'
             + '<span class="tm-liq-seite">' + (l.seite === 'long' ? 'Long' : 'Short') + '</span>'
             + '<span class="tm-liq-wert">' + kurzGeld(l.wert) + '</span>'
-            + '<span class="tm-liq-preis">@ ' + window.cfZahl(l.preis, l.coin === 'BTC' ? 0 : 2) + '</span>'
+            + '<span class="tm-liq-preis">@ ' + window.cfZahl(l.preis, (window.cfMarkt.COINS[l.coin] || {}).kursStellen || 2) + '</span>'
             + '<span class="tm-liq-boerse">' + l.boerse + '</span></div>';
     }
 
@@ -249,6 +286,73 @@
         const neu = box.firstElementChild;
         neu.classList.add('tm-neu');
         while (box.children.length > 60) box.lastElementChild.remove();
+    }
+
+    // ------------------------------------------------ Liquidations-Heatmap
+
+    const HEAT_SPALTEN = { 900000: 30, 3600000: 30, 14400000: 48 };
+    let heatFenster = 3600000, heatDaten = null;
+
+    // Farbe: Rot = mehr Longs liquidiert, Gruen = mehr Shorts, gemischt
+    // geht zum neutralen Grau. Helligkeit = Volumen (log), damit eine
+    // einzelne Riesen-Liquidation nicht alles andere ausblendet.
+    const ROT = [251, 113, 133], GRUEN = [52, 211, 153], GRAU = [161, 161, 170];
+    function heatFarbe(z, max) {
+        const ges = z.long + z.short;
+        if (!ges) return '';
+        const d = (z.long - z.short) / ges;
+        const pol = d >= 0 ? ROT : GRUEN, a = Math.abs(d);
+        const c = pol.map(function (v, i) { return Math.round(GRAU[i] + (v - GRAU[i]) * a); });
+        const st = Math.log10(1 + ges) / Math.log10(1 + Math.max(max, 1));
+        return 'rgba(' + c.join(',') + ',' + (0.18 + 0.82 * st).toFixed(2) + ')';
+    }
+
+    function heatZeigen() {
+        if (!markt) return;
+        const coins = window.cfMarkt.NAMEN;
+        const spalten = HEAT_SPALTEN[heatFenster];
+        const r = markt.liq.raster(coins, heatFenster, spalten);
+        heatDaten = r;
+        const zeilen = coins.map(function (c) {
+            const sm = r.summe[c], ges = sm.long + sm.short;
+            const anteil = ges ? (sm.long / ges) * 100 : 50;
+            return '<div class="tm-heat-zeile" data-coin="' + c + '">'
+                + '<span class="tm-heat-coin">' + c + '</span>'
+                + '<div class="tm-heat-zellen" style="--spalten:' + spalten + '">'
+                + r.zellen[c].map(function (z, i) {
+                    const f = heatFarbe(z, r.max);
+                    return '<i data-i="' + i + '"' + (f ? ' style="background:' + f + '"' + (z.long + z.short >= r.max * 0.6 && r.max > 0 ? ' class="tm-heat-spitze"' : '') : '') + '></i>';
+                }).join('')
+                + '</div>'
+                + '<span class="tm-heat-summe">' + (ges ? '<b>' + kurzGeld(ges) + '</b>'
+                    + '<span class="tm-heat-ls" title="Longs ' + Math.round(anteil) + ' %"><i style="width:' + anteil.toFixed(0) + '%"></i></span>' : '<em>—</em>') + '</span>'
+                + '</div>';
+        }).join('');
+        const zeit = function (ms) { return new Date(ms).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' }); };
+        el('tmHeatRaster').innerHTML = zeilen
+            + '<div class="tm-heat-achse"><span></span><div><span>' + zeit(r.start) + '</span><span>' + zeit(r.start + (r.schritt * spalten) / 2) + '</span><span>jetzt</span></div><span></span></div>';
+        const gesamt = coins.reduce(function (n, c) { return n + r.summe[c].long + r.summe[c].short; }, 0);
+        el('tmHeatStand').textContent = gesamt ? kurzGeld(gesamt) + ' liquidiert, Binance, Bybit, OKX' : 'Warte auf Liquidationen …';
+    }
+
+    function heatTipp(e) {
+        const zelle = e.target.closest('.tm-heat-zellen i');
+        const tipp = el('tmHeatTipp');
+        if (!zelle || !heatDaten) { tipp.hidden = true; return; }
+        const coin = zelle.closest('.tm-heat-zeile').getAttribute('data-coin');
+        const i = +zelle.getAttribute('data-i');
+        const z = heatDaten.zellen[coin][i];
+        const von = heatDaten.start + i * heatDaten.schritt;
+        const uhrz = function (ms) { return new Date(ms).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' }); };
+        tipp.innerHTML = '<strong>' + coin + '</strong> <span>' + uhrz(von) + '–' + uhrz(von + heatDaten.schritt) + '</span>'
+            + (z.anzahl ? '<div><em class="tm-minus">Longs ' + kurzGeld(z.long) + '</em><em class="tm-plus">Shorts ' + kurzGeld(z.short) + '</em></div>'
+                + '<span>' + z.anzahl + (z.anzahl === 1 ? ' Liquidation' : ' Liquidationen') + '</span>'
+                : '<div><span>Keine Liquidation</span></div>');
+        tipp.hidden = false;
+        const karte = el('tmHeat').getBoundingClientRect(), r = zelle.getBoundingClientRect();
+        const x = Math.min(Math.max(r.left + r.width / 2 - karte.left, 90), karte.width - 90);
+        tipp.style.left = x + 'px';
+        tipp.style.top = (r.top - karte.top - 8) + 'px';
     }
 
     // ------------------------------------------------------ Fear & Greed
@@ -272,6 +376,13 @@
                     const farbe = v < 25 ? '#FB7185' : v < 45 ? '#FDA4AF' : v <= 55 ? '#FBBF24' : v <= 75 ? '#6EE7B7' : '#34D399';
                     return '<i style="height:' + Math.max(6, v) + '%;background:' + farbe + '" title="' + v + '"></i>';
                 }).join('');
+            }
+            const mini = el('tmMiniFng');
+            if (mini) {
+                mini.querySelector('strong').textContent = String(w);
+                mini.querySelector('span').textContent = d.heute.text;
+                mini.querySelector('i').style.left = w + '%';
+                mini.setAttribute('data-stufe', el('tmFng').getAttribute('data-stufe'));
             }
             el('tmFngVerlauf').innerHTML = [['Gestern', d.gestern], ['Vor einer Woche', d.woche], ['Vor einem Monat', d.monat]]
                 .filter(function (x) { return x[1]; })
@@ -381,6 +492,7 @@
             }
             posts = data || [];
             neuZaehlen();
+            stimmungZeigen();
             const bilder = await bildAdressen(posts);
             const sichtbar = posts.filter(passtFilter);
             el('tmPosts').innerHTML = sichtbar.length ? sichtbar.map(function (p) { return postHtml(p, bilder); }).join('')
@@ -390,6 +502,31 @@
             tweetsLaden();
         })();
         try { await laedt; } finally { laedt = null; }
+    }
+
+    // Seitenleiste: Thesen der letzten 30 Tage je Coin, Long gegen Short
+    function stimmungZeigen() {
+        const box = el('tmStimmung');
+        if (!box) return;
+        const ab = new Date(Date.now() - 30 * 86400000).toISOString();
+        const je = {};
+        posts.forEach(function (p) {
+            if (p.art !== 'these' || !p.coin || p.created_at < ab) return;
+            const z = je[p.coin] || (je[p.coin] = { long: 0, short: 0, neutral: 0, n: 0 });
+            z[p.richtung || 'neutral']++; z.n++;
+        });
+        const coins = Object.keys(je).sort(function (a, b) { return je[b].n - je[a].n; });
+        box.innerHTML = coins.length ? coins.map(function (c) {
+            const z = je[c];
+            const name = c === 'ALLGEMEIN' ? 'Allgemein' : c;
+            return '<button type="button" class="tm-stimmung-zeile" data-filter-setzen="' + c + '">'
+                + '<b>' + name + '</b>'
+                + '<span class="tm-stimmung-balken" aria-hidden="true">'
+                +   '<i class="tm-st-long" style="flex:' + z.long + '"></i><i class="tm-st-neutral" style="flex:' + z.neutral + '"></i><i class="tm-st-short" style="flex:' + z.short + '"></i></span>'
+                + '<em>' + z.n + '</em>'
+                + '<span class="tm-stimmung-text">' + z.long + ' Long, ' + z.short + ' Short' + (z.neutral ? ', ' + z.neutral + ' Neutral' : '') + '</span>'
+                + '</button>';
+        }).join('') : '<p class="tm-leer">Noch keine Thesen.</p>';
     }
 
     // Filter im Feed
@@ -639,6 +776,23 @@
 
     function verdrahten() {
         lupeVerdrahten();
+        document.querySelector('.tm-heat-zeit').addEventListener('click', function (e) {
+            const b = e.target.closest('[data-fenster]');
+            if (!b) return;
+            heatFenster = +b.getAttribute('data-fenster');
+            segment(e.currentTarget, b.getAttribute('data-fenster'), 'data-fenster');
+            heatZeigen();
+        });
+        el('tmHeatRaster').addEventListener('mouseover', heatTipp);
+        el('tmHeatRaster').addEventListener('click', heatTipp);
+        el('tmHeatRaster').addEventListener('mouseleave', function () { el('tmHeatTipp').hidden = true; });
+        el('tmStimmung').addEventListener('click', function (e) {
+            const b = e.target.closest('[data-filter-setzen]');
+            if (!b) return;
+            const c = b.getAttribute('data-filter-setzen');
+            const knopf = document.querySelector('.tm-feed-filter [data-filter="' + c + '"]');
+            if (knopf) knopf.click();
+        });
         document.querySelector('.tm-feed-filter').addEventListener('click', function (e) {
             const b = e.target.closest('[data-filter]');
             if (!b) return;
@@ -836,10 +990,11 @@
     // Intro: einmal pro Sitzung die volle Animation (2 s), danach kurz
     function introDauer() {
         if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return 0;
-        let schon = false;
-        try { schon = sessionStorage.getItem('cf_tm_intro') === '1'; sessionStorage.setItem('cf_tm_intro', '1'); } catch (e) { /* egal */ }
-        if (schon) el('tmTor').classList.add('tm-intro-kurz');
-        return schon ? 700 : 2000;
+        // Ob kurz oder lang, steht schon im <head> fest (Klasse am <html>) -
+        // sonst wuerde die Animation mitten im Lauf umspringen
+        const kurz = document.documentElement.classList.contains('tm-intro-kurz');
+        try { sessionStorage.setItem('cf_tm_intro', '1'); } catch (e) { /* egal */ }
+        return kurz ? 700 : 2000;
     }
     function warte(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
 
@@ -857,12 +1012,15 @@
         let gemerkt = null;
         try { gemerkt = localStorage.getItem('cf_tm_ansicht'); } catch (e) { /* egal */ }
         if (gemerkt === 'feed' && !location.hash) ansicht('feed');
+        kurseAufbauen();
         buchAufbauen();
         verdrahten();
         markt = window.cfMarkt.starten({
             orderbuch: buchZeigen, kurs: kursZeigen, funding: fundingZeigen, status: statusZeigen,
-            liquidation: neueLiquidation,
+            liquidation: neueLiquidation, historie: heatZeigen,
         });
+        heatZeigen();
+        setInterval(heatZeigen, 2000);
         liqStatsZeigen();
         setInterval(liqStatsZeigen, 1000);
         fng();
@@ -888,7 +1046,7 @@
         ziel.classList.add('tm-post-ziel');
     }
 
-    window.cfTerminal = { tvBild: tvBild, tweetTeile: tweetTeile, feedLaden: feedLaden };
+    window.cfTerminal = { tvBild: tvBild, tweetTeile: tweetTeile, feedLaden: feedLaden, heatZeigen: heatZeigen, heatFarbe: heatFarbe };
 
     if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start);
     else start();

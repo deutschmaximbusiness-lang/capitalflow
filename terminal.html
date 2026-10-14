@@ -14,6 +14,11 @@
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="CF Terminal">
+    <script>
+        // Intro: ab dem zweiten Oeffnen in der Sitzung die Kurzfassung - vor
+        // dem ersten Zeichnen festlegen, damit nichts mitten im Lauf springt
+        try { if (sessionStorage.getItem('cf_tm_intro') === '1') document.documentElement.classList.add('tm-intro-kurz'); } catch (e) {}
+    </script>
     <script src="js/format.js"></script>
     <link rel="stylesheet" href="css/basis.css">
     <link rel="stylesheet" href="css/terminal.css">
@@ -55,26 +60,6 @@
                     <span class="tm-zusatz">Krypto Terminal</span>
                 </span>
             </a>
-            <div class="tm-kurse" id="tmKurse">
-                <div class="tm-kurs" data-coin="BTC">
-                    <span class="tm-kurs-coin">BTC</span>
-                    <span class="tm-kurs-preis">—</span>
-                    <span class="tm-kurs-24h">—</span>
-                    <span class="tm-kurs-funding" title="Funding Rate (Binance Perp)">—</span>
-                </div>
-                <div class="tm-kurs" data-coin="ETH">
-                    <span class="tm-kurs-coin">ETH</span>
-                    <span class="tm-kurs-preis">—</span>
-                    <span class="tm-kurs-24h">—</span>
-                    <span class="tm-kurs-funding" title="Funding Rate (Binance Perp)">—</span>
-                </div>
-                <div class="tm-kurs" data-coin="SOL">
-                    <span class="tm-kurs-coin">SOL</span>
-                    <span class="tm-kurs-preis">—</span>
-                    <span class="tm-kurs-24h">—</span>
-                    <span class="tm-kurs-funding" title="Funding Rate (Binance Perp)">—</span>
-                </div>
-            </div>
             <div class="tm-kopf-rechts">
                 <button type="button" class="tm-glocke pwa-install-btn" id="pwaInstallBtn" onclick="cfInstallieren()" title="Terminal als App installieren" style="display: none;">
                     <svg viewBox="0 0 24 24" width="17" height="17" aria-hidden="true"><path fill="currentColor" d="M12 3a1 1 0 0 1 1 1v8.59l2.3-2.3a1 1 0 1 1 1.4 1.42l-4 4a1 1 0 0 1-1.4 0l-4-4a1 1 0 1 1 1.4-1.42l2.3 2.3V4a1 1 0 0 1 1-1zM5 18a1 1 0 0 1 1-1h12a1 1 0 1 1 0 2H6a1 1 0 0 1-1-1z"/></svg>
@@ -88,6 +73,11 @@
                 <a class="tm-knopf tm-knopf-leise" href="app.html">Zum Journal</a>
             </div>
         </header>
+
+        <!-- Kursleiste: wird aus terminal-markt.js (COINS) gebaut -->
+        <div class="tm-ticker-rahmen">
+            <div class="tm-kurse" id="tmKurse" aria-label="Kurse"></div>
+        </div>
 
         <div class="tm-umschalter" role="tablist" aria-label="Ansicht">
             <button type="button" role="tab" aria-selected="true" data-ansicht="markt">Markt</button>
@@ -128,6 +118,31 @@
                         <p class="tm-hinweis" id="tmLiqHinweis">Gezählt wird ab dem Öffnen des Terminals. 24h-Summen kommen mit Stufe 2.</p>
                     </article>
                 </div>
+
+                <!-- Liquidations-Heatmap: echte Liquidationen je Coin und Zeitabschnitt -->
+                <article class="tm-karte tm-heat" id="tmHeat">
+                    <header class="tm-karte-kopf">
+                        <div>
+                            <h2>Liquidations-Heatmap</h2>
+                            <span class="tm-quelle" id="tmHeatStand">Binance, Bybit, OKX</span>
+                        </div>
+                        <div class="tm-segment tm-heat-zeit" role="group" aria-label="Zeitraum">
+                            <button type="button" data-fenster="900000">15 Min</button>
+                            <button type="button" data-fenster="3600000" class="aktiv">1 Std</button>
+                            <button type="button" data-fenster="14400000">4 Std</button>
+                        </div>
+                    </header>
+                    <div class="tm-heat-raster" id="tmHeatRaster" role="img" aria-label="Liquidations-Heatmap"></div>
+                    <div class="tm-heat-fuss">
+                        <div class="tm-heat-legende" aria-hidden="true">
+                            <span><i class="tm-heat-l"></i>mehr Longs liquidiert</span>
+                            <span><i class="tm-heat-s"></i>mehr Shorts liquidiert</span>
+                            <span class="tm-heat-skala">wenig<b></b>viel</span>
+                        </div>
+                        <p class="tm-heat-hinweis">Echte Liquidationen, keine Schätzung. Vor dem Öffnen des Terminals nur OKX-Daten.</p>
+                    </div>
+                    <div class="tm-heat-tipp" id="tmHeatTipp" hidden></div>
+                </article>
 
                 <div class="tm-buecher">
                     <article class="tm-karte tm-buch" data-coin="BTC">
@@ -171,7 +186,8 @@
 
             </section>
 
-            <aside class="tm-feed" aria-label="Thesen und Feed">
+            <section class="tm-feed" aria-label="Thesen und Feed">
+              <div class="tm-feed-haupt">
                 <header class="tm-feed-kopf">
                     <div>
                         <h2>Thesen &amp; Feed</h2>
@@ -226,7 +242,24 @@
                 </form>
 
                 <div class="tm-posts" id="tmPosts"><p class="tm-leer">Feed wird geladen …</p></div>
-            </aside>
+              </div>
+
+              <!-- Seitenleiste: Markt auf einen Blick, damit der Feed-Tab nicht leer wirkt -->
+              <aside class="tm-feed-seite" aria-label="Markt auf einen Blick">
+                <article class="tm-karte tm-seite-karte">
+                    <header class="tm-karte-kopf"><h2>Markt jetzt</h2><span class="tm-quelle">24 h</span></header>
+                    <div class="tm-mini-kurse" id="tmMiniKurse"></div>
+                </article>
+                <article class="tm-karte tm-seite-karte">
+                    <header class="tm-karte-kopf"><h2>Fear &amp; Greed</h2><span class="tm-quelle">Bitcoin</span></header>
+                    <div class="tm-mini-fng" id="tmMiniFng"><strong>—</strong><span></span><div class="tm-mini-fng-balken"><i></i></div></div>
+                </article>
+                <article class="tm-karte tm-seite-karte">
+                    <header class="tm-karte-kopf"><h2>Thesen nach Coin</h2><span class="tm-quelle">letzte 30 Tage</span></header>
+                    <div class="tm-stimmung" id="tmStimmung"><p class="tm-leer">Noch keine Thesen.</p></div>
+                </article>
+              </aside>
+            </section>
         </main>
     </div>
 

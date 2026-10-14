@@ -23,15 +23,25 @@
 
     // ctVal: Groesse eines OKX-Kontrakts in Coins. Wird beim Start von OKX
     // geholt, das hier ist nur der Rueckfall.
+    // buch: true = mit Orderbuch und eigener Statistik-Karte. Die Altcoins
+    // laufen in Kursleiste, Heatmap und Live-Liste mit.
+    function alt(sym, stellen) {
+        const k = sym.toLowerCase();
+        return { binance: k + 'usdt', bybit: sym + 'USDT', okx: sym + '-USDT-SWAP', ctVal: 0, kursStellen: stellen, buch: false };
+    }
     const COINS = {
-        BTC: { binance: 'btcusdt', bybit: 'BTCUSDT', okx: 'BTC-USDT-SWAP', ctVal: 0.01,
+        BTC: { binance: 'btcusdt', bybit: 'BTCUSDT', okx: 'BTC-USDT-SWAP', ctVal: 0.01, buch: true,
                stufen: [1, 10, 50, 100], stufe: 10, preisStellen: 1, mengeStellen: 3, kursStellen: 0 },
-        ETH: { binance: 'ethusdt', bybit: 'ETHUSDT', okx: 'ETH-USDT-SWAP', ctVal: 0.1,
+        ETH: { binance: 'ethusdt', bybit: 'ETHUSDT', okx: 'ETH-USDT-SWAP', ctVal: 0.1, buch: true,
                stufen: [0.1, 0.5, 1, 5], stufe: 0.5, preisStellen: 2, mengeStellen: 2, kursStellen: 2 },
-        SOL: { binance: 'solusdt', bybit: 'SOLUSDT', okx: 'SOL-USDT-SWAP', ctVal: 1,
+        SOL: { binance: 'solusdt', bybit: 'SOLUSDT', okx: 'SOL-USDT-SWAP', ctVal: 1, buch: true,
                stufen: [0.01, 0.05, 0.1, 0.5], stufe: 0.05, preisStellen: 2, mengeStellen: 1, kursStellen: 2 },
+        XRP: alt('XRP', 4), BNB: alt('BNB', 2), DOGE: alt('DOGE', 5), HYPE: alt('HYPE', 3),
+        SUI: alt('SUI', 4), ADA: alt('ADA', 4), LINK: alt('LINK', 3), AVAX: alt('AVAX', 3),
+        NEAR: alt('NEAR', 4), HBAR: alt('HBAR', 5),
     };
     const NAMEN = Object.keys(COINS);
+    const BUCH_NAMEN = NAMEN.filter(function (c) { return COINS[c].buch; });
     function coinVon(feld, wert) {
         for (let i = 0; i < NAMEN.length; i++) if (COINS[NAMEN[i]][feld] === wert) return NAMEN[i];
         return null;
@@ -40,7 +50,8 @@
     const BINANCE_PUBLIC = 'wss://fstream.binance.com/public/stream?streams=';
     const BINANCE_MARKET = 'wss://fstream.binance.com/market/stream?streams=';
     const OKX_WS = 'wss://ws.okx.com:8443/ws/v5/public';
-    const OKX_REST = 'https://www.okx.com/api/v5/public/instruments?instType=SWAP&instId=';
+    const OKX_REST = 'https://www.okx.com/api/v5/public/instruments?instType=SWAP';
+    const OKX_LIQ = 'https://www.okx.com/api/v5/public/liquidation-orders?instType=SWAP&state=filled&limit=100&instFamily=';
     const BINANCE_REST = 'https://fapi.binance.com/fapi/v1/depth';
     const BYBIT_WS = 'wss://stream.bybit.com/v5/public/linear';
     const FNG_URL = 'https://api.alternative.me/fng/?limit=31';
@@ -184,7 +195,7 @@
      */
     function ausOkx(zeile, d) {
         const coin = coinVon('okx', zeile && zeile.instId);
-        if (!coin || !d) return null;
+        if (!coin || !d || !(COINS[coin].ctVal > 0)) return null;
         const menge = (+d.sz) * COINS[coin].ctVal, preis = +d.bkPx;
         if (!(menge > 0) || !(preis > 0)) return null;
         const seite = d.posSide === 'long' || d.posSide === 'short' ? d.posSide
@@ -193,7 +204,43 @@
                  menge: menge, preis: preis, wert: menge * preis, zeit: +d.ts || Date.now() };
     }
 
-    function LiqStatistik() { this.seit = Date.now(); this.liste = []; }
+    function LiqStatistik() { this.seit = Date.now(); this.liste = []; this.historie = []; }
+    // Nachgeladene OKX-Liquidationen von vor dem Oeffnen: nur fuer die
+    // Heatmap, nicht fuer "gezaehlt seit Oeffnen"
+    LiqStatistik.prototype.historieSetzen = function (liste) {
+        const da = {};
+        this.historie.forEach(function (l) { da[l.coin + l.zeit + l.menge] = true; });
+        const self = this;
+        liste.forEach(function (l) { if (!da[l.coin + l.zeit + l.menge]) { l.alt = true; self.historie.push(l); } });
+        this.historie.sort(function (a, b) { return b.zeit - a.zeit; });
+        if (this.historie.length > 5000) this.historie.length = 5000;
+    };
+    /**
+     * Heatmap: pro Coin und Zeitabschnitt Longs/Shorts in USD.
+     * fensterMs: wie weit zurueck, spalten: Anzahl Abschnitte.
+     */
+    LiqStatistik.prototype.raster = function (coins, fensterMs, spalten, jetzt) {
+        jetzt = jetzt || Date.now();
+        const start = jetzt - fensterMs, schritt = fensterMs / spalten;
+        const zellen = {}, summe = {};
+        coins.forEach(function (c) {
+            zellen[c] = [];
+            for (let i = 0; i < spalten; i++) zellen[c].push({ long: 0, short: 0, anzahl: 0 });
+            summe[c] = { long: 0, short: 0, anzahl: 0 };
+        });
+        let max = 0;
+        const rein = function (l, t) {
+            if (!zellen[l.coin] || t < start || t > jetzt) return;
+            const i = Math.min(spalten - 1, Math.floor((t - start) / schritt));
+            const z = zellen[l.coin][i];
+            z[l.seite] += l.wert; z.anzahl++;
+            summe[l.coin][l.seite] += l.wert; summe[l.coin].anzahl++;
+            if (z.long + z.short > max) max = z.long + z.short;
+        };
+        this.liste.forEach(function (l) { rein(l, l.empfangen || l.zeit); });
+        this.historie.forEach(function (l) { rein(l, l.zeit); });
+        return { start: start, schritt: schritt, spalten: spalten, zellen: zellen, summe: summe, max: max };
+    };
     LiqStatistik.prototype.neu = function (l) {
         this.liste.unshift(l);
         if (this.liste.length > 5000) this.liste.length = 5000;
@@ -259,7 +306,7 @@
 
     function starten(ui) {
         const buecher = {};
-        NAMEN.forEach(function (c) { buecher[c] = new Orderbuch(); });
+        BUCH_NAMEN.forEach(function (c) { buecher[c] = new Orderbuch(); });
         const liq = new LiqStatistik();
         const status = { orderbuch: 'verbinde', binance: 'verbinde', bybit: 'verbinde', okx: 'verbinde' };
         const melden = function () { if (ui.status) ui.status(status); };
@@ -312,12 +359,12 @@
         };
 
         // Orderbuch (Binance /public)
-        const buch = new Leitung(BINANCE_PUBLIC + NAMEN.map(function (c) { return COINS[c].binance + '@depth@100ms'; }).join('/'), {
-            offen: function () { NAMEN.forEach(snapshot); },
+        const buch = new Leitung(BINANCE_PUBLIC + BUCH_NAMEN.map(function (c) { return COINS[c].binance + '@depth@100ms'; }).join('/'), {
+            offen: function () { BUCH_NAMEN.forEach(snapshot); },
             status: quelle('orderbuch'),
             nachricht: function (m) {
                 const coin = coinVon('binance', String(m.stream || '').split('@')[0]);
-                if (coin && m.data && !buecher[coin].ereignis(m.data)) snapshot(coin);
+                if (coin && buecher[coin] && m.data && !buecher[coin].ereignis(m.data)) snapshot(coin);
             },
         });
 
@@ -347,7 +394,9 @@
         let ping = null;
         const bybit = new Leitung(BYBIT_WS, {
             offen: function (ws) {
-                ws.send(JSON.stringify({ op: 'subscribe', args: NAMEN.map(function (c) { return 'allLiquidation.' + COINS[c].bybit; }) }));
+                // Bybit nimmt hoechstens 10 Themen pro Anmeldung
+                const themen = NAMEN.map(function (c) { return 'allLiquidation.' + COINS[c].bybit; });
+                for (let i = 0; i < themen.length; i += 10) ws.send(JSON.stringify({ op: 'subscribe', args: themen.slice(i, i + 10) }));
                 clearInterval(ping);
                 ping = setInterval(function () { try { ws.send(JSON.stringify({ op: 'ping' })); } catch (e) { /* egal */ } }, 20000);
             },
@@ -378,18 +427,39 @@
                 });
             },
         });
-        // Kontraktgroessen von OKX holen, falls sie sich geaendert haben
-        NAMEN.forEach(function (c) {
-            fetch(OKX_REST + COINS[c].okx).then(function (r) { return r.json(); }).then(function (j) {
-                const v = j && j.data && j.data[0] && +j.data[0].ctVal;
-                if (v > 0) COINS[c].ctVal = v;
-            }).catch(function () { /* Rueckfall bleibt */ });
-        });
+        // Kontraktgroessen aller OKX-Perps auf einmal holen. Ohne bekannte
+        // Groesse wird eine OKX-Liquidation verworfen statt falsch gezaehlt.
+        // Danach die letzten Liquidationen je Coin fuer die Heatmap nachladen.
+        fetch(OKX_REST).then(function (r) { return r.json(); }).then(function (j) {
+            (j && j.data || []).forEach(function (ins) {
+                const c = coinVon('okx', ins.instId);
+                if (c && +ins.ctVal > 0) COINS[c].ctVal = +ins.ctVal;
+            });
+        }).catch(function () { /* Rueckfall fuer BTC/ETH/SOL bleibt */ }).then(historieLaden);
+
+        function historieLaden() {
+            Promise.all(NAMEN.map(function (c) {
+                if (!(COINS[c].ctVal > 0)) return [];
+                return fetch(OKX_LIQ + c + '-USDT').then(function (r) { return r.json(); }).then(function (j) {
+                    const aus = [];
+                    (j && j.data || []).forEach(function (z) {
+                        (z.details || []).forEach(function (d) {
+                            const l = ausOkx({ instId: COINS[c].okx }, d);
+                            if (l) aus.push(l);
+                        });
+                    });
+                    return aus;
+                }).catch(function () { return []; });
+            })).then(function (teile) {
+                liq.historieSetzen([].concat.apply([], teile));
+                if (ui.historie) ui.historie();
+            });
+        }
 
         // Orderbuch nicht bei jedem Ereignis zeichnen (10x pro Sekunde je
         // Coin), sondern hoechstens viermal pro Sekunde
         const tick = setInterval(function () {
-            if (ui.orderbuch) NAMEN.forEach(function (c) {
+            if (ui.orderbuch) BUCH_NAMEN.forEach(function (c) {
                 if (buecher[c].bereit) ui.orderbuch(c, buecher[c]);
             });
         }, 250);
@@ -411,7 +481,7 @@
 
     window.cfMarkt = {
         COINS: COINS, Orderbuch: Orderbuch, gruppieren: gruppieren, kennzahlen: kennzahlen,
-        ausBinance: ausBinance, ausBybit: ausBybit, ausOkx: ausOkx, LiqStatistik: LiqStatistik, NAMEN: NAMEN,
+        ausBinance: ausBinance, ausBybit: ausBybit, ausOkx: ausOkx, LiqStatistik: LiqStatistik, NAMEN: NAMEN, BUCH_NAMEN: BUCH_NAMEN,
         fngLesen: fngLesen, fngHolen: fngHolen, starten: starten,
     };
 })();
