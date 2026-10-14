@@ -984,3 +984,69 @@ body.tm::before {
 /* Kein Weichzeichner hinter den Karten: die Orderbuecher zeichnen sich
    viermal pro Sekunde neu, mit Blur dahinter kostet das jedes Mal viel */
 .tm-karte, .tm-post { backdrop-filter: none !important; -webkit-backdrop-filter: none !important; }
+
+/* ============================================================ Sessions */
+.tm-sess .tm-karte-kopf { align-items: flex-start; }
+.tm-sess .tm-karte-kopf .tm-quelle { display: block; margin-top: 4px; }
+.tm-sess-inhalt { display: grid; grid-template-columns: minmax(260px, 340px) minmax(0, 1fr); gap: 28px; align-items: center; }
+.tm-sess-liste { display: grid; gap: 6px; }
+.tm-sess-zeile {
+    display: grid; grid-template-columns: 10px minmax(0, 1fr) auto; gap: 12px; align-items: center;
+    padding: 10px 12px; border-radius: 12px; background: rgba(9, 9, 11, 0.3); border: 1px solid rgba(255, 255, 255, 0.05);
+}
+.tm-sess-zeile b { display: block; font-size: 14px; }
+.tm-sess-zeile div span { font-size: 12px; color: var(--t-text-3); font-variant-numeric: tabular-nums; }
+.tm-sess-punkt { width: 10px; height: 10px; border-radius: 50%; background: var(--farbe); opacity: 0.45; }
+.tm-sess-aktiv { border-color: color-mix(in srgb, var(--farbe) 40%, transparent); background: color-mix(in srgb, var(--farbe) 9%, rgba(9, 9, 11, 0.3)); }
+.tm-sess-aktiv .tm-sess-punkt { opacity: 1; box-shadow: 0 0 0 0 var(--farbe); animation: tm-sess-puls 2.4s ease-out infinite; }
+@keyframes tm-sess-puls { 0% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--farbe) 60%, transparent); } 70%, 100% { box-shadow: 0 0 0 7px transparent; } }
+.tm-sess-status { font-size: 12px; font-weight: 600; color: var(--t-text-2); white-space: nowrap; font-variant-numeric: tabular-nums; }
+.tm-sess-offen { color: #fff; }
+
+.tm-sess-leiste { min-width: 0; }
+.tm-sess-bahnen { position: relative; display: grid; gap: 8px; }
+.tm-sess-bahn, .tm-sess-achse { display: grid; grid-template-columns: 72px minmax(0, 1fr); gap: 12px; align-items: center; }
+.tm-sess-bahn-name { font-size: 12px; color: var(--t-text-2); }
+.tm-sess-bahn-spur { position: relative; height: 16px; border-radius: 8px; background: rgba(255, 255, 255, 0.035); }
+.tm-sess-bahn-spur i { position: absolute; top: 0; bottom: 0; border-radius: 8px; background: color-mix(in srgb, var(--farbe) 38%, transparent); }
+.tm-sess-bahn-spur i.tm-sess-jetzt { background: var(--farbe); box-shadow: 0 0 16px -2px var(--farbe); }
+.tm-sess-spuren { position: absolute; left: 84px; right: 0; top: -6px; bottom: -6px; pointer-events: none; }
+.tm-sess-ueber { position: absolute; top: 0; bottom: 0; border-radius: 6px; background: rgba(255, 255, 255, 0.05); border: 1px dashed rgba(255, 255, 255, 0.18); }
+.tm-sess-marke { position: absolute; top: -4px; bottom: -4px; width: 2px; margin-left: -1px; background: #F4F4F5; border-radius: 1px; box-shadow: 0 0 10px rgba(255, 255, 255, 0.6); }
+.tm-sess-marke em { position: absolute; top: -20px; left: 50%; transform: translateX(-50%); font-style: normal; font-size: 11px; font-weight: 700; padding: 1px 6px; border-radius: 6px; background: #F4F4F5; color: #09090B; font-variant-numeric: tabular-nums; }
+.tm-sess-achse { margin-top: 8px; }
+.tm-sess-achse div { position: relative; height: 14px; }
+.tm-sess-achse div span { position: absolute; transform: translateX(-50%); font-size: 11px; color: var(--t-text-3); font-variant-numeric: tabular-nums; }
+.tm-sess-achse div span:first-child { transform: none; }
+.tm-sess-achse div span:last-child { transform: translateX(-100%); }
+.tm-sess-bahnen { padding-top: 18px; }
+
+/* Schalter */
+.tm-schalter { display: inline-flex; align-items: center; gap: 10px; cursor: pointer; font-size: 13px; font-weight: 600; color: var(--t-text-2); user-select: none; }
+.tm-schalter input { position: absolute; opacity: 0; width: 1px; height: 1px; }
+.tm-schalter-bahn { position: relative; width: 38px; height: 22px; border-radius: 11px; background: rgba(255, 255, 255, 0.12); transition: background 0.2s ease; flex: none; }
+.tm-schalter-bahn i { position: absolute; top: 3px; left: 3px; width: 16px; height: 16px; border-radius: 50%; background: #fff; transition: transform 0.2s ease; }
+.tm-schalter input:checked + .tm-schalter-bahn { background: linear-gradient(135deg, #7C5CF0, #A855F7); }
+.tm-schalter input:checked + .tm-schalter-bahn i { transform: translateX(16px); }
+.tm-schalter input:focus-visible + .tm-schalter-bahn { outline: 2px solid #C084FC; outline-offset: 2px; }
+.tm-schalter-aus { opacity: 0.5; }
+
+/* Kopf-Anzeige */
+.tm-sess-chip {
+    display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; border-radius: 999px; font-size: 12px; font-weight: 600;
+    color: var(--t-text); background: rgba(255, 255, 255, 0.04); border: 1px solid var(--t-rand); white-space: nowrap;
+}
+.tm-sess-chip i { width: 8px; height: 8px; border-radius: 50%; margin-right: -2px; }
+.tm-sess-chip i:last-of-type { margin-right: 4px; }
+.tm-sess-chip-zu { color: var(--t-text-3); }
+
+@media (max-width: 1080px) {
+    .tm-sess-inhalt { grid-template-columns: minmax(0, 1fr); gap: 20px; }
+    .tm-sess-chip { display: none !important; }
+}
+@media (max-width: 760px) {
+    .tm-sess-bahn, .tm-sess-achse { grid-template-columns: 58px minmax(0, 1fr); gap: 8px; }
+    .tm-sess-spuren { left: 66px; }
+    .tm-schalter-text { font-size: 12px; }
+}
+@media (prefers-reduced-motion: reduce) { .tm-sess-aktiv .tm-sess-punkt { animation: none; } }

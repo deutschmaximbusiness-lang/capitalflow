@@ -69,6 +69,7 @@
                     <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 1 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>
                     <span class="tm-glocke-text">Glocke</span>
                 </button>
+                <span class="tm-sess-chip" id="tmSessChip" hidden></span>
                 <span class="tm-live" id="tmLive" data-stand="verbinde"><span aria-hidden="true"></span><b>Verbinde</b></span>
                 <a class="tm-knopf tm-knopf-leise" id="tmZurApp" href="app.html?verwaltung" hidden>Verwaltung</a>
             </div>
@@ -86,6 +87,25 @@
 
         <main class="tm-raster" data-ansicht="markt">
             <section class="tm-markt" aria-label="Markt">
+                <!-- Handelssitzungen: welche laeuft, wann startet die naechste -->
+                <article class="tm-karte tm-sess" id="tmSess">
+                    <header class="tm-karte-kopf">
+                        <div>
+                            <h2>Sessions</h2>
+                            <span class="tm-quelle" id="tmSessStand">Zeiten in deiner Ortszeit</span>
+                        </div>
+                        <label class="tm-schalter" id="tmSessPushRahmen" title="Benachrichtigung, wenn eine Session startet">
+                            <input type="checkbox" id="tmSessPush" checked>
+                            <span class="tm-schalter-bahn" aria-hidden="true"><i></i></span>
+                            <span class="tm-schalter-text">Push bei Session-Start</span>
+                        </label>
+                    </header>
+                    <div class="tm-sess-inhalt">
+                        <div class="tm-sess-liste" id="tmSessListe"></div>
+                        <div class="tm-sess-leiste" id="tmSessLeiste" role="img" aria-label="Sessions im Tagesverlauf"></div>
+                    </div>
+                </article>
+
                 <div class="tm-heat-reihe">
                 <!-- Liquidations-Heatmap: Kachelflaeche = Betrag, Farbe = was ueberwiegt -->
                 <article class="tm-karte tm-heat" id="tmHeat">
@@ -341,6 +361,7 @@
 
     <script src="js/vendor/supabase.js"></script>
     <script src="js/supabase.js"></script>
+    <script src="js/sessions.js"></script>
     <script src="js/terminal-markt.js"></script>
     <script src="js/terminal.js"></script>
     <script src="js/pwa.js"></script>

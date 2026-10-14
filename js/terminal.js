@@ -531,6 +531,93 @@
         tipp.style.top = (r.top - karte.top - 8) + 'px';
     }
 
+    // ------------------------------------------------------------ Sessions
+
+    const SESS_FARBE = { asien: '#FBBF24', london: '#A78BFA', newyork: '#38BDF8' };
+    function hm(ms) { return new Date(ms).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' }); }
+    function dauer(ms) {
+        const min = Math.max(0, Math.round(ms / 60000));
+        const h = Math.floor(min / 60), m = min % 60;
+        return h ? h + ':' + String(m).padStart(2, '0') + ' Std.' : m + ' Min.';
+    }
+    function sessWann(ms, jetzt) {
+        if (ms - jetzt < 20 * 3600000) return 'in ' + dauer(ms - jetzt);
+        return new Date(ms).toLocaleDateString('de-DE', { weekday: 'short' }) + ' ' + hm(ms);
+    }
+
+    function sessZeigen() {
+        if (!window.cfSessions) return;
+        const jetzt = Date.now();
+        const stand = window.cfSessions.stand(jetzt);
+        // Liste
+        el('tmSessListe').innerHTML = stand.map(function (x) {
+            const heute = window.cfSessions.termine(x, jetzt - 86400000, jetzt + 8 * 86400000)
+                .find(function (t) { return t.ende > jetzt; });
+            const zeit = heute ? hm(heute.start) + '–' + hm(heute.ende) : '';
+            const st = x.offen
+                ? '<span class="tm-sess-status tm-sess-offen">Offen, noch ' + dauer(x.ende - jetzt) + '</span>'
+                : '<span class="tm-sess-status">Öffnet ' + (x.naechste ? sessWann(x.naechste, jetzt) : '—') + '</span>';
+            return '<div class="tm-sess-zeile' + (x.offen ? ' tm-sess-aktiv' : '') + '" data-session="' + x.id + '" style="--farbe:' + SESS_FARBE[x.id] + '">'
+                + '<i class="tm-sess-punkt" aria-hidden="true"></i>'
+                + '<div><b>' + x.name + '</b><span>' + zeit + '</span></div>'
+                + st + '</div>';
+        }).join('');
+        // Tagesleiste in Ortszeit des Betrachters (00-24 Uhr)
+        const tag0 = new Date(jetzt); tag0.setHours(0, 0, 0, 0);
+        const ab = tag0.getTime(), bis = ab + 86400000, lang = bis - ab;
+        const pos = function (ms) { return Math.max(0, Math.min(100, ((ms - ab) / lang) * 100)); };
+        let bahnen = '';
+        stand.forEach(function (x) {
+            const t = window.cfSessions.termine(x, ab, bis);
+            bahnen += '<div class="tm-sess-bahn" style="--farbe:' + SESS_FARBE[x.id] + '"><span class="tm-sess-bahn-name">' + x.name + '</span><div class="tm-sess-bahn-spur">'
+                + t.map(function (z) {
+                    const l = pos(z.start), r = pos(z.ende);
+                    return '<i class="' + (z.start <= jetzt && jetzt < z.ende ? 'tm-sess-jetzt' : '') + '" style="left:' + l.toFixed(2) + '%;width:' + (r - l).toFixed(2) + '%" title="' + x.name + ' ' + hm(z.start) + '–' + hm(z.ende) + '"></i>';
+                }).join('') + '</div></div>';
+        });
+        // Ueberschneidung London/New York
+        const lo = window.cfSessions.termine(stand[1], ab, bis), ny = window.cfSessions.termine(stand[2], ab, bis);
+        let ueber = '';
+        lo.forEach(function (a) { ny.forEach(function (b) {
+            const s0 = Math.max(a.start, b.start), e0 = Math.min(a.ende, b.ende);
+            if (e0 > s0) ueber = '<i class="tm-sess-ueber" style="left:' + pos(s0).toFixed(2) + '%;width:' + (pos(e0) - pos(s0)).toFixed(2) + '%" title="London und New York gleichzeitig: ' + hm(s0) + '–' + hm(e0) + '"></i>';
+        }); });
+        const striche = [0, 3, 6, 9, 12, 15, 18, 21, 24].map(function (h) {
+            return '<span style="left:' + ((h / 24) * 100).toFixed(2) + '%">' + String(h % 24 === 0 && h ? 24 : h).padStart(2, '0') + '</span>';
+        }).join('');
+        el('tmSessLeiste').innerHTML = '<div class="tm-sess-bahnen">' + bahnen
+            + '<div class="tm-sess-spuren">' + ueber + '<b class="tm-sess-marke" style="left:' + pos(jetzt).toFixed(2) + '%"><em>' + hm(jetzt) + '</em></b></div></div>'
+            + '<div class="tm-sess-achse"><span class="tm-sess-bahn-name"></span><div>' + striche + '</div></div>';
+        // Kopf
+        const offen = stand.filter(function (x) { return x.offen; });
+        const chip = el('tmSessChip');
+        chip.hidden = false;
+        chip.innerHTML = offen.length
+            ? offen.map(function (x) { return '<i style="background:' + SESS_FARBE[x.id] + '"></i>'; }).join('') + offen.map(function (x) { return x.name; }).join(' + ') + ' offen'
+            : 'Keine Session offen';
+        chip.classList.toggle('tm-sess-chip-zu', !offen.length);
+        const naechste = stand.filter(function (x) { return !x.offen && x.naechste; }).sort(function (a, b) { return a.naechste - b.naechste; })[0];
+        el('tmSessStand').textContent = (offen.length ? offen.map(function (x) { return x.name; }).join(' und ') + ' offen' : 'Gerade keine Session offen')
+            + (naechste ? ', als Nächstes ' + naechste.name + ' ' + sessWann(naechste.naechste, jetzt) : '')
+            + (/\.$/.test(naechste ? sessWann(naechste.naechste, jetzt) : '') ? ' ' : '. ') + 'Zeiten in deiner Ortszeit.';
+    }
+
+    // Schalter "Push bei Session-Start": gilt fuer dieses Geraet
+    function sessPushWunsch() { try { return localStorage.getItem('cf_tm_session_push') !== '0'; } catch (e) { return true; } }
+    async function sessPushAbgleichen() {
+        const an = sessPushWunsch();
+        el('tmSessPush').checked = an;
+        const glocke = el('tmGlocke').getAttribute('aria-pressed') === 'true';
+        el('tmSessPushRahmen').classList.toggle('tm-schalter-aus', !glocke);
+        el('tmSessPushRahmen').title = glocke ? 'Benachrichtigung, wenn eine Session startet' : 'Schalte zuerst die Glocke oben an';
+        if (!glocke || !pushGeht) return;
+        try {
+            const reg = await navigator.serviceWorker.ready;
+            const abo = await reg.pushManager.getSubscription();
+            if (abo) await window.cfDb.rpc('push_sessions_setzen', { p_endpoint: abo.endpoint, p_an: an });
+        } catch (e) { /* naechster Versuch beim naechsten Umschalten */ }
+    }
+
     // ----------------------------------------------- Liquidationshistorie
     //
     // Unten: Long-Liquidationen nach oben, Short nach unten (eine Achse,
@@ -1085,6 +1172,17 @@
 
     function verdrahten() {
         lupeVerdrahten();
+        el('tmSessPush').addEventListener('change', function () {
+            const glocke = el('tmGlocke').getAttribute('aria-pressed') === 'true';
+            if (!glocke) {
+                this.checked = sessPushWunsch();
+                toast('Schalte zuerst oben die Glocke an, dann kommen auch die Session-Nachrichten.', true);
+                return;
+            }
+            try { localStorage.setItem('cf_tm_session_push', this.checked ? '1' : '0'); } catch (e) { /* egal */ }
+            sessPushAbgleichen();
+            toast(this.checked ? 'Du bekommst eine Nachricht, wenn Asien, London oder New York startet' : 'Keine Session-Nachrichten mehr auf diesem Gerät');
+        });
         document.querySelector('.tm-heat-zeit').addEventListener('click', function (e) {
             const b = e.target.closest('[data-fenster]');
             if (!b) return;
@@ -1253,11 +1351,13 @@
     async function glockeEinrichten() {
         const g = el('tmGlocke');
         g.addEventListener('click', glockeKlick);
+        sessPushAbgleichen();
         if (!pushGeht || Notification.permission !== 'granted') return;
         try {
             const reg = await swBereit();
             glockeStand(!!(await reg.pushManager.getSubscription()));
         } catch (e) { /* bleibt aus */ }
+        sessPushAbgleichen();
     }
 
     let glockeLaeuft = false;
@@ -1277,6 +1377,7 @@
                 await window.cfDb.rpc('push_abo_loeschen', { p_endpoint: alt.endpoint });
                 await alt.unsubscribe();
                 glockeStand(false);
+                sessPushAbgleichen();
                 toast('Glocke aus – keine Benachrichtigungen mehr auf diesem Gerät');
                 return;
             }
@@ -1293,7 +1394,8 @@
             const { error: fe } = await window.cfDb.rpc('push_abo_setzen', { p_endpoint: j.endpoint, p_p256dh: j.keys.p256dh, p_auth: j.keys.auth });
             if (fe) throw new Error(/push_abo_setzen|schema cache/i.test(fe.message) ? '11_push.sql fehlt in Supabase' : fe.message);
             glockeStand(true);
-            toast('Glocke an – du bekommst eine Nachricht bei jeder neuen These');
+            sessPushAbgleichen();
+            toast('Glocke an – du bekommst eine Nachricht bei jeder neuen These' + (sessPushWunsch() ? ' und zum Start jeder Session' : ''));
         } catch (e) {
             toast('Glocke nicht aktiviert: ' + e.message, true);
         } finally {
@@ -1364,6 +1466,8 @@
         });
         heatZeigen();
         setInterval(heatZeigen, 2000);
+        sessZeigen();
+        setInterval(sessZeigen, 30000);
         histZeichnen();
         histKerzenLaden();
         setInterval(function () { if (!el('tmHistTipp').hidden) return; histZeichnen(); }, 5000);
@@ -1393,7 +1497,7 @@
         ziel.classList.add('tm-post-ziel');
     }
 
-    window.cfTerminal = { tvBild: tvBild, tweetTeile: tweetTeile, feedLaden: feedLaden, heatZeigen: heatZeigen, heatFarbe: heatFarbe, histZeichnen: histZeichnen, squarify: squarify };
+    window.cfTerminal = { tvBild: tvBild, tweetTeile: tweetTeile, feedLaden: feedLaden, heatZeigen: heatZeigen, heatFarbe: heatFarbe, histZeichnen: histZeichnen, squarify: squarify, sessZeigen: sessZeigen };
 
     if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start);
     else start();
