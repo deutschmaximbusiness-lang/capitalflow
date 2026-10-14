@@ -7,11 +7,19 @@
   "start_url": "./app.html",
   "scope": "./",
   "display": "standalone",
-  "display_override": ["window-controls-overlay", "standalone", "minimal-ui"],
+  "display_override": [
+    "window-controls-overlay",
+    "standalone",
+    "minimal-ui"
+  ],
   "orientation": "any",
   "background_color": "#0a0a15",
   "theme_color": "#0a0a15",
-  "categories": ["finance", "productivity", "business"],
+  "categories": [
+    "finance",
+    "productivity",
+    "business"
+  ],
   "icons": [
     {
       "src": "img/capitalflow-icon-32.png",
@@ -38,10 +46,11 @@
       "purpose": "any"
     },
     {
-      "src": "img/capitalflow-icon.png",
+      "src": "img/capitalflow-icon-maskable-512.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "maskable"
     }
-  ]
+  ],
+  "id": "./app.html"
 }

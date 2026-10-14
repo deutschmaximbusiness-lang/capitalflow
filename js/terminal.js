@@ -37,6 +37,7 @@
     function tor(text, knoepfe) {
         el('tmTorText').textContent = text;
         el('tmTorKnoepfe').hidden = !knoepfe;
+        if (knoepfe) el('tmTor').setAttribute('data-stand', 'hinweis');
     }
 
     async function zugang() {
@@ -59,6 +60,9 @@
 
     function ansicht(welche) {
         document.querySelector('.tm-raster').setAttribute('data-ansicht', welche);
+        try { localStorage.setItem('cf_tm_ansicht', welche); } catch (e) { /* egal */ }
+        if (welche === 'feed') { neuGesehen(); }
+        window.scrollTo({ top: 0 });
         document.querySelectorAll('.tm-umschalter [data-ansicht]').forEach(function (b) {
             b.setAttribute('aria-selected', b.getAttribute('data-ansicht') === welche ? 'true' : 'false');
         });
@@ -376,13 +380,136 @@
                 return;
             }
             posts = data || [];
+            neuZaehlen();
             const bilder = await bildAdressen(posts);
-            el('tmPosts').innerHTML = posts.length ? posts.map(function (p) { return postHtml(p, bilder); }).join('')
-                : '<p class="tm-leer">Noch keine Beiträge.' + (profil.is_admin ? ' Dein erster steht oben im Formular.' : '') + '</p>';
+            const sichtbar = posts.filter(passtFilter);
+            el('tmPosts').innerHTML = sichtbar.length ? sichtbar.map(function (p) { return postHtml(p, bilder); }).join('')
+                : posts.length ? '<p class="tm-leer">Keine Beiträge für diesen Filter.</p>'
+                : '<p class="tm-leer">Noch keine Beiträge.' + (profil.is_admin ? ' Schreib die erste These über „Neue These schreiben“.' : '') + '</p>';
             el('tmFeedStand').textContent = posts.length ? posts.length + (posts.length === 1 ? ' Beitrag' : ' Beiträge') : '';
             tweetsLaden();
         })();
         try { await laedt; } finally { laedt = null; }
+    }
+
+    // Filter im Feed
+    let filter = 'alle';
+    function passtFilter(p) {
+        if (filter === 'alle') return true;
+        if (filter === 'tweet') return p.art === 'tweet';
+        return p.art === 'these' && p.coin === filter;
+    }
+
+    // Neue Beitraege, waehrend man im Markt-Tab ist: Punkt am Feed-Tab
+    function gesehenBis() { try { return localStorage.getItem('cf_tm_gesehen') || ''; } catch (e) { return ''; } }
+    function neuZaehlen() {
+        const bis = gesehenBis();
+        const n = bis ? posts.filter(function (p) { return p.created_at > bis; }).length : 0;
+        const r = document.querySelector('.tm-raster');
+        if (r && r.getAttribute('data-ansicht') === 'feed') { neuGesehen(); return; }
+        const b = el('tmFeedNeu');
+        b.hidden = !n;
+        b.textContent = n > 9 ? '9+' : String(n);
+        if (!bis) neuGesehen();
+    }
+    function neuGesehen() {
+        const neueste = posts.reduce(function (m, p) { return p.created_at > m ? p.created_at : m; }, '');
+        try { if (neueste) localStorage.setItem('cf_tm_gesehen', neueste); } catch (e) { /* egal */ }
+        const b = el('tmFeedNeu');
+        if (b) b.hidden = true;
+    }
+
+    // --------------------------------------------------------- Bild gross
+    //
+    // Alle Bilder eines Beitrags (eigenes Bild + Chart) als Reihe. Klick ins
+    // Bild zoomt auf die Stelle, Pfeile/Wischen wechseln, Esc schliesst.
+
+    let lupe = { liste: [], i: 0 };
+    function lupeAuf(post, index) {
+        const bilder = Array.prototype.map.call(post.querySelectorAll('.tm-post-bild'), function (a) {
+            const img = a.querySelector('img');
+            return { src: img.getAttribute('src'), original: a.getAttribute('href'), alt: img.alt };
+        });
+        if (!bilder.length) return;
+        lupe = { liste: bilder, i: index, vorher: document.activeElement };
+        el('tmLupe').hidden = false;
+        document.documentElement.classList.add('tm-lupe-offen');
+        lupeZeigen();
+        el('tmLupeZu').focus();
+    }
+    function lupeZeigen() {
+        const b = lupe.liste[lupe.i];
+        const img = el('tmLupeBild');
+        el('tmLupeFlaeche').classList.remove('tm-gezoomt');
+        img.classList.remove('tm-lupe-da');
+        img.onload = function () { img.classList.add('tm-lupe-da'); };
+        img.src = b.src;
+        img.alt = b.alt;
+        if (img.complete) img.classList.add('tm-lupe-da');
+        el('tmLupeOriginal').href = b.original || b.src;
+        const mehr = lupe.liste.length > 1;
+        el('tmLupeZahl').textContent = mehr ? (lupe.i + 1) + ' / ' + lupe.liste.length : '';
+        el('tmLupeZurueck').hidden = !mehr;
+        el('tmLupeWeiter').hidden = !mehr;
+    }
+    function lupeBlaettern(d) {
+        if (lupe.liste.length < 2) return;
+        lupe.i = (lupe.i + d + lupe.liste.length) % lupe.liste.length;
+        lupeZeigen();
+    }
+    function lupeZu() {
+        if (el('tmLupe').hidden) return;
+        el('tmLupe').hidden = true;
+        document.documentElement.classList.remove('tm-lupe-offen');
+        el('tmLupeBild').removeAttribute('src');
+        if (lupe.vorher && lupe.vorher.focus) lupe.vorher.focus();
+    }
+    function lupeZoom(e) {
+        const f = el('tmLupeFlaeche');
+        const img = el('tmLupeBild');
+        if (f.classList.contains('tm-gezoomt')) { f.classList.remove('tm-gezoomt'); return; }
+        const r = img.getBoundingClientRect();
+        const fx = (e.clientX - r.left) / r.width, fy = (e.clientY - r.top) / r.height;
+        f.classList.add('tm-gezoomt');
+        el('tmLupeTipp').hidden = true;
+        // Auf die geklickte Stelle scrollen
+        requestAnimationFrame(function () {
+            f.scrollLeft = fx * f.scrollWidth - f.clientWidth / 2;
+            f.scrollTop = fy * f.scrollHeight - f.clientHeight / 2;
+        });
+    }
+    function lupeVerdrahten() {
+        el('tmLupeZu').addEventListener('click', lupeZu);
+        el('tmLupeZurueck').addEventListener('click', function () { lupeBlaettern(-1); });
+        el('tmLupeWeiter').addEventListener('click', function () { lupeBlaettern(1); });
+        el('tmLupeBild').addEventListener('click', function (e) { e.stopPropagation(); lupeZoom(e); });
+        el('tmLupeFlaeche').addEventListener('click', function (e) { if (e.target === e.currentTarget) lupeZu(); });
+        document.addEventListener('keydown', function (e) {
+            if (el('tmLupe').hidden) return;
+            if (e.key === 'Escape') lupeZu();
+            else if (e.key === 'ArrowLeft') lupeBlaettern(-1);
+            else if (e.key === 'ArrowRight') lupeBlaettern(1);
+        });
+        // Wischen auf dem Handy (nur ungezoomt)
+        let x0 = null, y0 = null;
+        el('tmLupeFlaeche').addEventListener('touchstart', function (e) {
+            if (e.touches.length !== 1 || e.currentTarget.classList.contains('tm-gezoomt')) { x0 = null; return; }
+            x0 = e.touches[0].clientX; y0 = e.touches[0].clientY;
+        }, { passive: true });
+        el('tmLupeFlaeche').addEventListener('touchend', function (e) {
+            if (x0 === null) return;
+            const dx = e.changedTouches[0].clientX - x0, dy = e.changedTouches[0].clientY - y0;
+            x0 = null;
+            if (Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy)) lupeBlaettern(dx < 0 ? 1 : -1);
+            else if (dy > 90 && Math.abs(dy) > Math.abs(dx)) lupeZu();
+        });
+        el('tmPosts').addEventListener('click', function (e) {
+            const a = e.target.closest('.tm-post-bild');
+            if (!a || e.ctrlKey || e.metaKey || e.shiftKey || e.button !== 0) return;
+            e.preventDefault();
+            const post = a.closest('.tm-post');
+            lupeAuf(post, Array.prototype.indexOf.call(post.querySelectorAll('.tm-post-bild'), a));
+        });
     }
 
     // Beitraege von anderen Geraeten / vom Admin sofort zeigen
@@ -511,6 +638,14 @@
     // -------------------------------------------------------- Verdrahtung
 
     function verdrahten() {
+        lupeVerdrahten();
+        document.querySelector('.tm-feed-filter').addEventListener('click', function (e) {
+            const b = e.target.closest('[data-filter]');
+            if (!b) return;
+            filter = b.getAttribute('data-filter');
+            segment(e.currentTarget, filter, 'data-filter');
+            feedLaden();
+        });
         document.querySelector('.tm-umschalter').addEventListener('click', function (e) {
             const b = e.target.closest('[data-ansicht]');
             if (b) ansicht(b.getAttribute('data-ansicht'));
@@ -698,12 +833,30 @@
         }
     }
 
+    // Intro: einmal pro Sitzung die volle Animation (2 s), danach kurz
+    function introDauer() {
+        if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return 0;
+        let schon = false;
+        try { schon = sessionStorage.getItem('cf_tm_intro') === '1'; sessionStorage.setItem('cf_tm_intro', '1'); } catch (e) { /* egal */ }
+        if (schon) el('tmTor').classList.add('tm-intro-kurz');
+        return schon ? 700 : 2000;
+    }
+    function warte(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
+
     async function start() {
+        const intro = warte(introDauer());
         let ok = false;
         try { ok = await zugang(); } catch (e) { tor('Zugang konnte nicht geprüft werden.', true); }
         if (!ok) return;
-        el('tmTor').hidden = true;
+        await intro;
+        const tor_ = el('tmTor');
+        tor_.setAttribute('data-stand', 'fertig');
         el('tmApp').hidden = false;
+        document.body.classList.add('tm-auftritt');
+        setTimeout(function () { tor_.hidden = true; document.body.classList.remove('tm-auftritt'); }, 650);
+        let gemerkt = null;
+        try { gemerkt = localStorage.getItem('cf_tm_ansicht'); } catch (e) { /* egal */ }
+        if (gemerkt === 'feed' && !location.hash) ansicht('feed');
         buchAufbauen();
         verdrahten();
         markt = window.cfMarkt.starten({

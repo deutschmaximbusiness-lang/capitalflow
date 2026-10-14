@@ -10,7 +10,7 @@
  * Bei jedem Release CACHE_VERSION hochzaehlen.
  */
 
-const CACHE_VERSION = 'cf-v78';
+const CACHE_VERSION = 'cf-v80';
 const CACHE_APP = CACHE_VERSION + '-app';
 const CACHE_ASSETS = CACHE_VERSION + '-assets';
 
@@ -56,10 +56,13 @@ const PRECACHE = [
     './js/terminal-markt.js',
     './logo/terminal-icon.svg',
     './manifest.json',
+    './manifest-terminal.json',
     './img/capitalflow-icon.png',
     './img/capitalflow-icon-192.png',
     './img/capitalflow-icon-180.png',
     './img/capitalflow-icon-32.png',
+    './img/terminal-icon-192.png',
+    './img/terminal-badge.png',
 ];
 
 self.addEventListener('install', (event) => {
@@ -160,12 +163,20 @@ self.addEventListener('fetch', (event) => {
 self.addEventListener('push', (event) => {
     let d = {};
     try { d = event.data ? event.data.json() : {}; } catch (e) { d = { text: event.data ? event.data.text() : '' }; }
-    event.waitUntil(self.registration.showNotification(d.titel || 'CapitalFlow Terminal', {
+    const optionen = {
         body: d.text || 'Neuer Beitrag im Feed',
         icon: 'img/terminal-icon-192.png',
+        // Android: kleines einfarbiges Logo in der Statusleiste
+        badge: 'img/terminal-badge.png',
         tag: d.id ? 'post-' + d.id : 'terminal',
+        renotify: true,
+        timestamp: d.zeit || Date.now(),
+        actions: [{ action: 'ansehen', title: d.knopf || 'Ansehen' }],
         data: { url: d.url || 'terminal.html' },
-    }));
+    };
+    // Grosses Bild (Chart): Windows und Android zeigen es, iPhone nicht
+    if (d.bild) optionen.image = d.bild;
+    event.waitUntil(self.registration.showNotification(d.titel || 'CapitalFlow Terminal', optionen));
 });
 
 self.addEventListener('notificationclick', (event) => {
