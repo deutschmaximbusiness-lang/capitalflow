@@ -1737,3 +1737,21 @@ input[type="number"] { -moz-appearance: textfield; appearance: textfield; }
 .nav-terminal { text-decoration: none; }
 .nav-terminal-icon { border-radius: 6px; flex: none; }
 .admin-vip-btn.aktiv { background: rgba(54, 37, 92, 0.95) !important; border-color: rgba(167, 139, 250, 0.55) !important; color: #F4F0FF !important; }
+
+/* ===== Zugaenge: Zahlen oben (live online, Nutzer, VIP, Glocke) ===== */
+.admin-statistik { display: grid; grid-template-columns: 1.3fr 1fr 1fr 1fr; gap: 16px; margin-bottom: 24px; }
+.admin-stat {
+    display: flex; flex-direction: column; gap: 6px; padding: 20px 22px; border-radius: 16px;
+    background: var(--cf-glas, rgba(15, 15, 32, 0.6)); border: 1px solid rgba(124, 92, 240, 0.16);
+}
+.admin-stat-titel { display: inline-flex; align-items: center; gap: 8px; font-size: 12px; font-weight: 600; color: #A9A5BD; }
+.admin-stat strong { font-size: 32px; font-weight: 700; letter-spacing: -0.02em; line-height: 1.05; color: #F4F4F5; font-variant-numeric: tabular-nums; }
+.admin-stat small { font-size: 12px; color: #8E8AA3; }
+.admin-stat-live { border-color: rgba(52, 211, 153, 0.35); background: linear-gradient(160deg, rgba(16, 60, 48, 0.35), rgba(15, 15, 32, 0.6)); }
+.admin-stat-live strong { font-size: 40px; color: #ECFDF5; }
+.admin-live-punkt { width: 8px; height: 8px; border-radius: 50%; background: #34D399; box-shadow: 0 0 0 0 rgba(52, 211, 153, 0.6); animation: admin-live 2s ease-out infinite; }
+@keyframes admin-live { 70%, 100% { box-shadow: 0 0 0 7px rgba(52, 211, 153, 0); } }
+.admin-zahl-neu { animation: admin-zahl 0.5s ease-out; }
+@keyframes admin-zahl { from { color: #6EE7B7; } }
+@media (max-width: 900px) { .admin-statistik { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (prefers-reduced-motion: reduce) { .admin-live-punkt, .admin-zahl-neu { animation: none; } }

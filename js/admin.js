@@ -302,9 +302,51 @@
 
     // ------------------------------------------------------------- Aufbau
 
+    // ---------------------------------------------------------- Zahlen
+
+    function zahl(n) { return typeof n === 'number' ? n.toLocaleString('de-DE') : '—'; }
+
+    async function statistikLaden() {
+        try {
+            const { data, error } = await window.cfDb.rpc('admin_statistik');
+            if (error || !data) throw error || new Error('leer');
+            el('adminStatNutzer').textContent = zahl(data.nutzer);
+            el('adminStatNeu').textContent = '+' + zahl(data.neu_7_tage) + ' in 7 Tagen';
+            el('adminStatVip').textContent = zahl(data.vip);
+            el('adminStatFrei').textContent = zahl(data.freigeschaltet) + ' freigeschaltet';
+            el('adminStatGeraete').textContent = zahl(data.geraete);
+            el('adminStatSession').textContent = zahl(data.session_push) + ' mit Session-Push';
+        } catch (e) {
+            el('adminStatNeu').textContent = '13_statistik.sql fehlt';
+        }
+    }
+
+    // Live: wer hat gerade das Terminal offen (Realtime Presence).
+    // Der Admin hoert nur zu und zaehlt sich nicht selbst mit.
+    let onlineKanal = null;
+    function onlineZaehlen() {
+        if (onlineKanal || !window.cfDb || !window.cfDb.channel) return;
+        try {
+            onlineKanal = window.cfDb.channel('terminal-online');
+            const zeigen = function () {
+                const n = Object.keys(onlineKanal.presenceState() || {}).length;
+                const z = el('adminOnline');
+                if (z.textContent !== zahl(n)) {
+                    z.textContent = zahl(n);
+                    z.classList.remove('admin-zahl-neu'); void z.offsetWidth; z.classList.add('admin-zahl-neu');
+                }
+            };
+            onlineKanal.on('presence', { event: 'sync' }, zeigen).subscribe(function (status) {
+                if (status === 'SUBSCRIBED') zeigen();
+            });
+        } catch (e) { el('adminOnline').textContent = '—'; }
+    }
+
     window.cfAdminOeffnen = async function () {
         if (!istAdmin) await window.cfAdminPruefen();
         if (!istAdmin) return;
+        onlineZaehlen();
+        statistikLaden();
         await listeLaden();
     };
 

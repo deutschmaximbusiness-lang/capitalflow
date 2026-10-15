@@ -52,6 +52,30 @@
         if (knoepfe) el('tmTor').setAttribute('data-stand', 'hinweis');
     }
 
+    // VIP wird oft erst vergeben, waehrend das Terminal schon offen ist (in
+    // der iPhone-App gibt es keinen Neu-laden-Knopf). Deshalb: alle 10 s
+    // und beim Zurueckkehren in die App nachsehen, dann selbst neu starten.
+    let freigabeTimer = null;
+    function aufFreigabeWarten(uid) {
+        if (freigabeTimer) return;
+        const pruefen = async function () {
+            if (document.hidden) return;
+            try {
+                const { data } = await window.cfDb.from('profiles')
+                    .select('activated, is_vip, is_admin').eq('id', uid).maybeSingle();
+                if (data && data.activated && (data.is_vip || data.is_admin)) {
+                    clearInterval(freigabeTimer);
+                    el('tmTorText').textContent = 'Freigeschaltet – das Terminal startet …';
+                    location.reload();
+                }
+            } catch (e) { /* naechster Versuch */ }
+        };
+        freigabeTimer = setInterval(pruefen, 10000);
+        document.addEventListener('visibilitychange', function () { if (!document.hidden) pruefen(); });
+        window.addEventListener('focus', pruefen);
+        window.cfTerminalFreigabePruefen = pruefen;
+    }
+
     async function zugang() {
         if (!window.cfDb) { tor('Keine Verbindung zur Datenbank.', true); return false; }
         const s = await window.cfSitzung();
@@ -62,6 +86,7 @@
         if (!data.activated) { tor('Dein Zugang ist noch nicht freigeschaltet. Löse deinen Access Key ein.', 'anmelden'); return false; }
         if (!(data.is_vip || data.is_admin)) {
             tor('Das Krypto Terminal ist für VIP-Member. Melde dich bei uns, wenn du dazugehören willst.', 'abmelden');
+            aufFreigabeWarten(s.user.id);
             return false;
         }
         profil = data;
@@ -1045,6 +1070,18 @@
         });
     }
 
+    // Wer ist gerade im Terminal? Jedes offene Terminal meldet sich ueber
+    // Supabase Realtime (Presence) an - pro Konto einmal, egal wie viele
+    // Tabs oder Geraete. Die Zahl sieht nur der Admin unter "Zugaenge".
+    function anwesend() {
+        try {
+            const kanal = window.cfDb.channel('terminal-online', { config: { presence: { key: profil.id } } });
+            kanal.subscribe(function (status) {
+                if (status === 'SUBSCRIBED') kanal.track({ seit: Date.now() });
+            });
+        } catch (e) { /* ohne Realtime keine Zaehlung */ }
+    }
+
     // Beitraege von anderen Geraeten / vom Admin sofort zeigen
     function live() {
         try {
@@ -1478,6 +1515,7 @@
         setInterval(fng, 10 * 60 * 1000);
         await feedLaden();
         live();
+        anwesend();
         zuPost();
         window.addEventListener('hashchange', function () { feedLaden().then(zuPost); });
     }
