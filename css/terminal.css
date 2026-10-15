@@ -1050,3 +1050,12 @@ body.tm::before {
     .tm-schalter-text { font-size: 12px; }
 }
 @media (prefers-reduced-motion: reduce) { .tm-sess-aktiv .tm-sess-punkt { animation: none; } }
+
+/* Online-Anzeige im Kopf */
+.tm-online-chip {
+    display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; border-radius: 999px; font-size: 12px; font-weight: 600;
+    color: var(--t-text); background: rgba(52, 211, 153, 0.08); border: 1px solid rgba(52, 211, 153, 0.3); white-space: nowrap;
+}
+.tm-online-chip i { width: 8px; height: 8px; border-radius: 50%; background: #34D399; animation: tm-puls 2s ease-in-out infinite; }
+.tm-online-chip b { display: inline-block; min-width: 3ch; text-align: right; font-variant-numeric: tabular-nums; }
+@media (max-width: 760px) { .tm-online-chip { padding: 5px 9px; font-size: 11px; } }

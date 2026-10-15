@@ -1073,11 +1073,52 @@
     // Wer ist gerade im Terminal? Jedes offene Terminal meldet sich ueber
     // Supabase Realtime (Presence) an - pro Konto einmal, egal wie viele
     // Tabs oder Geraete. Die Zahl sieht nur der Admin unter "Zugaenge".
+    // Online-Anzeige im Kopf, fuer alle sichtbar.
+    // Bis ONLINE_TEST_BIS laeuft eine TESTZAHL (simuliert, hoechstens 150).
+    // Danach zeigt die Anzeige von selbst die echte Zahl aus Realtime
+    // Presence. Testzahl sofort beenden: Datum in die Vergangenheit setzen.
+    const ONLINE_TEST_BIS = Date.parse('2026-10-22T23:59:59+02:00');
+    function onlineChip(n) {
+        const c = el('tmOnlineChip');
+        if (!c) return;
+        c.hidden = false;
+        const b = c.querySelector('b');
+        const neu = String(n);
+        if (b.textContent !== neu) {
+            b.textContent = neu;
+            if (b.animate && !ruhig) b.animate([{ transform: 'translateY(-4px)', opacity: 0.3 }, { transform: 'none', opacity: 1 }], { duration: 350, easing: 'ease-out' });
+        }
+    }
+    function onlineTest() {
+        if (Date.now() > ONLINE_TEST_BIS) return false;
+        let n = 80 + Math.round(Math.random() * 40);
+        const schritt = function () {
+            // Abends mehr, nachts weniger; die Zahl folgt dem Ziel in kleinen Schritten
+            const h = new Date().getHours() + new Date().getMinutes() / 60;
+            const ziel = 70 + 65 * Math.max(0, Math.sin(((h - 7) / 24) * 2 * Math.PI)) + (Math.random() - 0.5) * 20;
+            n += Math.sign(ziel - n) * Math.ceil(Math.random() * 3) + Math.round((Math.random() - 0.5) * 2);
+            n = Math.max(40, Math.min(150, n));
+            if (Date.now() > ONLINE_TEST_BIS) { onlineTestAktiv = false; echtZeigen(); return; }
+            onlineChip(n);
+            setTimeout(schritt, 3500 + Math.random() * 6000);
+        };
+        schritt();
+        return true;
+    }
+    let onlineTestAktiv = false, onlineKanal = null;
+    function echtZeigen() {
+        if (onlineTestAktiv || !onlineKanal) return;
+        onlineChip(Math.max(1, Object.keys(onlineKanal.presenceState() || {}).length));
+    }
+
     function anwesend() {
+        onlineTestAktiv = !!onlineTest();
         try {
             const kanal = window.cfDb.channel('terminal-online', { config: { presence: { key: profil.id } } });
+            onlineKanal = kanal;
+            if (kanal.on) kanal.on('presence', { event: 'sync' }, echtZeigen);
             kanal.subscribe(function (status) {
-                if (status === 'SUBSCRIBED') kanal.track({ seit: Date.now() });
+                if (status === 'SUBSCRIBED') { kanal.track({ seit: Date.now() }); echtZeigen(); }
             });
         } catch (e) { /* ohne Realtime keine Zaehlung */ }
     }
